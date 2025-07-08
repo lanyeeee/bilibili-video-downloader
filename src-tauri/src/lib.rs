@@ -1,11 +1,8 @@
+mod commands;
+
 use tauri::Wry;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-#[specta::specta]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+use crate::commands::*;
 
 fn generate_context() -> tauri::Context<Wry> {
     tauri::generate_context!()
