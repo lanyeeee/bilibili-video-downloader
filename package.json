@@ -27,6 +27,7 @@
     "prettier": "3.6.2",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.36.0",
+    "unocss": "^66.3.3",
     "vite": "^6.0.3",
     "vue-tsc": "^2.1.10"
   }
