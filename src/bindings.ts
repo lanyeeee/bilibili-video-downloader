@@ -7,6 +7,9 @@
 export const commands = {
 async greet(name: string) : Promise<string> {
     return await TAURI_INVOKE("greet", { name });
+},
+async getConfig() : Promise<Config> {
+    return await TAURI_INVOKE("get_config");
 }
 }
 
@@ -20,7 +23,7 @@ async greet(name: string) : Promise<string> {
 
 /** user-defined types **/
 
-
+export type Config = { downloadDir: string }
 
 /** tauri-specta globals **/
 

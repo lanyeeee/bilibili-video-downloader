@@ -1,10 +1,13 @@
 mod commands;
+mod config;
 mod extensions;
 mod utils;
 
-use tauri::Wry;
-
-use crate::commands::*;
+use anyhow::Context;
+use commands::*;
+use config::Config;
+use parking_lot::RwLock;
+use tauri::{Manager, Wry};
 
 fn generate_context() -> tauri::Context<Wry> {
     tauri::generate_context!()
@@ -13,7 +16,7 @@ fn generate_context() -> tauri::Context<Wry> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri_specta::Builder::<Wry>::new()
-        .commands(tauri_specta::collect_commands![greet])
+        .commands(tauri_specta::collect_commands![greet, get_config])
         .events(tauri_specta::collect_events![]);
 
     #[cfg(debug_assertions)]
@@ -32,6 +35,18 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .context("获取app_data_dir目录失败")?;
+
+            std::fs::create_dir_all(&app_data_dir)
+                .context(format!("创建app_data_dir目录`{app_data_dir:?}`失败"))?;
+
+            let config = RwLock::new(Config::new(app.handle())?);
+            app.manage(config);
+
             Ok(())
         })
         .run(generate_context())

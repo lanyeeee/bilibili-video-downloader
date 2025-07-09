@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import {commands} from "./bindings.ts";
+import { commands } from './bindings.ts'
 
 const greetMsg = ref('')
 const name = ref('')
@@ -10,8 +10,9 @@ async function greet() {
   greetMsg.value = await commands.greet(name.value)
 }
 
-function test() {
-  console.log('test')
+async function test() {
+  const result = await commands.getConfig()
+  console.log(result)
 }
 </script>
 
