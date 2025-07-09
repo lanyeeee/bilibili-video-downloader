@@ -1,4 +1,5 @@
 mod commands;
+mod extensions;
 mod utils;
 
 use tauri::Wry;
