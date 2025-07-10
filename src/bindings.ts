@@ -16,6 +16,11 @@ async getConfig() : Promise<Config> {
 /** user-defined events **/
 
 
+export const events = __makeEvents__<{
+logEvent: LogEvent
+}>({
+logEvent: "log-event"
+})
 
 /** user-defined constants **/
 
@@ -23,7 +28,10 @@ async getConfig() : Promise<Config> {
 
 /** user-defined types **/
 
-export type Config = { downloadDir: string }
+export type Config = { downloadDir: string; enableFileLogger: boolean }
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
+export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in string]: JsonValue }; target: string; filename: string; line_number: number }
+export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
 
 /** tauri-specta globals **/
 

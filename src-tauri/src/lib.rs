@@ -1,6 +1,10 @@
 mod commands;
 mod config;
+mod errors;
+mod events;
 mod extensions;
+mod logger;
+mod types;
 mod utils;
 
 use anyhow::Context;
@@ -8,6 +12,8 @@ use commands::*;
 use config::Config;
 use parking_lot::RwLock;
 use tauri::{Manager, Wry};
+
+use crate::events::LogEvent;
 
 fn generate_context() -> tauri::Context<Wry> {
     tauri::generate_context!()
@@ -17,7 +23,7 @@ fn generate_context() -> tauri::Context<Wry> {
 pub fn run() {
     let builder = tauri_specta::Builder::<Wry>::new()
         .commands(tauri_specta::collect_commands![greet, get_config])
-        .events(tauri_specta::collect_events![]);
+        .events(tauri_specta::collect_events![LogEvent]);
 
     #[cfg(debug_assertions)]
     builder
@@ -46,6 +52,8 @@ pub fn run() {
 
             let config = RwLock::new(Config::new(app.handle())?);
             app.manage(config);
+
+            logger::init(app.handle())?;
 
             Ok(())
         })

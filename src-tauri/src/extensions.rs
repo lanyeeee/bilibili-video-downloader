@@ -1,3 +1,8 @@
+use parking_lot::RwLock;
+use tauri::{Manager, State};
+
+use crate::config::Config;
+
 pub trait AnyhowErrorToStringChain {
     /// 将 `anyhow::Error` 转换为chain格式  
     /// # Example  
@@ -16,5 +21,15 @@ impl AnyhowErrorToStringChain for anyhow::Error {
                 let _ = writeln!(output, "{i}: {e}");
                 output
             })
+    }
+}
+
+pub trait AppHandleExt {
+    fn get_config(&self) -> State<RwLock<Config>>;
+}
+
+impl AppHandleExt for tauri::AppHandle {
+    fn get_config(&self) -> State<RwLock<Config>> {
+        self.state::<RwLock<Config>>()
     }
 }
