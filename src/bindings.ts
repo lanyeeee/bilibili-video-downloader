@@ -10,6 +10,14 @@ async greet(name: string) : Promise<string> {
 },
 async getConfig() : Promise<Config> {
     return await TAURI_INVOKE("get_config");
+},
+async saveConfig(config: Config) : Promise<Result<null, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_config", { config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -28,6 +36,7 @@ logEvent: "log-event"
 
 /** user-defined types **/
 
+export type CommandError = { err_title: string; err_message: string }
 export type Config = { downloadDir: string; enableFileLogger: boolean }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
 export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in string]: JsonValue }; target: string; filename: string; line_number: number }
