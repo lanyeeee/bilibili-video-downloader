@@ -6,7 +6,7 @@ use crate::{
     errors::{CommandError, CommandResult},
     extensions::AppHandleExt,
     logger,
-    types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus},
+    types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo},
 };
 
 #[tauri::command]
@@ -79,4 +79,15 @@ pub async fn get_qrcode_status(app: AppHandle, qrcode_key: String) -> CommandRes
         .await
         .map_err(|err| CommandError::from("获取二维码状态", err))?;
     Ok(qrcode_status)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_user_info(app: AppHandle, sessdata: String) -> CommandResult<UserInfo> {
+    let bili_client = app.get_bili_client();
+    let user_info = bili_client
+        .get_user_info(&sessdata)
+        .await
+        .map_err(|err| CommandError::from("获取用户信息失败", err))?;
+    Ok(user_info)
 }

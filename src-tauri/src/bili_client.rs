@@ -12,7 +12,7 @@ use tauri::{
     AppHandle,
 };
 
-use crate::types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus};
+use crate::types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo};
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 const REFERRER: &str = "https://www.bilibili.com/";
@@ -96,6 +96,41 @@ impl BiliClient {
             return Err(anyhow!("预料之外的二维码code: {qrcode_status:?}"));
         }
         Ok(qrcode_status)
+    }
+
+    pub async fn get_user_info(&self, sessdata: &str) -> anyhow::Result<UserInfo> {
+        // 发送获取用户信息的请求
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/x/web-interface/nav")
+            .header("cookie", format!("SESSDATA={sessdata}"));
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code == -101 {
+            return Err(anyhow!("cookie错误或已过期，请重新登录: {bili_resp:?}"));
+        } else if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为UserInfo
+        let data_str = data.to_string();
+        let user_info: UserInfo = serde_json::from_str(&data_str)
+            .context(format!("将data解析为UserInfo失败: {data_str}"))?;
+
+        Ok(user_info)
     }
 }
 

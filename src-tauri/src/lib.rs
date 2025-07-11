@@ -29,6 +29,7 @@ pub fn run() {
             save_config,
             generate_qrcode,
             get_qrcode_status,
+            get_user_info,
         ])
         .events(tauri_specta::collect_events![LogEvent]);
 

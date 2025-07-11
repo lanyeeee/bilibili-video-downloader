@@ -34,6 +34,14 @@ async getQrcodeStatus(qrcodeKey: string) : Promise<Result<QrcodeStatus, CommandE
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getUserInfo(sessdata: string) : Promise<Result<UserInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_user_info", { sessdata }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -55,10 +63,20 @@ logEvent: "log-event"
 export type CommandError = { err_title: string; err_message: string }
 export type Config = { downloadDir: string; enableFileLogger: boolean }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
+export type LabelInUserInfo = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
+export type LevelInfoInUserInfo = { current_level: number; current_min: number; current_exp: number }
 export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in string]: JsonValue }; target: string; filename: string; line_number: number }
 export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
+export type Official = { role: number; title: string; desc: string; type: number }
+export type OfficialVerify = { type: number; desc: string }
+export type PendantInUserInfo = { pid: number; name: string; image: string; expire: number; image_enhance: string; image_enhance_frame: string; n_pid: number }
 export type QrcodeData = { url: string; qrcode_key: string }
 export type QrcodeStatus = { url: string; refresh_token: string; timestamp: number; code: number; message: string }
+export type UserInfo = { isLogin: boolean; email_verified: number; face: string; face_nft: number; face_nft_type: number; level_info: LevelInfoInUserInfo; mid: number; mobile_verified: number; money: number; moral: number; official: Official; officialVerify: OfficialVerify; pendant: PendantInUserInfo; scores: number; uname: string; vipDueDate: number; vipStatus: number; vipType: number; vip_pay_type: number; vip_theme_type: number; vip_label: VipLabel; vip_avatar_subscript: number; vip_nickname_color: string; vip: VipInUserInfo; wallet: Wallet | null; has_shop: boolean; shop_url: string; answer_status: number; is_senior_member: number; wbi_img: WbiImg; is_jury: boolean }
+export type VipInUserInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInUserInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number }
+export type VipLabel = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
+export type Wallet = { mid: number; bcoin_balance: number; coupon_balance: number; coupon_due_time: number }
+export type WbiImg = { img_url: string; sub_url: string }
 
 /** tauri-specta globals **/
 
