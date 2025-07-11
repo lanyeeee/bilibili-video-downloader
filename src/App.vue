@@ -11,7 +11,7 @@ async function greet() {
 }
 
 async function test() {
-  const result = await commands.getConfig()
+  const result = await commands.generateQrcode()
   console.log(result)
 }
 </script>

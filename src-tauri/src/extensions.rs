@@ -1,7 +1,7 @@
 use parking_lot::RwLock;
 use tauri::{Manager, State};
 
-use crate::config::Config;
+use crate::{bili_client::BiliClient, config::Config};
 
 pub trait AnyhowErrorToStringChain {
     /// 将 `anyhow::Error` 转换为chain格式  
@@ -26,10 +26,14 @@ impl AnyhowErrorToStringChain for anyhow::Error {
 
 pub trait AppHandleExt {
     fn get_config(&self) -> State<RwLock<Config>>;
+    fn get_bili_client(&self) -> State<BiliClient>;
 }
 
 impl AppHandleExt for tauri::AppHandle {
     fn get_config(&self) -> State<RwLock<Config>> {
         self.state::<RwLock<Config>>()
+    }
+    fn get_bili_client(&self) -> State<BiliClient> {
+        self.state::<BiliClient>()
     }
 }

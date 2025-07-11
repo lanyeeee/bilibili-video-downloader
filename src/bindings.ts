@@ -18,6 +18,14 @@ async saveConfig(config: Config) : Promise<Result<null, CommandError>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async generateQrcode() : Promise<Result<QrcodeData, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("generate_qrcode") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -41,6 +49,7 @@ export type Config = { downloadDir: string; enableFileLogger: boolean }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
 export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in string]: JsonValue }; target: string; filename: string; line_number: number }
 export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
+export type QrcodeData = { url: string; qrcode_key: string }
 
 /** tauri-specta globals **/
 

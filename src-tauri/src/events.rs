@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
 
-use crate::types::LogLevel;
+use crate::types::log_level::LogLevel;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type, Event)]
 #[serde(rename_all = "camelCase")]
