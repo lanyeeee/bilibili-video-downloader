@@ -6,7 +6,7 @@ use crate::{
     errors::{CommandError, CommandResult},
     extensions::AppHandleExt,
     logger,
-    types::qrcode_data::QrcodeData,
+    types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus},
 };
 
 #[tauri::command]
@@ -67,4 +67,16 @@ pub async fn generate_qrcode(app: AppHandle) -> CommandResult<QrcodeData> {
         .await
         .map_err(|err| CommandError::from("生成二维码失败", err))?;
     Ok(qrcode_data)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_qrcode_status(app: AppHandle, qrcode_key: String) -> CommandResult<QrcodeStatus> {
+    let bili_client = app.get_bili_client();
+    let qrcode_status = bili_client
+        .get_qrcode_status(&qrcode_key)
+        .await
+        .map_err(|err| CommandError::from("获取二维码状态", err))?;
+    Ok(qrcode_status)
 }

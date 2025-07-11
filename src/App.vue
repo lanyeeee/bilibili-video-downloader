@@ -13,6 +13,10 @@ async function greet() {
 async function test() {
   const result = await commands.generateQrcode()
   console.log(result)
+  if (result.status === 'ok') {
+    const result2 = await commands.getQrcodeStatus(result.data.qrcode_key)
+    console.log(result2)
+  }
 }
 </script>
 

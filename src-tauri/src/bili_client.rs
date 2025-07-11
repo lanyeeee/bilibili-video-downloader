@@ -6,12 +6,13 @@ use reqwest::StatusCode;
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, Jitter, RetryTransientMiddleware};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tauri::{
     http::{HeaderMap, HeaderValue},
     AppHandle,
 };
 
-use crate::types::qrcode_data::QrcodeData;
+use crate::types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus};
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 const REFERRER: &str = "https://www.bilibili.com/";
@@ -59,6 +60,42 @@ impl BiliClient {
             .context(format!("将data解析为QrcodeData失败: {data_str}"))?;
 
         Ok(qrcode_data)
+    }
+
+    pub async fn get_qrcode_status(&self, qrcode_key: &str) -> anyhow::Result<QrcodeStatus> {
+        // 发送获取二维码状态请求
+        let params = json!({"qrcode_key": qrcode_key});
+        let request = self
+            .api_client
+            .read()
+            .get("https://passport.bilibili.com/x/passport-login/web/qrcode/poll")
+            .query(&params);
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为二维码状态
+        let data_str = data.to_string();
+        let qrcode_status: QrcodeStatus = serde_json::from_str(&data_str)
+            .context(format!("将data解析为QrcodeStatus失败: {data_str}"))?;
+        if ![0, 86101, 86090, 86038].contains(&qrcode_status.code) {
+            return Err(anyhow!("预料之外的二维码code: {qrcode_status:?}"));
+        }
+        Ok(qrcode_status)
     }
 }
 
