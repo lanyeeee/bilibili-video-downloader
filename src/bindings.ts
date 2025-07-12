@@ -42,6 +42,14 @@ async getUserInfo(sessdata: string) : Promise<Result<UserInfo, CommandError>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getNormalInfo(params: GetNormalInfoParams) : Promise<Result<NormalInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_normal_info", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -60,18 +68,42 @@ logEvent: "log-event"
 
 /** user-defined types **/
 
+export type Arc = { aid: number; videos: number; type_id: number; type_name: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; state: number; duration: number; rights: RightsInNormalEp; author: Author; stat: StatInNormalEp; dynamic: string; dimension: Dimension; is_chargeable_season: boolean; is_blooper: boolean; enable_vt: number; vt_display: string; type_id_v2: number; type_name_v2: string; is_lesson_video: number }
+export type ArgueInfo = { argue_msg: string; argue_type: number; argue_link: string }
+export type Author = { mid: number; name: string; face: string }
 export type CommandError = { err_title: string; err_message: string }
-export type Config = { downloadDir: string; enableFileLogger: boolean }
+export type Config = { downloadDir: string; enableFileLogger: boolean; sessdata: string }
+export type DescV2 = { raw_text: string; type: number; biz_id: number }
+export type Dimension = { width: number; height: number; rotate: number }
+export type EpInNormal = { season_id: number; section_id: number; id: number; aid: number; cid: number; title: string; attribute: number; arc: Arc; page: PageInNormalEp; bvid: string; pages: PageInNormalEp[] }
+export type GetNormalInfoParams = { Bvid: string } | { Aid: number }
+export type Honor = { aid: number; type: number; desc: string; weekly_recommend_num: number }
+export type HonorReply = { honor: Honor[] | null }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
 export type LabelInUserInfo = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
 export type LevelInfoInUserInfo = { current_level: number; current_min: number; current_exp: number }
 export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in string]: JsonValue }; target: string; filename: string; line_number: number }
 export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
+export type NormalInfo = { bvid: string; aid: number; videos: number; tid: number; tid_v2: number; tname: string; tname_v2: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; desc_v2: DescV2[] | null; state: number; duration: number; rights: Rights; owner: OwnerInNormal; stat: StatInNormal; argue_info: ArgueInfo; dynamic: string; cid: number; dimension: Dimension; teenage_mode: number; is_chargeable_season: boolean; is_story: boolean; is_upower_exclusive: boolean; is_upower_play: boolean; is_upower_preview: boolean; enable_vt: number; vt_display: string; is_upower_exclusive_with_qa: boolean; no_cache: boolean; pages: PageInNormal[]; subtitle: SubtitleInNormal; staff: Staff[] | null; ugc_season: UgcSeason | null; is_season_display: boolean; user_garb: UserGarb; honor_reply: HonorReply; like_icon: string; need_jump_bv: boolean; disable_show_up_info: boolean; is_story_play: number; is_view_self: boolean }
 export type Official = { role: number; title: string; desc: string; type: number }
 export type OfficialVerify = { type: number; desc: string }
+export type OwnerInNormal = { mid: number; name: string; face: string }
+export type PageInNormal = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension; ctime: number }
+export type PageInNormalEp = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension }
 export type PendantInUserInfo = { pid: number; name: string; image: string; expire: number; image_enhance: string; image_enhance_frame: string; n_pid: number }
 export type QrcodeData = { url: string; qrcode_key: string }
 export type QrcodeStatus = { url: string; refresh_token: string; timestamp: number; code: number; message: string }
+export type Rights = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; no_background: number; clean_mode: number; is_stein_gate: number; is_360: number; no_share: number; arc_pay: number; free_watch: number }
+export type RightsInNormalEp = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; arc_pay: number; free_watch: number }
+export type SectionInNormal = { season_id: number; id: number; title: string; type: number; episodes: EpInNormal[] }
+export type Staff = { mid: number; title: string; name: string; face: string; follower: number; label_style: number }
+export type StatInNormal = { aid: number; view: number; danmaku: number; reply: number; favorite: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; dislike: number; evaluation: string; vt: number }
+export type StatInNormalEp = { aid: number; view: number; danmaku: number; reply: number; fav: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; dislike: number; evaluation: string; argue_msg: string; vt: number; vv: number }
+export type StatInNormalSeason = { season_id: number; view: number; danmaku: number; reply: number; fav: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; vt: number; vv: number }
+export type SubtitleDetailInNormal = { id: number; lan: string; lan_doc: string; is_lock: boolean; subtitle_url: string; type: number; id_str: string; ai_type: number; ai_status: number }
+export type SubtitleInNormal = { allow_submit: boolean; list: SubtitleDetailInNormal[] }
+export type UgcSeason = { id: number; title: string; cover: string; mid: number; intro: string; sign_state: number; attribute: number; sections: SectionInNormal[]; stat: StatInNormalSeason; ep_count: number; season_type: number; is_pay_season: boolean; enable_vt: number }
+export type UserGarb = { url_image_ani_cut: string }
 export type UserInfo = { isLogin: boolean; email_verified: number; face: string; face_nft: number; face_nft_type: number; level_info: LevelInfoInUserInfo; mid: number; mobile_verified: number; money: number; moral: number; official: Official; officialVerify: OfficialVerify; pendant: PendantInUserInfo; scores: number; uname: string; vipDueDate: number; vipStatus: number; vipType: number; vip_pay_type: number; vip_theme_type: number; vip_label: VipLabel; vip_avatar_subscript: number; vip_nickname_color: string; vip: VipInUserInfo; wallet: Wallet | null; has_shop: boolean; shop_url: string; answer_status: number; is_senior_member: number; wbi_img: WbiImg; is_jury: boolean }
 export type VipInUserInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInUserInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number }
 export type VipLabel = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }

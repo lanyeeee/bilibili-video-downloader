@@ -6,7 +6,10 @@ use crate::{
     errors::{CommandError, CommandResult},
     extensions::AppHandleExt,
     logger,
-    types::{qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo},
+    types::{
+        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
+        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
+    },
 };
 
 #[tauri::command]
@@ -90,4 +93,18 @@ pub async fn get_user_info(app: AppHandle, sessdata: String) -> CommandResult<Us
         .await
         .map_err(|err| CommandError::from("获取用户信息失败", err))?;
     Ok(user_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_normal_info(
+    app: AppHandle,
+    params: GetNormalInfoParams,
+) -> CommandResult<NormalInfo> {
+    let bili_client = app.get_bili_client();
+    let normal_info = bili_client
+        .get_normal_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取普通视频信息失败", err))?;
+    Ok(normal_info)
 }

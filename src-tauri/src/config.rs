@@ -9,6 +9,7 @@ use tauri::{AppHandle, Manager};
 pub struct Config {
     pub download_dir: PathBuf,
     pub enable_file_logger: bool,
+    pub sessdata: String,
 }
 
 impl Config {
@@ -66,6 +67,7 @@ impl Config {
         Config {
             download_dir: app_data_dir.join("视频下载"),
             enable_file_logger: true,
+            sessdata: String::new(),
         }
     }
 }
