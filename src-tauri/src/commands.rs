@@ -7,8 +7,7 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
-        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
+        bangumi_info::BangumiInfo, get_bangumi_info_params::GetBangumiInfoParams, get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo
     },
 };
 
@@ -107,4 +106,18 @@ pub async fn get_normal_info(
         .await
         .map_err(|err| CommandError::from("获取普通视频信息失败", err))?;
     Ok(normal_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_bangumi_info(
+    app: AppHandle,
+    params: GetBangumiInfoParams,
+) -> CommandResult<BangumiInfo> {
+    let bili_client = app.get_bili_client();
+    let bangumi_info = bili_client
+        .get_bangumi_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
+    Ok(bangumi_info)
 }

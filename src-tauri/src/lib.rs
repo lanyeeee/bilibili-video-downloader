@@ -31,6 +31,7 @@ pub fn run() {
             get_qrcode_status,
             get_user_info,
             get_normal_info,
+            get_bangumi_info,
         ])
         .events(tauri_specta::collect_events![LogEvent]);
 
