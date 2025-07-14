@@ -1,5 +1,7 @@
 pub mod bangumi_info;
+pub mod cheese_info;
 pub mod get_bangumi_info_params;
+pub mod get_cheese_info_params;
 pub mod get_normal_info_params;
 pub mod log_level;
 pub mod normal_info;

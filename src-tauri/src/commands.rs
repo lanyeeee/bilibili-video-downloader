@@ -7,7 +7,10 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::BangumiInfo, get_bangumi_info_params::GetBangumiInfoParams, get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo
+        bangumi_info::BangumiInfo, cheese_info::CheeseInfo,
+        get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
+        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
+        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
     },
 };
 
@@ -120,4 +123,18 @@ pub async fn get_bangumi_info(
         .await
         .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
     Ok(bangumi_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_cheese_info(
+    app: AppHandle,
+    params: GetCheeseInfoParams,
+) -> CommandResult<CheeseInfo> {
+    let bili_client = app.get_bili_client();
+    let cheese_info = bili_client
+        .get_cheese_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取课程视频信息失败", err))?;
+    Ok(cheese_info)
 }
