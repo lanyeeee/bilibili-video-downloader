@@ -10,7 +10,8 @@ use crate::{
         bangumi_info::BangumiInfo, cheese_info::CheeseInfo,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
-        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
+        normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus,
+        user_info::UserInfo,
     },
 };
 
@@ -137,4 +138,19 @@ pub async fn get_cheese_info(
         .await
         .map_err(|err| CommandError::from("获取课程视频信息失败", err))?;
     Ok(cheese_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_normal_url(
+    app: AppHandle,
+    bvid: String,
+    cid: i64,
+) -> CommandResult<NormalMediaUrl> {
+    let bili_client = app.get_bili_client();
+    let media_url = bili_client
+        .get_normal_url(&bvid, cid)
+        .await
+        .map_err(|err| CommandError::from("获取普通视频url失败", err))?;
+    Ok(media_url)
 }

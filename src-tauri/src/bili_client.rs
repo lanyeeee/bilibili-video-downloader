@@ -18,7 +18,8 @@ use crate::{
         bangumi_info::BangumiInfo, cheese_info::CheeseInfo,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
-        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
+        normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus,
+        user_info::UserInfo,
     },
 };
 
@@ -259,6 +260,46 @@ impl BiliClient {
             .context(format!("将data解析为CheeseInfo失败: {data_str}"))?;
 
         Ok(cheese_info)
+    }
+
+    pub async fn get_normal_url(&self, bvid: &str, cid: i64) -> anyhow::Result<NormalMediaUrl> {
+        let params = json!({
+            "bvid": bvid,
+            "cid": cid,
+            "qn": 127,
+            "fnval": 4048,
+        });
+        // 发送获取普通url的请求
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/x/player/wbi/playurl")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为NormalMediaUrl
+        let data_str = data.to_string();
+        let media_url: NormalMediaUrl = serde_json::from_str(&data_str)
+            .context(format!("将data解析为NormalMediaUrl失败: {data_str}"))?;
+
+        Ok(media_url)
     }
 
     fn get_cookie(&self) -> String {
