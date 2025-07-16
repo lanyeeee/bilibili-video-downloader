@@ -7,7 +7,7 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::BangumiInfo, cheese_info::CheeseInfo,
+        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
         normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus,
@@ -152,5 +152,16 @@ pub async fn get_normal_url(
         .get_normal_url(&bvid, cid)
         .await
         .map_err(|err| CommandError::from("获取普通视频url失败", err))?;
+    Ok(media_url)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_bangumi_url(app: AppHandle, cid: i64) -> CommandResult<BangumiMediaUrl> {
+    let bili_client = app.get_bili_client();
+    let media_url = bili_client
+        .get_bangumi_url(cid)
+        .await
+        .map_err(|err| CommandError::from("获取番剧视频url失败", err))?;
     Ok(media_url)
 }
