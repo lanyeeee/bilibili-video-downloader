@@ -7,11 +7,7 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
-        get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
-        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
-        normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus,
-        user_info::UserInfo,
+        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo, cheese_media_url::CheeseMediaUrl, get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams, get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo, normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo
     },
 };
 
@@ -163,5 +159,16 @@ pub async fn get_bangumi_url(app: AppHandle, cid: i64) -> CommandResult<BangumiM
         .get_bangumi_url(cid)
         .await
         .map_err(|err| CommandError::from("获取番剧视频url失败", err))?;
+    Ok(media_url)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_cheese_url(app: AppHandle, ep_id: i64) -> CommandResult<CheeseMediaUrl> {
+    let bili_client = app.get_bili_client();
+    let media_url = bili_client
+        .get_cheese_url(ep_id)
+        .await
+        .map_err(|err| CommandError::from("获取课程视频url失败", err))?;
     Ok(media_url)
 }

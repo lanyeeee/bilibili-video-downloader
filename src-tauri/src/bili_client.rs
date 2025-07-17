@@ -16,10 +16,10 @@ use crate::{
     extensions::AppHandleExt,
     types::{
         bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
-        get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
-        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
-        normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus,
-        user_info::UserInfo,
+        cheese_media_url::CheeseMediaUrl, get_bangumi_info_params::GetBangumiInfoParams,
+        get_cheese_info_params::GetCheeseInfoParams, get_normal_info_params::GetNormalInfoParams,
+        normal_info::NormalInfo, normal_media_url::NormalMediaUrl, qrcode_data::QrcodeData,
+        qrcode_status::QrcodeStatus, user_info::UserInfo,
     },
 };
 
@@ -341,6 +341,47 @@ impl BiliClient {
         let data_str = data.to_string();
         let media_url: BangumiMediaUrl = serde_json::from_str(&data_str)
             .context(format!("将data解析为BangumiMediaUrl失败: {data_str}"))?;
+
+        Ok(media_url)
+    }
+
+    pub async fn get_cheese_url(&self, ep_id: i64) -> anyhow::Result<CheeseMediaUrl> {
+        let params = json!({
+            "ep_id": ep_id,
+            "qn": 127,
+            "fnval": 4048,
+        });
+        // 发送获取课程url的请求
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/pugv/player/web/playurl")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code == -403 {
+            return Err(anyhow!("没有观看权限，请先购买: {bili_resp:?}"));
+        } else if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为CheeseMediaUrl
+        let data_str = data.to_string();
+        let media_url: CheeseMediaUrl = serde_json::from_str(&data_str)
+            .context(format!("将data解析为CheeseMediaUrl失败: {data_str}"))?;
 
         Ok(media_url)
     }
