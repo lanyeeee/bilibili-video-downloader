@@ -36,6 +36,7 @@ pub fn run() {
             get_normal_url,
             get_bangumi_url,
             get_cheese_url,
+            get_player_info,
         ])
         .events(tauri_specta::collect_events![LogEvent]);
 
