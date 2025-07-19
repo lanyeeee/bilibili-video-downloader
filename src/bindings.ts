@@ -98,6 +98,14 @@ async getPlayerInfo(aid: number, cid: number) : Promise<Result<PlayerInfo, Comma
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getFavFolders(uid: number) : Promise<Result<FavFolders, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_fav_folders", { uid }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -156,8 +164,10 @@ export type EpTag = { part_preview_tag: string; pay_tag: string; preview_tag: st
 export type Faq = { content: string; link: string; title: string }
 export type Faq1 = { items: Faq1Item[]; title: string }
 export type Faq1Item = { answer: string; question: string }
+export type FavFolders = { count: number; list: Folder[] }
 export type Fawkes = { config_version: number; ff_version: number }
 export type Flac = { display: boolean; audio: MediaInNormal | null }
+export type Folder = { id: number; fid: number; mid: number; attr: number; title: string; fav_state: number; media_count: number }
 export type GetBangumiInfoParams = { EpId: number } | { SeasonId: number }
 export type GetCheeseInfoParams = { EpId: number } | { SeasonId: number }
 export type GetNormalInfoParams = { Bvid: string } | { Aid: number }
