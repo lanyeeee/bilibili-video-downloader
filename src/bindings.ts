@@ -106,6 +106,14 @@ async getFavFolders(uid: number) : Promise<Result<FavFolders, CommandError>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getFavInfo(params: GetFavInfoParams) : Promise<Result<FavInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_fav_info", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -138,6 +146,8 @@ export type Brief = { content: string; img: Img[]; title: string; type: number }
 export type CheeseInfo = { abtest_info: AbtestInfo; be_subscription: boolean; brief: Brief; consulting: Consulting; cooperation: Cooperation; course_content: string; cover: string; ep_count: number; episode_page: EpPage; episode_sort: number; episode_tag: EpTag; episodes: EpInCheese[]; expiry_day: number; expiry_info_content: string; faq: Faq; faq1: Faq1; is_enable_cash: boolean; is_series: boolean; live_ep_count: number; opened_ep_count: number; paid_jump: PaidJump; paid_view: boolean; payment: Payment; previewed_purchase_note: PreviewedPurchaseNote; purchase_format_note: PurchaseFormatNote; purchase_note: PurchaseNote; purchase_protocol: PurchaseProtocol; recommend_seasons: RecommendSeason[]; release_bottom_info: string; release_info: string; release_info2: string; release_status: string; season_id: number; season_tag: number; share_url: string; short_link: string; show_watermark: boolean; stat: StatInCheese; status: number; stop_sell: boolean; subscription_update_count_cycle_text: string; subtitle: string; title: string; up_info: UpInfoInCheese; update_status: number; user_status: UserStatusInCheese; watermark_interval: number }
 export type CheeseMediaUrl = { accept_format: string; code: number; seek_param: string; is_preview: number; fnval: number; video_project: boolean; play_view_business_info: PlayViewBusinessInfo | null; fnver: number; type: string; result: string; seek_type: string; from: string; video_codecid: number; no_rexcode: number; format: string; support_formats: SupportFormatInCheese[]; message: string; accept_quality: number[]; quality: number; timelength: number; durls: DurlInCheese[]; has_paid: boolean; dash: DashInCheese | null; accept_description: string[]; status: number }
 export type ClipInfoList = { materialNo: number; start: number; end: number; toastText: string; clipType: string }
+export type CntInfo = { collect: number; play: number; thumb_up: number; share: number }
+export type CntInfoInMedia = { collect: number; play: number; danmaku: number; vt: number; play_switch: number; reply: number; view_text_1: string }
 export type CommandError = { err_title: string; err_message: string }
 export type Config = { downloadDir: string; enableFileLogger: boolean; sessdata: string }
 export type Consulting = { consulting_flag: boolean; consulting_url: string }
@@ -165,17 +175,20 @@ export type Faq = { content: string; link: string; title: string }
 export type Faq1 = { items: Faq1Item[]; title: string }
 export type Faq1Item = { answer: string; question: string }
 export type FavFolders = { count: number; list: Folder[] }
+export type FavInfo = { info: Info; medias: MediaInFav[] | null; has_more: boolean; ttl: number }
 export type Fawkes = { config_version: number; ff_version: number }
 export type Flac = { display: boolean; audio: MediaInNormal | null }
 export type Folder = { id: number; fid: number; mid: number; attr: number; title: string; fav_state: number; media_count: number }
 export type GetBangumiInfoParams = { EpId: number } | { SeasonId: number }
 export type GetCheeseInfoParams = { EpId: number } | { SeasonId: number }
+export type GetFavInfoParams = { media_list_id: number; pn: number }
 export type GetNormalInfoParams = { Bvid: string } | { Aid: number }
 export type Honor = { aid: number; type: number; desc: string; weekly_recommend_num: number }
 export type HonorReply = { honor: Honor[] | null }
 export type IconFont = { name: string; text: string }
 export type IconResource = Record<string, never>
 export type Img = { aspect_ratio: number; url: string }
+export type Info = { id: number; fid: number; mid: number; attr: number; title: string; cover: string; upper: Upper; cover_type: number; cnt_info: CntInfo; type: number; intro: string; ctime: number; mtime: number; state: number; fav_state: number; like_state: number; media_count: number; is_top: boolean }
 export type IpInfo = { ip: string; zone_ip: string; zone_id: number; country: string; province: string; city: string }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]: JsonValue }
 export type LabelInPlayerInfo = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
@@ -186,6 +199,7 @@ export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in s
 export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
 export type MediaInBangumi = { start_with_sap: number; bandwidth: number; sar: string; backup_url: string[]; codecs: string; base_url: string; segment_base: SegmentBaseInBangumi; mime_type: string; frame_rate: string; codecid: number; size: number; width: number; id: number; height: number; md5: string }
 export type MediaInCheese = { start_with_sap: number; bandwidth: number; sar: string; codecs: string; base_url: string; backup_url: string[]; segment_base: SegmentBaseInCheese; frame_rate: string; codecid: number; size: number; mime_type: string; width: number; id: number; height: number; md5: string }
+export type MediaInFav = { id: number; type: number; title: string; cover: string; intro: string; page: number; duration: number; upper: UpperInMedia; attr: number; cnt_info: CntInfoInMedia; link: string; ctime: number; pubtime: number; fav_time: number; bv_id: string; bvid: string; ugc: Ugc | null; media_list_link: string }
 export type MediaInNormal = { id: number; start_with_sap: number; bandwidth: number; sar: string; codecs: string; base_url: string; backup_url: string[]; segment_base: SegmentBaseInNormal; mime_type: string; frame_rate: string; width: number; height: number; codecid: number }
 export type NewEp = { desc: string; id: number; is_new: number; title: string }
 export type NewEpInSeason = { cover: string; id: number; index_show: string }
@@ -248,9 +262,12 @@ export type SubtitleInPlayerInfo = { allow_submit: boolean; lan: string; lan_doc
 export type SupportFormatInBangumi = { display_desc: string; has_preview: boolean; sub_description: string; superscript: string; need_login: boolean | null; codecs: string[]; format: string; description: string; need_vip: boolean | null; attribute: number; quality: number; new_description: string }
 export type SupportFormatInCheese = { display_desc: string; superscript: string; need_login: boolean; codecs: string[]; format: string; description: string; quality: number; new_description: string }
 export type SupportFormatInNormal = { quality: number; format: string; new_description: string; display_desc: string; superscript: string; codecs: string[] }
+export type Ugc = { first_cid: number }
 export type UgcSeason = { id: number; title: string; cover: string; mid: number; intro: string; sign_state: number; attribute: number; sections: SectionInNormal[]; stat: StatInNormalSeason; ep_count: number; season_type: number; is_pay_season: boolean; enable_vt: number }
 export type UpInfoInBangumi = { avatar: string; mid: number; uname: string }
 export type UpInfoInCheese = { avatar: string; brief: string; follower: number; is_follow: number; is_living: boolean; link: string; mid: number; pendant: PendantInCheese; season_count: number; uname: string }
+export type Upper = { mid: number; name: string; face: string; followed: boolean; vip_type: number; vip_statue: number }
+export type UpperInMedia = { mid: number; name: string; face: string; jump_link: string }
 export type UserGarb = { url_image_ani_cut: string }
 export type UserInfo = { isLogin: boolean; email_verified: number; face: string; face_nft: number; face_nft_type: number; level_info: LevelInfoInUserInfo; mid: number; mobile_verified: number; money: number; moral: number; official: Official; officialVerify: OfficialVerify; pendant: PendantInUserInfo; scores: number; uname: string; vipDueDate: number; vipStatus: number; vipType: number; vip_pay_type: number; vip_theme_type: number; vip_label: VipLabel; vip_avatar_subscript: number; vip_nickname_color: string; vip: VipInUserInfo; wallet: Wallet | null; has_shop: boolean; shop_url: string; answer_status: number; is_senior_member: number; wbi_img: WbiImg; is_jury: boolean }
 export type UserStatusInBangumi = { area_limit: number; ban_area_show: number; follow: number; follow_status: number; login: number; pay: number; pay_pack_paid: number; sponsor: number }

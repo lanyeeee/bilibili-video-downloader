@@ -7,7 +7,12 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo, cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams, get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo
+        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
+        cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
+        get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
+        get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
+        normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo,
+        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
     },
 };
 
@@ -193,4 +198,15 @@ pub async fn get_fav_folders(app: AppHandle, uid: i64) -> CommandResult<FavFolde
         .await
         .map_err(|err| CommandError::from("获取收藏夹列表失败", err))?;
     Ok(fav_folders)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_fav_info(app: AppHandle, params: GetFavInfoParams) -> CommandResult<FavInfo> {
+    let bili_client = app.get_bili_client();
+    let fav_info = bili_client
+        .get_fav_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取收藏夹内容失败", err))?;
+    Ok(fav_info)
 }

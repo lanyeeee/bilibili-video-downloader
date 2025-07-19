@@ -38,6 +38,7 @@ pub fn run() {
             get_cheese_url,
             get_player_info,
             get_fav_folders,
+            get_fav_info,
         ])
         .events(tauri_specta::collect_events![LogEvent]);
 
