@@ -39,6 +39,7 @@ pub fn run() {
             get_player_info,
             get_fav_folders,
             get_fav_info,
+            get_watch_later_info,
         ])
         .events(tauri_specta::collect_events![LogEvent]);
 

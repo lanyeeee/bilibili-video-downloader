@@ -13,6 +13,7 @@ use crate::{
         get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
         normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo,
         qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
+        watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -209,4 +210,15 @@ pub async fn get_fav_info(app: AppHandle, params: GetFavInfoParams) -> CommandRe
         .await
         .map_err(|err| CommandError::from("获取收藏夹内容失败", err))?;
     Ok(fav_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_watch_later_info(app: AppHandle, page: i32) -> CommandResult<WatchLaterInfo> {
+    let bili_client = app.get_bili_client();
+    let watch_later_info = bili_client
+        .get_watch_later_info(page)
+        .await
+        .map_err(|err| CommandError::from("获取稍后观看内容失败", err))?;
+    Ok(watch_later_info)
 }

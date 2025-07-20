@@ -114,6 +114,14 @@ async getFavInfo(params: GetFavInfoParams) : Promise<Result<FavInfo, CommandErro
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getWatchLaterInfo(page: number) : Promise<Result<WatchLaterInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_watch_later_info", { page }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -159,6 +167,7 @@ export type DashInNormal = { duration: number; min_buffer_time: number; video: M
 export type DescV2 = { raw_text: string; type: number; biz_id: number }
 export type Dimension = { width: number; height: number; rotate: number }
 export type DimensionInBangumi = { height: number; rotate: number; width: number }
+export type DimensionInWatchLater = { width: number; height: number; rotate: number }
 export type Dolby = { type: number; audio: MediaInNormal[] | null }
 export type DurlDetailInBangumi = { size: number; ahead: string; length: number; vhead: string; backup_url: string[]; url: string; order: number; md5: string }
 export type DurlDetailInCheese = { size: number; ahead: string; length: number; vhead: string; backup_url: string[]; url: string; order: number; md5: string }
@@ -201,6 +210,7 @@ export type MediaInBangumi = { start_with_sap: number; bandwidth: number; sar: s
 export type MediaInCheese = { start_with_sap: number; bandwidth: number; sar: string; codecs: string; base_url: string; backup_url: string[]; segment_base: SegmentBaseInCheese; frame_rate: string; codecid: number; size: number; mime_type: string; width: number; id: number; height: number; md5: string }
 export type MediaInFav = { id: number; type: number; title: string; cover: string; intro: string; page: number; duration: number; upper: UpperInMedia; attr: number; cnt_info: CntInfoInMedia; link: string; ctime: number; pubtime: number; fav_time: number; bv_id: string; bvid: string; ugc: Ugc | null; media_list_link: string }
 export type MediaInNormal = { id: number; start_with_sap: number; bandwidth: number; sar: string; codecs: string; base_url: string; backup_url: string[]; segment_base: SegmentBaseInNormal; mime_type: string; frame_rate: string; width: number; height: number; codecid: number }
+export type MediaInWatchLater = { aid: number; videos: number; tid: number; tname: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; state: number; duration: number; redirect_url: string | null; mission_id: number | null; rights: RightsInWatchLater; owner: OwnerInWatchLater; stat: StatInWatchLater; dynamic: string; dimension: DimensionInWatchLater; short_link_v2: string; up_from_v2: number | null; first_frame: string | null; pub_location: string | null; cover43: string; tidv2: number; tnamev2: string; pid_v2: number; pid_name_v2: string; page: PageInWatchLater; count: number; cid: number; progress: number; add_at: number; bvid: string; uri: string; enable_vt: number; view_text_1: string; card_type: number; left_icon_type: number; left_text: string; right_icon_type: number; right_text: string; arc_state: number; pgc_label: string; show_up: boolean; forbid_fav: boolean; forbid_sort: boolean; season_title: string; long_title: string; index_title: string; c_source: string; season_id: number | null }
 export type NewEp = { desc: string; id: number; is_new: number; title: string }
 export type NewEpInSeason = { cover: string; id: number; index_show: string }
 export type NormalInfo = { bvid: string; aid: number; videos: number; tid: number; tid_v2: number; tname: string; tname_v2: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; desc_v2: DescV2[] | null; state: number; duration: number; rights: Rights; owner: OwnerInNormal; stat: StatInNormal; argue_info: ArgueInfo; dynamic: string; cid: number; dimension: Dimension; teenage_mode: number; is_chargeable_season: boolean; is_story: boolean; is_upower_exclusive: boolean; is_upower_play: boolean; is_upower_preview: boolean; enable_vt: number; vt_display: string; is_upower_exclusive_with_qa: boolean; no_cache: boolean; pages: PageInNormal[]; subtitle: SubtitleInNormal; staff: Staff[] | null; ugc_season: UgcSeason | null; is_season_display: boolean; user_garb: UserGarb; honor_reply: HonorReply; like_icon: string; need_jump_bv: boolean; disable_show_up_info: boolean; is_story_play: number; is_view_self: boolean }
@@ -211,8 +221,10 @@ export type OnlineSwitch = { enable_gray_dash_playback: string; new_broadcast: s
 export type Op = { end: number; start: number }
 export type Options = { is_360: boolean; without_vip: boolean }
 export type OwnerInNormal = { mid: number; name: string; face: string }
+export type OwnerInWatchLater = { mid: number; name: string; face: string }
 export type PageInNormal = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension; ctime: number }
 export type PageInNormalEp = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension }
+export type PageInWatchLater = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: DimensionInWatchLater; first_frame: string | null; ctime: number }
 export type PaidJump = { jump_url_for_app: string; url: string }
 export type PayType = { allow_discount: number; allow_pack: number; allow_ticket: number; allow_time_limit: number; allow_vip_discount: number; forbid_bb: number }
 export type Payment = { bp_enough: number; desc: string; my_bp: number; pay_shade: string; price: number; price_format: string; price_unit: string; refresh_text: string; select_text: string }
@@ -238,6 +250,7 @@ export type Rights = { bp: number; elec: number; download: number; movie: number
 export type RightsInBangumi = { allow_bp: number; allow_bp_rank: number; allow_download: number; allow_review: number; area_limit: number; ban_area_show: number; can_watch: number; copyright: string; forbid_pre: number; freya_white: number; is_cover_show: number; is_preview: number; only_vip_download: number; resource: string; watch_platform: number }
 export type RightsInBangumiEp = { allow_dm: number; allow_download: number; area_limit: number }
 export type RightsInNormalEp = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; arc_pay: number; free_watch: number }
+export type RightsInWatchLater = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; no_background: number; arc_pay: number; pay_free_watch: number }
 export type Season = { badge: string; badge_info: BadgeInfo; badge_type: number; cover: string; enable_vt: boolean; horizontal_cover_1610: string; horizontal_cover_169: string; icon_font: IconFont; media_id: number; new_ep: NewEpInSeason; season_id: number; season_title: string; season_type: number; stat: StatInSeason }
 export type SectionInBangumi = { attr: number; episodes: EpInBangumi[]; id: number; title: string; type: number; type2: number }
 export type SectionInNormal = { season_id: number; id: number; title: string; type: number; episodes: EpInNormal[] }
@@ -255,6 +268,7 @@ export type StatInNormal = { aid: number; view: number; danmaku: number; reply: 
 export type StatInNormalEp = { aid: number; view: number; danmaku: number; reply: number; fav: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; dislike: number; evaluation: string; argue_msg: string; vt: number; vv: number }
 export type StatInNormalSeason = { season_id: number; view: number; danmaku: number; reply: number; fav: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; vt: number; vv: number }
 export type StatInSeason = { favorites: number; series_follow: number; views: number; vt: number }
+export type StatInWatchLater = { aid: number; view: number; danmaku: number; reply: number; favorite: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; dislike: number; vt: number; vv: number }
 export type SubtitleDetailInNormal = { id: number; lan: string; lan_doc: string; is_lock: boolean; subtitle_url: string; type: number; id_str: string; ai_type: number; ai_status: number }
 export type SubtitleDetailInPlayerInfo = { id: number; lan: string; lan_doc: string; is_lock: boolean; subtitle_url: string; type: number; id_str: string; ai_type: number; ai_status: number }
 export type SubtitleInNormal = { allow_submit: boolean; list: SubtitleDetailInNormal[] }
@@ -278,6 +292,7 @@ export type VipInPlayerInfo = { type: number; status: number; due_date: number; 
 export type VipInUserInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInUserInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number }
 export type VipLabel = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
 export type Wallet = { mid: number; bcoin_balance: number; coupon_balance: number; coupon_due_time: number }
+export type WatchLaterInfo = { count: number; list: MediaInWatchLater[] }
 export type WatchProgress = { current_watch_progress: number; last_ep_id: number; last_ep_index: string; last_time: number }
 export type WbiImg = { img_url: string; sub_url: string }
 
