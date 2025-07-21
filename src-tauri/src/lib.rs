@@ -1,6 +1,7 @@
 mod bili_client;
 mod commands;
 mod config;
+mod downloader;
 mod errors;
 mod events;
 mod extensions;
@@ -14,7 +15,11 @@ use config::Config;
 use parking_lot::RwLock;
 use tauri::{Manager, Wry};
 
-use crate::{bili_client::BiliClient, events::LogEvent};
+use crate::{
+    bili_client::BiliClient,
+    downloader::download_manager::DownloadManager,
+    events::{DownloadEvent, LogEvent},
+};
 
 fn generate_context() -> tauri::Context<Wry> {
     tauri::generate_context!()
@@ -40,8 +45,14 @@ pub fn run() {
             get_fav_folders,
             get_fav_info,
             get_watch_later_info,
+            create_download_tasks,
+            pause_download_tasks,
+            resume_download_tasks,
+            delete_download_tasks,
+            restart_download_tasks,
+            restore_download_tasks,
         ])
-        .events(tauri_specta::collect_events![LogEvent]);
+        .events(tauri_specta::collect_events![LogEvent, DownloadEvent]);
 
     #[cfg(debug_assertions)]
     builder
@@ -75,6 +86,9 @@ pub fn run() {
 
             let bili_client = BiliClient::new(app.handle().clone());
             app.manage(bili_client);
+
+            let download_manager = DownloadManager::new(app.handle().clone());
+            app.manage(download_manager);
 
             logger::init(app.handle())?;
 

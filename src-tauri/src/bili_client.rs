@@ -1,8 +1,9 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use bytes::Bytes;
 use parking_lot::RwLock;
-use reqwest::StatusCode;
+use reqwest::{Client, StatusCode};
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, Jitter, RetryTransientMiddleware};
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,7 @@ use tauri::{
     http::{HeaderMap, HeaderValue},
     AppHandle,
 };
+use tokio::task::JoinSet;
 
 use crate::{
     extensions::AppHandleExt,
@@ -31,6 +33,8 @@ const REFERRER: &str = "https://www.bilibili.com/";
 pub struct BiliClient {
     app: AppHandle,
     api_client: RwLock<ClientWithMiddleware>,
+    media_client: RwLock<ClientWithMiddleware>,
+    content_length_client: RwLock<Client>,
 }
 
 impl BiliClient {
@@ -38,7 +42,18 @@ impl BiliClient {
         let api_client = create_api_client(&app);
         let api_client = RwLock::new(api_client);
 
-        Self { app, api_client }
+        let media_client = create_media_client(&app);
+        let media_client = RwLock::new(media_client);
+
+        let content_length_client = create_content_length_client(&app);
+        let content_length_client = RwLock::new(content_length_client);
+
+        Self {
+            app,
+            api_client,
+            media_client,
+            content_length_client,
+        }
     }
 
     pub async fn generate_qrcode(&self) -> anyhow::Result<QrcodeData> {
@@ -536,6 +551,72 @@ impl BiliClient {
         Ok(watch_later_info)
     }
 
+    pub async fn get_media_chunk(
+        &self,
+        media_url: &str,
+        start: u64,
+        end: u64,
+    ) -> anyhow::Result<Bytes> {
+        let request = self
+            .media_client
+            .read()
+            .get(media_url)
+            .header("range", format!("bytes={start}-{end}"));
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        if status != StatusCode::PARTIAL_CONTENT {
+            return Err(anyhow!("预料之外的状态码({status})"));
+        }
+
+        let bytes = http_resp.bytes().await?;
+
+        Ok(bytes)
+    }
+
+    pub async fn get_content_length(&self, media_url: &str) -> anyhow::Result<u64> {
+        let request = self.content_length_client.read().head(media_url);
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status})"));
+        }
+
+        let headers = http_resp.headers();
+        let content_length = headers
+            .get("Content-Length")
+            .context("缺少 Content-Length 响应头")?
+            .to_str()
+            .context("Content-Length 响应头无法转换为字符串")?
+            .parse::<u64>()
+            .context("Content-Length 响应头无法转换为整数")?;
+
+        Ok(content_length)
+    }
+
+    pub async fn get_url_with_content_length(&self, urls: Vec<String>) -> Vec<(String, u64)> {
+        let mut url_with_content_length = Vec::new();
+        let mut join_set = JoinSet::new();
+
+        for url in urls {
+            let app = self.app.clone();
+            join_set.spawn(async move {
+                let bili_client = app.get_bili_client();
+                let Ok(content_length) = bili_client.get_content_length(&url).await else {
+                    return None;
+                };
+                Some((url, content_length))
+            });
+        }
+
+        while let Some(Ok(Some((url, content_length)))) = join_set.join_next().await {
+            url_with_content_length.push((url, content_length));
+        }
+
+        url_with_content_length
+    }
+
     fn get_cookie(&self) -> String {
         let sessdata = self.app.get_config().read().sessdata.clone();
         format!("SESSDATA={sessdata}")
@@ -561,6 +642,38 @@ fn create_api_client(_app: &AppHandle) -> ClientWithMiddleware {
     reqwest_middleware::ClientBuilder::new(client)
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .build()
+}
+
+fn create_media_client(_app: &AppHandle) -> ClientWithMiddleware {
+    let retry_policy = ExponentialBackoff::builder()
+        .base(1)
+        .jitter(Jitter::Bounded)
+        .build_with_max_retries(3);
+
+    let mut headers = HeaderMap::new();
+    headers.insert("user-agent", HeaderValue::from_static(USER_AGENT));
+    headers.insert("referer", HeaderValue::from_static(REFERRER));
+
+    let client = reqwest::ClientBuilder::new()
+        .default_headers(headers)
+        .build()
+        .unwrap();
+
+    reqwest_middleware::ClientBuilder::new(client)
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+        .build()
+}
+
+fn create_content_length_client(_app: &AppHandle) -> Client {
+    let mut headers = HeaderMap::new();
+    headers.insert("user-agent", HeaderValue::from_static(USER_AGENT));
+    headers.insert("referer", HeaderValue::from_static(REFERRER));
+
+    reqwest::ClientBuilder::new()
+        .timeout(Duration::from_secs(5))
+        .default_headers(headers)
+        .build()
+        .unwrap()
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]

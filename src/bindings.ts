@@ -122,6 +122,29 @@ async getWatchLaterInfo(page: number) : Promise<Result<WatchLaterInfo, CommandEr
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async createDownloadTasks(params: CreateDownloadTaskParams) : Promise<void> {
+    await TAURI_INVOKE("create_download_tasks", { params });
+},
+async pauseDownloadTasks(taskIds: string[]) : Promise<void> {
+    await TAURI_INVOKE("pause_download_tasks", { taskIds });
+},
+async resumeDownloadTasks(taskIds: string[]) : Promise<void> {
+    await TAURI_INVOKE("resume_download_tasks", { taskIds });
+},
+async deleteDownloadTasks(taskIds: string[]) : Promise<void> {
+    await TAURI_INVOKE("delete_download_tasks", { taskIds });
+},
+async restartDownloadTasks(taskIds: string[]) : Promise<void> {
+    await TAURI_INVOKE("restart_download_tasks", { taskIds });
+},
+async restoreDownloadTasks() : Promise<Result<null, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("restore_download_tasks") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -129,8 +152,10 @@ async getWatchLaterInfo(page: number) : Promise<Result<WatchLaterInfo, CommandEr
 
 
 export const events = __makeEvents__<{
+downloadEvent: DownloadEvent,
 logEvent: LogEvent
 }>({
+downloadEvent: "download-event",
 logEvent: "log-event"
 })
 
@@ -156,11 +181,16 @@ export type CheeseMediaUrl = { accept_format: string; code: number; seek_param: 
 export type ClipInfoList = { materialNo: number; start: number; end: number; toastText: string; clipType: string }
 export type CntInfo = { collect: number; play: number; thumb_up: number; share: number }
 export type CntInfoInMedia = { collect: number; play: number; danmaku: number; vt: number; play_switch: number; reply: number; view_text_1: string }
+export type CodecType = "Unknown" | "Audio" | "AVC" | "HEVC" | "AV1"
 export type CommandError = { err_title: string; err_message: string }
-export type Config = { downloadDir: string; enableFileLogger: boolean; sessdata: string }
+export type Config = { downloadDir: string; enableFileLogger: boolean; sessdata: string; preferVideoQuality: PreferVideoQuality; preferCodecType: PreferCodecType; downloadVideo: boolean; dirFmt: string; dirFmtForPart: string; timeFmt: string; taskConcurrency: number; taskDownloadIntervalSec: number; chunkConcurrency: number; chunkDownloadIntervalSec: number }
 export type Consulting = { consulting_flag: boolean; consulting_url: string }
 export type ContentList = { bold: boolean; content: string; number: string }
 export type Cooperation = { link: string }
+export type CreateBangumiDownloadTaskParams = { ep_ids: number[]; info: BangumiInfo }
+export type CreateCheeseDownloadTaskParams = { ep_ids: number[]; info: CheeseInfo }
+export type CreateDownloadTaskParams = { Normal: CreateNormalDownloadTaskParams } | { Bangumi: CreateBangumiDownloadTaskParams } | { Cheese: CreateCheeseDownloadTaskParams }
+export type CreateNormalDownloadTaskParams = { info: NormalInfo; aid_cid_pairs: ([number, number | null])[] }
 export type DashInBangumi = { duration: number; min_buffer_time: number; video: MediaInBangumi[]; audio: MediaInBangumi[] | null }
 export type DashInCheese = { duration: number; min_buffer_time: number; video: MediaInCheese[]; audio: MediaInCheese[] | null }
 export type DashInNormal = { duration: number; min_buffer_time: number; video: MediaInNormal[]; audio: MediaInNormal[] | null; dolby: Dolby; flac: Flac | null }
@@ -169,6 +199,9 @@ export type Dimension = { width: number; height: number; rotate: number }
 export type DimensionInBangumi = { height: number; rotate: number; width: number }
 export type DimensionInWatchLater = { width: number; height: number; rotate: number }
 export type Dolby = { type: number; audio: MediaInNormal[] | null }
+export type DownloadEvent = { event: "Speed"; data: { speed: string } } | { event: "TaskCreate"; data: { state: DownloadTaskState; progress: DownloadProgress } } | { event: "TaskStateUpdate"; data: { task_id: string; state: DownloadTaskState } } | { event: "TaskSleeping"; data: { task_id: string; remaining_sec: number } } | { event: "TaskDelete"; data: { task_id: string } } | { event: "ProgressPreparing"; data: { task_id: string } } | { event: "ProgressUpdate"; data: { progress: DownloadProgress } }
+export type DownloadProgress = { task_id: string; episode_type: EpisodeType; aid: number; bvid: string | null; cid: number; ep_id: number | null; duration: number; pub_ts: number; collection_title: string; part_title: string | null; part_order: number | null; episode_title: string; episode_order: number; up_name: string | null; up_uid: number | null; up_avatar: string | null; episode_dir: string; filename: string; video_task: VideoTask; create_ts: number; completed_ts: number | null }
+export type DownloadTaskState = "Pending" | "Downloading" | "Paused" | "Completed" | "Failed"
 export type DurlDetailInBangumi = { size: number; ahead: string; length: number; vhead: string; backup_url: string[]; url: string; order: number; md5: string }
 export type DurlDetailInCheese = { size: number; ahead: string; length: number; vhead: string; backup_url: string[]; url: string; order: number; md5: string }
 export type DurlInBangumi = { durl: DurlDetailInBangumi[]; quality: number }
@@ -180,6 +213,7 @@ export type EpInCheese = { aid: number; catalogue_index: number; cid: number; co
 export type EpInNormal = { season_id: number; section_id: number; id: number; aid: number; cid: number; title: string; attribute: number; arc: Arc; page: PageInNormalEp; bvid: string; pages: PageInNormalEp[] }
 export type EpPage = { next: boolean; num: number; size: number; total: number }
 export type EpTag = { part_preview_tag: string; pay_tag: string; preview_tag: string }
+export type EpisodeType = "Normal" | "Bangumi" | "Cheese"
 export type Faq = { content: string; link: string; title: string }
 export type Faq1 = { items: Faq1Item[]; title: string }
 export type Faq1Item = { answer: string; question: string }
@@ -206,6 +240,7 @@ export type LevelInfoInPlayerInfo = { current_level: number; current_min: number
 export type LevelInfoInUserInfo = { current_level: number; current_min: number; current_exp: number }
 export type LogEvent = { timestamp: string; level: LogLevel; fields: { [key in string]: JsonValue }; target: string; filename: string; line_number: number }
 export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
+export type MediaChunk = { start: number; end: number; completed: boolean }
 export type MediaInBangumi = { start_with_sap: number; bandwidth: number; sar: string; backup_url: string[]; codecs: string; base_url: string; segment_base: SegmentBaseInBangumi; mime_type: string; frame_rate: string; codecid: number; size: number; width: number; id: number; height: number; md5: string }
 export type MediaInCheese = { start_with_sap: number; bandwidth: number; sar: string; codecs: string; base_url: string; backup_url: string[]; segment_base: SegmentBaseInCheese; frame_rate: string; codecid: number; size: number; mime_type: string; width: number; id: number; height: number; md5: string }
 export type MediaInFav = { id: number; type: number; title: string; cover: string; intro: string; page: number; duration: number; upper: UpperInMedia; attr: number; cnt_info: CntInfoInMedia; link: string; ctime: number; pubtime: number; fav_time: number; bv_id: string; bvid: string; ugc: Ugc | null; media_list_link: string }
@@ -236,6 +271,8 @@ export type PlayStrategy = { strategies: string[] }
 export type PlayViewBusinessInfo = { user_status: UserStatusInCheeseUrl }
 export type PlayerInfo = { aid: number; bvid: string; allow_bp: boolean; no_share: boolean; cid: number; max_limit: number; page_no: number; has_next: boolean; ip_info: IpInfo; login_mid: number; login_mid_hash: string; is_owner: boolean; name: string; permission: string; level_info: LevelInfoInPlayerInfo; vip: VipInPlayerInfo; answer_status: number; block_time: number; role: string; last_play_time: number; last_play_cid: number; now_time: number; online_count: number; need_login_subtitle: boolean; subtitle: SubtitleInPlayerInfo; view_points: ViewPoint[]; preview_toast: string; options: Options; online_switch: OnlineSwitch; fawkes: Fawkes; show_switch: ShowSwitch; toast_block: boolean; is_upower_exclusive: boolean; is_upower_play: boolean; is_ugc_pay_preview: boolean; elec_high_level: ElecHighLevel; disable_show_up_info: boolean; is_upower_exclusive_with_qa: boolean }
 export type Positive = { id: number; title: string }
+export type PreferCodecType = "Unknown" | "AVC" | "HEVC" | "AV1"
+export type PreferVideoQuality = "Best" | "240P" | "360P" | "480P" | "720P" | "720P60" | "1080P" | "AiRepair" | "1080P+" | "1080P60" | "4K" | "HDR" | "Dolby" | "8K"
 export type PreviewedPurchaseNote = { long_watch_text: string; pay_text: string; price_format: string; watch_text: string; watching_text: string }
 export type Publish = { is_finish: number; is_started: number; pub_time: string; pub_time_show: string; unknow_pub_date: number; weekday: number }
 export type PurchaseFormatNote = { content_list: ContentList[]; link: string; title: string }
@@ -287,6 +324,8 @@ export type UserInfo = { isLogin: boolean; email_verified: number; face: string;
 export type UserStatusInBangumi = { area_limit: number; ban_area_show: number; follow: number; follow_status: number; login: number; pay: number; pay_pack_paid: number; sponsor: number }
 export type UserStatusInCheese = { bp: number; expire_at: number; favored: number; favored_count: number; is_expired: boolean; is_first_paid: boolean; payed: number; user_expiry_content: string }
 export type UserStatusInCheeseUrl = { watch_progress: WatchProgress }
+export type VideoQuality = "Unknown" | "240P" | "360P" | "480P" | "720P" | "720P60" | "1080P" | "AiRepair" | "1080P+" | "1080P60" | "4K" | "HDR" | "Dolby" | "8K"
+export type VideoTask = { selected: boolean; url: string; video_quality: VideoQuality; codec_type: CodecType; content_length: number; chunks: MediaChunk[]; completed: boolean }
 export type ViewPoint = { type: number; from: number; to: number; content: string; img_url: string | null; logo_url: string | null; team_type: string; team_name: string }
 export type VipInPlayerInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInPlayerInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number; avatar_icon: AvatarIcon }
 export type VipInUserInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInUserInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number }

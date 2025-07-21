@@ -1,7 +1,9 @@
 use parking_lot::RwLock;
 use tauri::{Manager, State};
 
-use crate::{bili_client::BiliClient, config::Config};
+use crate::{
+    bili_client::BiliClient, config::Config, downloader::download_manager::DownloadManager,
+};
 
 pub trait AnyhowErrorToStringChain {
     /// 将 `anyhow::Error` 转换为chain格式  
@@ -27,6 +29,7 @@ impl AnyhowErrorToStringChain for anyhow::Error {
 pub trait AppHandleExt {
     fn get_config(&self) -> State<RwLock<Config>>;
     fn get_bili_client(&self) -> State<BiliClient>;
+    fn get_download_manager(&self) -> State<DownloadManager>;
 }
 
 impl AppHandleExt for tauri::AppHandle {
@@ -35,5 +38,8 @@ impl AppHandleExt for tauri::AppHandle {
     }
     fn get_bili_client(&self) -> State<BiliClient> {
         self.state::<BiliClient>()
+    }
+    fn get_download_manager(&self) -> State<DownloadManager> {
+        self.state::<DownloadManager>()
     }
 }

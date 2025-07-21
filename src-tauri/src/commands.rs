@@ -8,12 +8,12 @@ use crate::{
     logger,
     types::{
         bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
-        cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
-        get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
-        get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
-        normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo,
-        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
-        watch_later_info::WatchLaterInfo,
+        cheese_media_url::CheeseMediaUrl, create_download_task_params::CreateDownloadTaskParams,
+        fav_folders::FavFolders, fav_info::FavInfo, get_bangumi_info_params::GetBangumiInfoParams,
+        get_cheese_info_params::GetCheeseInfoParams, get_fav_info_params::GetFavInfoParams,
+        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
+        normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
+        qrcode_status::QrcodeStatus, user_info::UserInfo, watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -221,4 +221,57 @@ pub async fn get_watch_later_info(app: AppHandle, page: i32) -> CommandResult<Wa
         .await
         .map_err(|err| CommandError::from("获取稍后观看内容失败", err))?;
     Ok(watch_later_info)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn create_download_tasks(app: AppHandle, params: CreateDownloadTaskParams) {
+    let download_manager = app.get_download_manager();
+    download_manager.create_download_tasks(&params);
+    tracing::debug!("下载任务创建成功");
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn pause_download_tasks(app: AppHandle, task_ids: Vec<String>) {
+    let download_manager = app.get_download_manager();
+    download_manager.pause_download_tasks(&task_ids);
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn resume_download_tasks(app: AppHandle, task_ids: Vec<String>) {
+    let download_manager = app.get_download_manager();
+    download_manager.resume_download_tasks(&task_ids);
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn delete_download_tasks(app: AppHandle, task_ids: Vec<String>) {
+    let download_manager = app.get_download_manager();
+    download_manager.delete_download_tasks(&task_ids);
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn restart_download_tasks(app: AppHandle, task_ids: Vec<String>) {
+    let download_manager = app.get_download_manager();
+    download_manager.restart_download_tasks(&task_ids);
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn restore_download_tasks(app: AppHandle) -> CommandResult<()> {
+    let download_manager = app.get_download_manager();
+    download_manager
+        .restore_download_tasks()
+        .map_err(|err| CommandError::from("恢复下载任务失败", err))?;
+    tracing::debug!("恢复下载任务成功");
+    Ok(())
 }

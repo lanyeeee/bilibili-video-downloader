@@ -38,6 +38,13 @@ tracing-subscriber = { version = "0.3.19", features = ["json", "time", "local-ti
 tracing-appender = { version = "0.2.3" }
 notify = { version = "8.0.0" }
 tokio = { version = "1.46.0", features = ["full"] }
+byteorder = { version = "1.5.0" }
+strfmt = { version = "0.2.4" }
+uuid = { version = "1.17.0", features = ["v4"] }
+bytes = { version = "1.10.1" }
+fs4 = { version = "0.13.1" }
+num_enum = { version = "0.7.4" }
+chrono = { version = "0.4.41" }
 
 [profile.release]
 strip = true
