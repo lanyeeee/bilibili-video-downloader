@@ -1,3 +1,4 @@
+pub mod audio_quality;
 pub mod bangumi_info;
 pub mod bangumi_media_url;
 pub mod cheese_info;

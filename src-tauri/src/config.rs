@@ -13,7 +13,9 @@ pub struct Config {
     pub sessdata: String,
     pub prefer_video_quality: PreferVideoQuality,
     pub prefer_codec_type: PreferCodecType,
+    pub prefer_audio_quality: PreferAudioQuality,
     pub download_video: bool,
+    pub download_audio: bool,
     pub dir_fmt: String,
     pub dir_fmt_for_part: String,
     pub time_fmt: String,
@@ -83,7 +85,9 @@ impl Config {
             sessdata: String::new(),
             prefer_video_quality: PreferVideoQuality::Best,
             prefer_codec_type: PreferCodecType::AVC,
+            prefer_audio_quality: PreferAudioQuality::Best,
             download_video: true,
+            download_audio: true,
             dir_fmt: "{collection_title}/{episode_title}".to_string(),
             dir_fmt_for_part: DEFAULT_FMT_FOR_PART.to_string(),
             time_fmt: "%Y-%m-%d_%H-%M-%S".to_string(),
@@ -161,4 +165,32 @@ pub enum PreferCodecType {
     AVC = 7,
     HEVC = 12,
     AV1 = 13,
+}
+
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    Copy,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Type,
+    IntoPrimitive,
+    FromPrimitive,
+)]
+#[repr(i64)]
+pub enum PreferAudioQuality {
+    #[default]
+    Best = -1,
+    #[serde(rename = "64K")]
+    Audio64K = 30216,
+    #[serde(rename = "132K")]
+    Audio132K = 30232,
+    #[serde(rename = "192K")]
+    Audio192K = 30280,
+    #[serde(rename = "Dolby")]
+    AudioDolby = 30250,
+    #[serde(rename = "HiRes")]
+    AudioHiRes = 30251,
 }

@@ -11,9 +11,10 @@ use uuid::Uuid;
 
 use crate::{
     config::Config,
-    downloader::tasks::video_task::VideoTask,
+    downloader::tasks::{audio_task::AudioTask, video_task::VideoTask},
     extensions::AppHandleExt,
     types::{
+        audio_quality::AudioQuality,
         bangumi_info::BangumiInfo,
         cheese_info::CheeseInfo,
         codec_type::CodecType,
@@ -46,6 +47,7 @@ pub struct DownloadProgress {
     pub episode_dir: PathBuf,
     pub filename: String,
     pub video_task: VideoTask,
+    pub audio_task: AudioTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
 }
@@ -111,6 +113,7 @@ impl DownloadProgress {
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video,
+            audio_task: tasks.audio,
             create_ts,
             completed_ts: None,
         };
@@ -155,6 +158,7 @@ impl DownloadProgress {
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video,
+            audio_task: tasks.audio,
             create_ts,
             completed_ts: None,
         };
@@ -169,9 +173,11 @@ impl DownloadProgress {
     pub async fn prepare(&mut self, app: &AppHandle) -> anyhow::Result<()> {
         let video_selected = self.video_task.selected;
         let video_completed = self.video_task.completed;
+        let audio_selected = self.audio_task.selected;
+        let audio_completed = self.audio_task.completed;
 
-        if !video_selected && video_completed {
-            // 如果视频没有选中，或者已经完成，则不需要准备
+        if (!video_selected && !audio_selected) || (video_completed && audio_completed) {
+            // 如果视频和音频都没有选中，或者都已经完成，则不需要准备
             return Ok(());
         }
 
@@ -191,6 +197,11 @@ impl DownloadProgress {
                     // 如果视频被选中且未完成，则准备视频任务
                     self.video_task.prepare_normal(app, &media_url).await?;
                 }
+
+                if audio_selected && !audio_completed {
+                    // 如果音频被选中且未完成，则准备音频任务
+                    self.audio_task.prepare_normal(app, &media_url).await?;
+                }
             }
             EpisodeType::Bangumi => {
                 let media_url = bili_client
@@ -201,6 +212,11 @@ impl DownloadProgress {
                 if video_selected && !video_completed {
                     // 如果视频被选中且未完成，则准备视频任务
                     self.video_task.prepare_bangumi(app, &media_url).await?;
+                }
+
+                if audio_selected && !audio_completed {
+                    // 如果音频被选中且未完成，则准备音频任务
+                    self.audio_task.prepare_bangumi(app, &media_url).await?;
                 }
             }
             EpisodeType::Cheese => {
@@ -215,6 +231,11 @@ impl DownloadProgress {
                 if video_selected && !video_completed {
                     // 如果视频被选中且未完成，则准备视频任务
                     self.video_task.prepare_cheese(app, &media_url).await?;
+                }
+
+                if audio_selected && !audio_completed {
+                    // 如果音频被选中且未完成，则准备音频任务
+                    self.audio_task.prepare_cheese(app, &media_url).await?;
                 }
             }
         }
@@ -270,11 +291,12 @@ impl DownloadProgress {
     }
 
     pub fn is_completed(&self) -> bool {
-        self.video_task.is_completed()
+        self.video_task.is_completed() && self.audio_task.is_completed()
     }
 
     pub fn mark_uncompleted(&mut self) {
         self.video_task.mark_uncompleted();
+        self.audio_task.mark_uncompleted();
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -321,6 +343,7 @@ fn create_normal_progresses_for_single(
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video,
+            audio_task: tasks.audio,
             create_ts,
             completed_ts: None,
         };
@@ -354,6 +377,7 @@ fn create_normal_progresses_for_single(
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video,
+            audio_task: tasks.audio,
             create_ts,
             completed_ts: None,
         };
@@ -387,6 +411,7 @@ fn create_normal_progresses_for_single(
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video.clone(),
+            audio_task: tasks.audio.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -452,6 +477,7 @@ fn create_normal_progresses_for_season(
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video,
+            audio_task: tasks.audio,
             create_ts,
             completed_ts: None,
         };
@@ -485,6 +511,7 @@ fn create_normal_progresses_for_season(
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video,
+            audio_task: tasks.audio,
             create_ts,
             completed_ts: None,
         };
@@ -519,6 +546,7 @@ fn create_normal_progresses_for_season(
             episode_dir: PathBuf::new(),
             filename: String::new(),
             video_task: tasks.video.clone(),
+            audio_task: tasks.audio.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -534,6 +562,7 @@ fn create_normal_progresses_for_season(
 
 struct Tasks {
     video: VideoTask,
+    audio: AudioTask,
 }
 
 impl Tasks {
@@ -548,6 +577,15 @@ impl Tasks {
             completed: false,
         };
 
-        Self { video }
+        let audio = AudioTask {
+            selected: config.download_audio,
+            url: String::new(),
+            audio_quality: AudioQuality::Unknown,
+            content_length: 0,
+            chunks: Vec::new(),
+            completed: false,
+        };
+
+        Self { video, audio }
     }
 }
