@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     config::Config,
-    downloader::tasks::{audio_task::AudioTask, video_task::VideoTask},
+    downloader::tasks::{audio_task::AudioTask, merge_task::MergeTask, video_task::VideoTask},
     extensions::AppHandleExt,
     types::{
         audio_quality::AudioQuality,
@@ -48,6 +48,7 @@ pub struct DownloadProgress {
     pub filename: String,
     pub video_task: VideoTask,
     pub audio_task: AudioTask,
+    pub merge_task: MergeTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
 }
@@ -114,6 +115,7 @@ impl DownloadProgress {
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
+            merge_task: tasks.merge,
             create_ts,
             completed_ts: None,
         };
@@ -159,6 +161,7 @@ impl DownloadProgress {
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
+            merge_task: tasks.merge,
             create_ts,
             completed_ts: None,
         };
@@ -291,12 +294,15 @@ impl DownloadProgress {
     }
 
     pub fn is_completed(&self) -> bool {
-        self.video_task.is_completed() && self.audio_task.is_completed()
+        self.video_task.is_completed()
+            && self.audio_task.is_completed()
+            && self.merge_task.is_completed()
     }
 
     pub fn mark_uncompleted(&mut self) {
         self.video_task.mark_uncompleted();
         self.audio_task.mark_uncompleted();
+        self.merge_task.completed = false;
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -344,6 +350,7 @@ fn create_normal_progresses_for_single(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
+            merge_task: tasks.merge,
             create_ts,
             completed_ts: None,
         };
@@ -378,6 +385,7 @@ fn create_normal_progresses_for_single(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
+            merge_task: tasks.merge,
             create_ts,
             completed_ts: None,
         };
@@ -412,6 +420,7 @@ fn create_normal_progresses_for_single(
             filename: String::new(),
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
+            merge_task: tasks.merge.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -478,6 +487,7 @@ fn create_normal_progresses_for_season(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
+            merge_task: tasks.merge,
             create_ts,
             completed_ts: None,
         };
@@ -512,6 +522,7 @@ fn create_normal_progresses_for_season(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
+            merge_task: tasks.merge,
             create_ts,
             completed_ts: None,
         };
@@ -547,6 +558,7 @@ fn create_normal_progresses_for_season(
             filename: String::new(),
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
+            merge_task: tasks.merge.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -563,6 +575,7 @@ fn create_normal_progresses_for_season(
 struct Tasks {
     video: VideoTask,
     audio: AudioTask,
+    merge: MergeTask,
 }
 
 impl Tasks {
@@ -586,6 +599,15 @@ impl Tasks {
             completed: false,
         };
 
-        Self { video, audio }
+        let merge = MergeTask {
+            selected: config.auto_merge,
+            completed: false,
+        };
+
+        Self {
+            video,
+            audio,
+            merge,
+        }
     }
 }

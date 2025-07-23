@@ -296,6 +296,13 @@ impl DownloadTask {
             tracing::debug!("{ids_string} `{filename}`音频下载完成");
         }
 
+        if !progress.merge_task.is_completed() {
+            self.merge_video_audio(&progress)
+                .await
+                .context(format!("{ids_string} `{filename}`合并视频和音频失败"))?;
+            tracing::debug!("{ids_string} `{filename}`视频和音频合并完成");
+        }
+
         let completed_ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs())
@@ -526,6 +533,89 @@ impl DownloadTask {
         ))?;
 
         self.update_progress(|p| p.audio_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn merge_video_audio(&self, progress: &DownloadProgress) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let video_path = episode_dir.join(format!("{filename}.mp4"));
+        if !video_path.exists() {
+            self.update_progress(|p| p.merge_task.completed = true);
+            return Ok(());
+        }
+
+        let audio_path = episode_dir.join(format!("{filename}.m4a"));
+        if !audio_path.exists() {
+            self.update_progress(|p| p.merge_task.completed = true);
+            return Ok(());
+        }
+
+        let output_path = episode_dir.join(format!("{filename}-merged.mp4"));
+
+        let ffmpeg_program = std::env::current_exe()
+            .context("获取当前可执行文件路径失败")?
+            .parent()
+            .context("获取当前可执行文件所在目录失败")?
+            .join("com.lanyeeee.bilibili-video-downloader-ffmpeg");
+
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let video_path_clone = video_path.clone();
+        let audio_path_clone = audio_path.clone();
+        let output_path_clone = output_path.clone();
+
+        tauri::async_runtime::spawn_blocking(move || {
+            let mut command = std::process::Command::new(ffmpeg_program);
+
+            command
+                .arg("-i")
+                .arg(video_path_clone)
+                .arg("-i")
+                .arg(audio_path_clone)
+                .arg("-c")
+                .arg("copy")
+                .arg("-map")
+                .arg("0:v:0")
+                .arg("-map")
+                .arg("1:a:0")
+                .arg(output_path_clone)
+                .arg("-y");
+
+            #[cfg(target_os = "windows")]
+            {
+                // 隐藏窗口
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(0x0800_0000);
+            }
+
+            let output = command.output();
+
+            let _ = tx.send(output);
+        });
+
+        let output = rx.await??;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let err = anyhow!(format!("STDOUT: {stdout}"))
+                .context(format!("STDERR: {stderr}"))
+                .context("原因可能是视频或音频文件损坏，建议[重来]试试");
+            return Err(err);
+        }
+
+        std::fs::remove_file(&video_path)
+            .context(format!("删除视频文件`{}`失败", video_path.display()))?;
+        std::fs::remove_file(&audio_path)
+            .context(format!("删除音频文件`{}`失败", audio_path.display()))?;
+        std::fs::rename(&output_path, &video_path).context(format!(
+            "将`{}`重命名为`{}`失败",
+            output_path.display(),
+            video_path.display()
+        ))?;
+
+        self.update_progress(|p| p.merge_task.completed = true);
 
         Ok(())
     }
