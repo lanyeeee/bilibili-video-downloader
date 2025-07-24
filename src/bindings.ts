@@ -178,6 +178,61 @@ export type BadgeInfo = { bg_color: string; bg_color_night: string; text: string
 export type BangumiMediaUrl = { accept_format: string; code: number; seek_param: string; is_preview: number; fnval: number; video_project: boolean; fnver: number; type: string; bp: number; seek_type: string; result: string; vip_type: number | null; from: string; video_codecid: number; record_info: RecordInfo | null; is_drm: boolean; no_rexcode: number; format: string; support_formats: SupportFormatInBangumi[]; message: string; accept_quality: number[]; quality: number; timelength: number; durls: DurlInBangumi[]; has_paid: boolean; vip_status: number | null; error_code: number; dash: DashInBangumi | null; clip_info_list: ClipInfoList[]; accept_description: string[]; status: number }
 export type BangumiInfo = { activity: Activity; actors: string; alias: string; areas: Area[]; bkg_cover: string; cover: string; delivery_fragment_video: boolean; enable_vt: boolean; episodes: EpInBangumi[]; evaluate: string; hide_ep_vv_vt_dm: number; icon_font: IconFont; jp_title: string; link: string; media_id: number; mode: number; new_ep: NewEp; payment: PaymentInBangumi | null; play_strategy: PlayStrategy | null; positive: Positive; publish: Publish; rating: Rating | null; record: string; rights: RightsInBangumi; season_id: number; season_title: string; seasons: Season[]; section: SectionInBangumi[] | null; series: Series; share_copy: string; share_sub_title: string; share_url: string; show: Show; show_season_type: number; square_cover: string; staff: string; stat: StatInBangumi; status: number; styles: string[]; subtitle: string; title: string; total: number; type: number; up_info: UpInfoInBangumi | null; user_status: UserStatusInBangumi }
 export type Brief = { content: string; img: Img[]; title: string; type: number }
+export type CanvasConfig = { 
+/**
+ * 弹幕在屏幕上的【持续时间】，单位为秒，可以有小数
+ */
+duration: number; 
+/**
+ * 渲染的屏幕分辨率，这个并不会影响渲染区域的大小，只是字体的相对大小，可以不用改动
+ */
+width: number; 
+/**
+ * 渲染的屏幕分辨率，这个并不会影响渲染区域的大小，只是字体的相对大小，可以不用改动
+ */
+height: number; 
+/**
+ * 使用字体名称
+ */
+font: string; 
+/**
+ * 弹幕字体大小
+ */
+font_size: number; 
+/**
+ * 是一个比例数，用来计算平衡不同字体的宽度
+ * 有的字体比较粗、比较宽，可以适当调大（如 1.4、1.6）
+ * 有的字体比较细、比较窄，可以适当调小（如 1.0、1.2）
+ */
+width_ratio: number; 
+/**
+ * 用来调整弹幕时间的水平距离，单位是像素，如果想拉开弹幕之间的距离，可以调大
+ */
+horizontal_gap: number; 
+/**
+ * 计算弹幕高度的数值，即【行高度/行间距】。数值越大，弹幕的垂直距离越大
+ */
+lane_size: number; 
+/**
+ * 【正常弹幕的屏幕填充占比】，默认为 50%，即“半屏填充”。
+ */
+float_percentage: number; 
+/**
+ * 弹幕的不透明度，越小越透明，越大越不透明
+ */
+alpha: number; 
+/**
+ * 字体是否加粗
+ */
+bold: boolean; 
+/**
+ * 弹幕的描边宽度，单位为像素
+ */
+outline: number; 
+/**
+ * 弹幕时间轴偏移，>0 会让弹幕延后，<0 会让弹幕提前，单位为秒
+ */
+time_offset: number }
 export type CheeseInfo = { abtest_info: AbtestInfo; be_subscription: boolean; brief: Brief; consulting: Consulting; cooperation: Cooperation; course_content: string; cover: string; ep_count: number; episode_page: EpPage; episode_sort: number; episode_tag: EpTag; episodes: EpInCheese[]; expiry_day: number; expiry_info_content: string; faq: Faq; faq1: Faq1; is_enable_cash: boolean; is_series: boolean; live_ep_count: number; opened_ep_count: number; paid_jump: PaidJump; paid_view: boolean; payment: Payment; previewed_purchase_note: PreviewedPurchaseNote; purchase_format_note: PurchaseFormatNote; purchase_note: PurchaseNote; purchase_protocol: PurchaseProtocol; recommend_seasons: RecommendSeason[]; release_bottom_info: string; release_info: string; release_info2: string; release_status: string; season_id: number; season_tag: number; share_url: string; short_link: string; show_watermark: boolean; stat: StatInCheese; status: number; stop_sell: boolean; subscription_update_count_cycle_text: string; subtitle: string; title: string; up_info: UpInfoInCheese; update_status: number; user_status: UserStatusInCheese; watermark_interval: number }
 export type CheeseMediaUrl = { accept_format: string; code: number; seek_param: string; is_preview: number; fnval: number; video_project: boolean; play_view_business_info: PlayViewBusinessInfo | null; fnver: number; type: string; result: string; seek_type: string; from: string; video_codecid: number; no_rexcode: number; format: string; support_formats: SupportFormatInCheese[]; message: string; accept_quality: number[]; quality: number; timelength: number; durls: DurlInCheese[]; has_paid: boolean; dash: DashInCheese | null; accept_description: string[]; status: number }
 export type ClipInfoList = { materialNo: number; start: number; end: number; toastText: string; clipType: string }
@@ -185,7 +240,7 @@ export type CntInfo = { collect: number; play: number; thumb_up: number; share: 
 export type CntInfoInMedia = { collect: number; play: number; danmaku: number; vt: number; play_switch: number; reply: number; view_text_1: string }
 export type CodecType = "Unknown" | "Audio" | "AVC" | "HEVC" | "AV1"
 export type CommandError = { err_title: string; err_message: string }
-export type Config = { downloadDir: string; enableFileLogger: boolean; sessdata: string; preferVideoQuality: PreferVideoQuality; preferCodecType: PreferCodecType; preferAudioQuality: PreferAudioQuality; downloadVideo: boolean; downloadAudio: boolean; autoMerge: boolean; dirFmt: string; dirFmtForPart: string; timeFmt: string; taskConcurrency: number; taskDownloadIntervalSec: number; chunkConcurrency: number; chunkDownloadIntervalSec: number }
+export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; prefer_video_quality: PreferVideoQuality; prefer_codec_type: PreferCodecType; prefer_audio_quality: PreferAudioQuality; download_video: boolean; download_audio: boolean; auto_merge: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig }
 export type Consulting = { consulting_flag: boolean; consulting_url: string }
 export type ContentList = { bold: boolean; content: string; number: string }
 export type Cooperation = { link: string }
@@ -193,6 +248,7 @@ export type CreateBangumiDownloadTaskParams = { ep_ids: number[]; info: BangumiI
 export type CreateCheeseDownloadTaskParams = { ep_ids: number[]; info: CheeseInfo }
 export type CreateDownloadTaskParams = { Normal: CreateNormalDownloadTaskParams } | { Bangumi: CreateBangumiDownloadTaskParams } | { Cheese: CreateCheeseDownloadTaskParams }
 export type CreateNormalDownloadTaskParams = { info: NormalInfo; aid_cid_pairs: ([number, number | null])[] }
+export type DanmakuTask = { xml_selected: boolean; ass_selected: boolean; json_selected: boolean; completed: boolean }
 export type DashInBangumi = { duration: number; min_buffer_time: number; video: MediaInBangumi[]; audio: MediaInBangumi[] | null }
 export type DashInCheese = { duration: number; min_buffer_time: number; video: MediaInCheese[]; audio: MediaInCheese[] | null }
 export type DashInNormal = { duration: number; min_buffer_time: number; video: MediaInNormal[]; audio: MediaInNormal[] | null; dolby: Dolby; flac: Flac | null }
@@ -202,7 +258,7 @@ export type DimensionInBangumi = { height: number; rotate: number; width: number
 export type DimensionInWatchLater = { width: number; height: number; rotate: number }
 export type Dolby = { type: number; audio: MediaInNormal[] | null }
 export type DownloadEvent = { event: "Speed"; data: { speed: string } } | { event: "TaskCreate"; data: { state: DownloadTaskState; progress: DownloadProgress } } | { event: "TaskStateUpdate"; data: { task_id: string; state: DownloadTaskState } } | { event: "TaskSleeping"; data: { task_id: string; remaining_sec: number } } | { event: "TaskDelete"; data: { task_id: string } } | { event: "ProgressPreparing"; data: { task_id: string } } | { event: "ProgressUpdate"; data: { progress: DownloadProgress } }
-export type DownloadProgress = { task_id: string; episode_type: EpisodeType; aid: number; bvid: string | null; cid: number; ep_id: number | null; duration: number; pub_ts: number; collection_title: string; part_title: string | null; part_order: number | null; episode_title: string; episode_order: number; up_name: string | null; up_uid: number | null; up_avatar: string | null; episode_dir: string; filename: string; video_task: VideoTask; audio_task: AudioTask; merge_task: MergeTask; create_ts: number; completed_ts: number | null }
+export type DownloadProgress = { task_id: string; episode_type: EpisodeType; aid: number; bvid: string | null; cid: number; ep_id: number | null; duration: number; pub_ts: number; collection_title: string; part_title: string | null; part_order: number | null; episode_title: string; episode_order: number; up_name: string | null; up_uid: number | null; up_avatar: string | null; episode_dir: string; filename: string; video_task: VideoTask; audio_task: AudioTask; merge_task: MergeTask; danmaku_task: DanmakuTask; create_ts: number; completed_ts: number | null }
 export type DownloadTaskState = "Pending" | "Downloading" | "Paused" | "Completed" | "Failed"
 export type DurlDetailInBangumi = { size: number; ahead: string; length: number; vhead: string; backup_url: string[]; url: string; order: number; md5: string }
 export type DurlDetailInCheese = { size: number; ahead: string; length: number; vhead: string; backup_url: string[]; url: string; order: number; md5: string }

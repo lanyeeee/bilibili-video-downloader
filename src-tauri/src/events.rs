@@ -10,7 +10,6 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type, Event)]
-#[serde(rename_all = "camelCase")]
 pub struct LogEvent {
     pub timestamp: String,
     pub level: LogLevel,

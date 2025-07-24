@@ -5,8 +5,10 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{AppHandle, Manager};
 
+use crate::danmaku_xml_to_ass::canvas::CanvasConfig;
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Config {
     pub download_dir: PathBuf,
     pub enable_file_logger: bool,
@@ -17,6 +19,9 @@ pub struct Config {
     pub download_video: bool,
     pub download_audio: bool,
     pub auto_merge: bool,
+    pub download_xml_danmaku: bool,
+    pub download_ass_danmaku: bool,
+    pub download_json_danmaku: bool,
     pub dir_fmt: String,
     pub dir_fmt_for_part: String,
     pub time_fmt: String,
@@ -24,6 +29,7 @@ pub struct Config {
     pub task_download_interval_sec: u64,
     pub chunk_concurrency: usize,
     pub chunk_download_interval_sec: u64,
+    pub danmaku_config: CanvasConfig,
 }
 
 impl Config {
@@ -90,6 +96,9 @@ impl Config {
             download_video: true,
             download_audio: true,
             auto_merge: true,
+            download_xml_danmaku: true,
+            download_ass_danmaku: true,
+            download_json_danmaku: true,
             dir_fmt: "{collection_title}/{episode_title}".to_string(),
             dir_fmt_for_part: DEFAULT_FMT_FOR_PART.to_string(),
             time_fmt: "%Y-%m-%d_%H-%M-%S".to_string(),
@@ -97,6 +106,7 @@ impl Config {
             task_download_interval_sec: 0,
             chunk_concurrency: 16,
             chunk_download_interval_sec: 0,
+            danmaku_config: CanvasConfig::default(),
         }
     }
 }

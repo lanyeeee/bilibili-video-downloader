@@ -45,6 +45,10 @@ bytes = { version = "1.10.1" }
 fs4 = { version = "0.13.1" }
 num_enum = { version = "0.7.4" }
 chrono = { version = "0.4.41" }
+prost = { version = "0.14.1" }
+yaserde = { version = "0.12.0", features = ["yaserde_derive"] }
+float-ord = { version = "0.3.2" }
+memchr = { version = "2.7.5" }
 
 [profile.release]
 strip = true

@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Context};
 use bytes::Bytes;
 use parking_lot::RwLock;
+use prost::Message;
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, Jitter, RetryTransientMiddleware};
@@ -16,6 +17,7 @@ use tokio::task::JoinSet;
 
 use crate::{
     extensions::AppHandleExt,
+    protobuf::DmSegMobileReply,
     types::{
         bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
         cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
@@ -615,6 +617,57 @@ impl BiliClient {
         }
 
         url_with_content_length
+    }
+
+    pub async fn get_danmaku(
+        &self,
+        aid: i64,
+        cid: i64,
+        duration: u64,
+    ) -> anyhow::Result<Vec<DmSegMobileReply>> {
+        let client = self.api_client.read().clone();
+        // 以6分钟为单位分段
+        let segment_count = duration.div_ceil(360);
+
+        let mut join_set = JoinSet::new();
+        for segment_index in 1..=segment_count {
+            let client = client.clone();
+            let cookie = self.get_cookie();
+
+            join_set.spawn(async move {
+                // 发送获取分段弹幕的请求
+                let params = json!({
+                    "type": 1,
+                    "oid": cid,
+                    "pid": aid,
+                    "segment_index": segment_index,
+                });
+                let http_resp = client
+                    .get("https://api.bilibili.com/x/v2/dm/web/seg.so")
+                    .query(&params)
+                    .header("cookie", cookie)
+                    .send()
+                    .await?;
+                let status = http_resp.status();
+                if status != StatusCode::OK {
+                    let body = http_resp.text().await?;
+                    return Err(anyhow!("预料之外的状态码({status}): {body}"));
+                }
+                let body = http_resp.bytes().await?;
+                let reply =
+                    DmSegMobileReply::decode(body).context("将body解析为DmSegMobileReply失败")?;
+
+                Ok(reply)
+            });
+        }
+
+        let mut replies = Vec::new();
+        while let Some(Ok(res)) = join_set.join_next().await {
+            let reply = res?;
+            replies.push(reply);
+        }
+
+        Ok(replies)
     }
 
     fn get_cookie(&self) -> String {

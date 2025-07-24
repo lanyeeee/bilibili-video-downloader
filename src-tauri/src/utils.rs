@@ -7,6 +7,11 @@ use std::{
 use anyhow::{anyhow, Context};
 use byteorder::{BigEndian, ReadBytesExt};
 
+use crate::{
+    danmaku_xml_to_ass::{DamakuXmlDTag, DanmakuXmlITag},
+    protobuf::DmSegMobileReply,
+};
+
 pub fn filename_filter(s: &str) -> String {
     s.chars()
         .map(|c| match c {
@@ -123,4 +128,37 @@ pub fn is_mp4_complete(file_path: &Path) -> anyhow::Result<bool> {
     }
 
     Ok(real_size == total_size && has_moov_box)
+}
+
+pub trait ToXml {
+    fn to_xml(&self, cid: i64) -> anyhow::Result<String>;
+}
+
+impl ToXml for Vec<DmSegMobileReply> {
+    fn to_xml(&self, cid: i64) -> anyhow::Result<String> {
+        let elems = self
+            .iter()
+            .flat_map(|reply| &reply.elems)
+            .map(|elem| DamakuXmlDTag {
+                p: format!(
+                    "{},{},{},{},{},{},{},{}",
+                    elem.progress / 1000,
+                    elem.mode,
+                    elem.fontsize,
+                    elem.color,
+                    elem.ctime,
+                    elem.pool,
+                    elem.mid_hash.clone(),
+                    elem.id_str.clone(),
+                ),
+                body: Some(elem.content.clone()),
+            })
+            .collect();
+
+        let i_tag = DanmakuXmlITag { chatid: cid, elems };
+
+        let xml = yaserde::ser::to_string(&i_tag).map_err(|e| anyhow!(e))?;
+
+        Ok(xml)
+    }
 }

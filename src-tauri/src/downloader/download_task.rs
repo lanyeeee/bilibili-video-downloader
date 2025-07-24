@@ -17,10 +17,11 @@ use tokio::{
 };
 
 use crate::{
+    danmaku_xml_to_ass::xml_to_ass,
     events::DownloadEvent,
     extensions::{AnyhowErrorToStringChain, AppHandleExt},
     types::create_download_task_params::CreateDownloadTaskParams,
-    utils::{self},
+    utils::{self, ToXml},
 };
 
 use super::{download_progress::DownloadProgress, download_task_state::DownloadTaskState};
@@ -301,6 +302,13 @@ impl DownloadTask {
                 .await
                 .context(format!("{ids_string} `{filename}`合并视频和音频失败"))?;
             tracing::debug!("{ids_string} `{filename}`视频和音频合并完成");
+        }
+
+        if !progress.danmaku_task.is_completed() {
+            self.download_danmaku(&progress)
+                .await
+                .context(format!("{ids_string} `{filename}`下载弹幕失败"))?;
+            tracing::debug!("{ids_string} `{filename}`弹幕下载完成");
         }
 
         let completed_ts = SystemTime::now()
@@ -616,6 +624,46 @@ impl DownloadTask {
         ))?;
 
         self.update_progress(|p| p.merge_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn download_danmaku(&self, progress: &DownloadProgress) -> anyhow::Result<()> {
+        let (aid, cid, duration) = (progress.aid, progress.cid, progress.duration);
+        let danmaku_task = &progress.danmaku_task;
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let bili_client = self.app.get_bili_client();
+        let replies = bili_client
+            .get_danmaku(aid, cid, duration)
+            .await
+            .context("获取弹幕失败")?;
+
+        let xml = replies.to_xml(cid).context("将弹幕转换为XML失败")?;
+
+        if danmaku_task.xml_selected {
+            let xml_path = episode_dir.join(format!("{filename}.弹幕.xml"));
+            std::fs::write(&xml_path, &xml)
+                .context(format!("保存弹幕XML到`{}`失败", xml_path.display()))?;
+        }
+
+        if danmaku_task.ass_selected {
+            let config = self.app.get_config().read().danmaku_config.clone();
+            let ass_path = episode_dir.join(format!("{filename}.弹幕.ass"));
+            let ass_file = File::create(&ass_path)
+                .context(format!("创建弹幕ASS文件`{}`失败", ass_path.display()))?;
+            let title = filename.to_string();
+            xml_to_ass(&xml, ass_file, title, config).context("将弹幕XML转换为ASS失败")?;
+        }
+
+        if danmaku_task.json_selected {
+            let json_path = episode_dir.join(format!("{filename}.弹幕.json"));
+            let json_string = serde_json::to_string(&replies).context("将弹幕转换为JSON失败")?;
+            std::fs::write(&json_path, json_string)
+                .context(format!("保存弹幕JSON到`{}`失败", json_path.display()))?;
+        }
+
+        self.update_progress(|p| p.danmaku_task.completed = true);
 
         Ok(())
     }

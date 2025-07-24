@@ -1,6 +1,7 @@
 mod bili_client;
 mod commands;
 mod config;
+mod danmaku_xml_to_ass;
 mod downloader;
 mod errors;
 mod events;
@@ -8,6 +9,9 @@ mod extensions;
 mod logger;
 mod types;
 mod utils;
+mod protobuf {
+    include!("./bilibili.community.service.dm.v1.rs");
+}
 
 use anyhow::Context;
 use commands::*;

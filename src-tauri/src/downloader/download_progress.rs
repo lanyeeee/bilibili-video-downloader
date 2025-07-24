@@ -11,7 +11,10 @@ use uuid::Uuid;
 
 use crate::{
     config::Config,
-    downloader::tasks::{audio_task::AudioTask, merge_task::MergeTask, video_task::VideoTask},
+    downloader::tasks::{
+        audio_task::AudioTask, danmaku_task::DanmakuTask, merge_task::MergeTask,
+        video_task::VideoTask,
+    },
     extensions::AppHandleExt,
     types::{
         audio_quality::AudioQuality,
@@ -49,6 +52,7 @@ pub struct DownloadProgress {
     pub video_task: VideoTask,
     pub audio_task: AudioTask,
     pub merge_task: MergeTask,
+    pub danmaku_task: DanmakuTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
 }
@@ -116,6 +120,7 @@ impl DownloadProgress {
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            danmaku_task: tasks.danmaku,
             create_ts,
             completed_ts: None,
         };
@@ -162,6 +167,7 @@ impl DownloadProgress {
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            danmaku_task: tasks.danmaku,
             create_ts,
             completed_ts: None,
         };
@@ -297,12 +303,14 @@ impl DownloadProgress {
         self.video_task.is_completed()
             && self.audio_task.is_completed()
             && self.merge_task.is_completed()
+            && self.danmaku_task.is_completed()
     }
 
     pub fn mark_uncompleted(&mut self) {
         self.video_task.mark_uncompleted();
         self.audio_task.mark_uncompleted();
         self.merge_task.completed = false;
+        self.danmaku_task.completed = false;
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -351,6 +359,7 @@ fn create_normal_progresses_for_single(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            danmaku_task: tasks.danmaku,
             create_ts,
             completed_ts: None,
         };
@@ -386,6 +395,7 @@ fn create_normal_progresses_for_single(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            danmaku_task: tasks.danmaku,
             create_ts,
             completed_ts: None,
         };
@@ -421,6 +431,7 @@ fn create_normal_progresses_for_single(
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
             merge_task: tasks.merge.clone(),
+            danmaku_task: tasks.danmaku.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -488,6 +499,7 @@ fn create_normal_progresses_for_season(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            danmaku_task: tasks.danmaku,
             create_ts,
             completed_ts: None,
         };
@@ -523,6 +535,7 @@ fn create_normal_progresses_for_season(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            danmaku_task: tasks.danmaku,
             create_ts,
             completed_ts: None,
         };
@@ -559,6 +572,7 @@ fn create_normal_progresses_for_season(
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
             merge_task: tasks.merge.clone(),
+            danmaku_task: tasks.danmaku.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -576,6 +590,7 @@ struct Tasks {
     video: VideoTask,
     audio: AudioTask,
     merge: MergeTask,
+    danmaku: DanmakuTask,
 }
 
 impl Tasks {
@@ -604,10 +619,18 @@ impl Tasks {
             completed: false,
         };
 
+        let danmaku = DanmakuTask {
+            xml_selected: config.download_xml_danmaku,
+            ass_selected: config.download_ass_danmaku,
+            json_selected: config.download_json_danmaku,
+            completed: false,
+        };
+
         Self {
             video,
             audio,
             merge,
+            danmaku,
         }
     }
 }
