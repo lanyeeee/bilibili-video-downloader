@@ -24,8 +24,8 @@ use crate::{
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
         normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo,
-        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, user_info::UserInfo,
-        watch_later_info::WatchLaterInfo,
+        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, subtitle::Subtitle,
+        user_info::UserInfo, watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -668,6 +668,21 @@ impl BiliClient {
         }
 
         Ok(replies)
+    }
+
+    pub async fn get_subtitle(&self, url: &str) -> anyhow::Result<Subtitle> {
+        let request = self.api_client.read().get(url);
+        let http_resp = request.send().await?;
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为Subtitle
+        let subtitle: Subtitle =
+            serde_json::from_str(&body).context(format!("将body解析为Subtitle失败: {body}"))?;
+
+        Ok(subtitle)
     }
 
     fn get_cookie(&self) -> String {

@@ -162,3 +162,17 @@ impl ToXml for Vec<DmSegMobileReply> {
         Ok(xml)
     }
 }
+
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_sign_loss)]
+#[allow(clippy::similar_names)]
+pub fn seconds_to_srt_time(seconds: f64) -> String {
+    let total_ms = (seconds * 1000.0).round() as u64;
+    let ms = total_ms % 1000;
+    let total_s = total_ms / 1000;
+    let s = total_s % 60;
+    let total_m = total_s / 60;
+    let m = total_m % 60;
+    let h = total_m / 60;
+    format!("{h:02}:{m:02}:{s:02},{ms:03}")
+}

@@ -311,6 +311,13 @@ impl DownloadTask {
             tracing::debug!("{ids_string} `{filename}`弹幕下载完成");
         }
 
+        if !progress.subtitle_task.is_completed() {
+            self.download_subtitle(&progress)
+                .await
+                .context(format!("{ids_string} `{filename}`下载字幕失败"))?;
+            tracing::debug!("{ids_string} `{filename}`字幕下载完成");
+        }
+
         let completed_ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs())
@@ -664,6 +671,52 @@ impl DownloadTask {
         }
 
         self.update_progress(|p| p.danmaku_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn download_subtitle(&self, progress: &DownloadProgress) -> anyhow::Result<()> {
+        use std::fmt::Write;
+
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let (aid, cid) = {
+            let progress = self.progress.read();
+            (progress.aid, progress.cid)
+        };
+
+        let bili_client = self.app.get_bili_client();
+        let player_info = bili_client
+            .get_player_info(aid, cid)
+            .await
+            .context("获取播放器信息失败")?;
+
+        let subtitle = &player_info.subtitle;
+        for subtitle_detail in &subtitle.subtitles {
+            let url = format!("http:{}", subtitle_detail.subtitle_url);
+            let subtitle = bili_client
+                .get_subtitle(&url)
+                .await
+                .context("获取字幕失败")?;
+
+            let mut srt_content = String::new();
+            for (i, b) in subtitle.body.iter().enumerate() {
+                let index = i + 1;
+                let content = &b.content;
+                let start_time = utils::seconds_to_srt_time(b.from);
+                let end_time = utils::seconds_to_srt_time(b.to);
+                let _ = writeln!(
+                    &mut srt_content,
+                    "{index}\n{start_time} --> {end_time}\n{content}\n"
+                );
+            }
+
+            let lan = utils::filename_filter(&subtitle_detail.lan);
+            let save_path = episode_dir.join(format!("{filename}.{lan}.srt"));
+            std::fs::write(save_path, srt_content)?;
+        }
+
+        self.update_progress(|p| p.subtitle_task.completed = true);
 
         Ok(())
     }
