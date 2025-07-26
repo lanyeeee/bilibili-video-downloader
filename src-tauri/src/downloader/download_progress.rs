@@ -12,8 +12,8 @@ use uuid::Uuid;
 use crate::{
     config::Config,
     downloader::tasks::{
-        audio_task::AudioTask, danmaku_task::DanmakuTask, merge_task::MergeTask,
-        subtitle_task::SubtitleTask, video_task::VideoTask,
+        audio_task::AudioTask, cover_task::CoverTask, danmaku_task::DanmakuTask,
+        merge_task::MergeTask, subtitle_task::SubtitleTask, video_task::VideoTask,
     },
     extensions::AppHandleExt,
     types::{
@@ -54,6 +54,7 @@ pub struct DownloadProgress {
     pub merge_task: MergeTask,
     pub subtitle_task: SubtitleTask,
     pub danmaku_task: DanmakuTask,
+    pub cover_task: CoverTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
 }
@@ -123,6 +124,7 @@ impl DownloadProgress {
             merge_task: tasks.merge,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
+            cover_task: tasks.cover,
             create_ts,
             completed_ts: None,
         };
@@ -171,6 +173,7 @@ impl DownloadProgress {
             merge_task: tasks.merge,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
+            cover_task: tasks.cover,
             create_ts,
             completed_ts: None,
         };
@@ -308,6 +311,7 @@ impl DownloadProgress {
             && self.merge_task.is_completed()
             && self.danmaku_task.is_completed()
             && self.subtitle_task.is_completed()
+            && self.cover_task.is_completed()
     }
 
     pub fn mark_uncompleted(&mut self) {
@@ -316,6 +320,7 @@ impl DownloadProgress {
         self.merge_task.completed = false;
         self.danmaku_task.completed = false;
         self.subtitle_task.completed = false;
+        self.cover_task.completed = false;
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -366,6 +371,7 @@ fn create_normal_progresses_for_single(
             merge_task: tasks.merge,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
+            cover_task: tasks.cover,
             create_ts,
             completed_ts: None,
         };
@@ -403,6 +409,7 @@ fn create_normal_progresses_for_single(
             merge_task: tasks.merge,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
+            cover_task: tasks.cover,
             create_ts,
             completed_ts: None,
         };
@@ -440,6 +447,7 @@ fn create_normal_progresses_for_single(
             merge_task: tasks.merge.clone(),
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
+            cover_task: tasks.cover.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -509,6 +517,7 @@ fn create_normal_progresses_for_season(
             merge_task: tasks.merge,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
+            cover_task: tasks.cover,
             create_ts,
             completed_ts: None,
         };
@@ -546,6 +555,7 @@ fn create_normal_progresses_for_season(
             merge_task: tasks.merge,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
+            cover_task: tasks.cover,
             create_ts,
             completed_ts: None,
         };
@@ -584,6 +594,7 @@ fn create_normal_progresses_for_season(
             merge_task: tasks.merge.clone(),
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
+            cover_task: tasks.cover.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -603,10 +614,11 @@ struct Tasks {
     merge: MergeTask,
     danmaku: DanmakuTask,
     subtitle: SubtitleTask,
+    cover: CoverTask,
 }
 
 impl Tasks {
-    fn new(config: &Config, _cover_url: &str) -> Self {
+    fn new(config: &Config, cover_url: &str) -> Self {
         let video = VideoTask {
             selected: config.download_video,
             url: String::new(),
@@ -643,12 +655,19 @@ impl Tasks {
             completed: false,
         };
 
+        let cover = CoverTask {
+            selected: config.download_cover,
+            url: cover_url.to_string(),
+            completed: false,
+        };
+
         Self {
             video,
             audio,
             merge,
             danmaku,
             subtitle,
+            cover,
         }
     }
 }

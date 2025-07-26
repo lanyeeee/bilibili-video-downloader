@@ -318,6 +318,13 @@ impl DownloadTask {
             tracing::debug!("{ids_string} `{filename}`字幕下载完成");
         }
 
+        if !progress.cover_task.is_completed() {
+            self.download_cover(&progress)
+                .await
+                .context(format!("{ids_string} `{filename}`下载封面失败"))?;
+            tracing::debug!("{ids_string} `{filename}`封面下载完成");
+        }
+
         let completed_ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs())
@@ -717,6 +724,24 @@ impl DownloadTask {
         }
 
         self.update_progress(|p| p.subtitle_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn download_cover(&self, progress: &DownloadProgress) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let bili_client = self.app.get_bili_client();
+        let (cover_data, ext) = bili_client
+            .get_cover_data_and_ext(&progress.cover_task.url)
+            .await
+            .context("获取封面失败")?;
+
+        let save_path = episode_dir.join(format!("{filename}.{ext}"));
+        std::fs::write(&save_path, cover_data)
+            .context(format!("保存封面到`{}`失败", save_path.display()))?;
+
+        self.update_progress(|p| p.cover_task.completed = true);
 
         Ok(())
     }

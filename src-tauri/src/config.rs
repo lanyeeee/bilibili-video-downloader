@@ -9,6 +9,7 @@ use crate::danmaku_xml_to_ass::canvas::CanvasConfig;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[allow(clippy::struct_excessive_bools)]
+#[allow(clippy::struct_field_names)]
 pub struct Config {
     pub download_dir: PathBuf,
     pub enable_file_logger: bool,
@@ -23,6 +24,7 @@ pub struct Config {
     pub download_ass_danmaku: bool,
     pub download_json_danmaku: bool,
     pub download_subtitle: bool,
+    pub download_cover: bool,
     pub dir_fmt: String,
     pub dir_fmt_for_part: String,
     pub time_fmt: String,
@@ -101,6 +103,7 @@ impl Config {
             download_ass_danmaku: true,
             download_json_danmaku: true,
             download_subtitle: true,
+            download_cover: true,
             dir_fmt: "{collection_title}/{episode_title}".to_string(),
             dir_fmt_for_part: DEFAULT_FMT_FOR_PART.to_string(),
             time_fmt: "%Y-%m-%d_%H-%M-%S".to_string(),

@@ -685,6 +685,36 @@ impl BiliClient {
         Ok(subtitle)
     }
 
+    pub async fn get_cover_data_and_ext(&self, url: &str) -> anyhow::Result<(Bytes, String)> {
+        let request = self.api_client.read().get(url);
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        if status != StatusCode::OK {
+            let body = http_resp.text().await?;
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+
+        let content_type = http_resp
+            .headers()
+            .get("Content-Type")
+            .context("缺少 Content-Type 响应头")?
+            .to_str()
+            .context("Content-Type 响应头无法转换为字符串")?
+            .to_string();
+
+        let ext = match content_type.as_str() {
+            "image/png" => "png",
+            "image/webp" => "webp",
+            "image/avif" => "avif",
+            _ => "jpg",
+        };
+
+        let bytes = http_resp.bytes().await?;
+
+        Ok((bytes, ext.to_string()))
+    }
+
     fn get_cookie(&self) -> String {
         let sessdata = self.app.get_config().read().sessdata.clone();
         format!("SESSDATA={sessdata}")
