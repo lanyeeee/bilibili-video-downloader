@@ -17,10 +17,17 @@ use tokio::{
 };
 
 use crate::{
+    bili_client::BiliClient,
     danmaku_xml_to_ass::xml_to_ass,
+    downloader::episode_type::EpisodeType,
     events::DownloadEvent,
     extensions::{AnyhowErrorToStringChain, AppHandleExt},
-    types::create_download_task_params::CreateDownloadTaskParams,
+    types::{
+        bangumi_info::BangumiInfo, cheese_info::CheeseInfo,
+        create_download_task_params::CreateDownloadTaskParams,
+        get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
+        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
+    },
     utils::{self, ToXml},
 };
 
@@ -323,6 +330,15 @@ impl DownloadTask {
                 .await
                 .context(format!("{ids_string} `{filename}`下载封面失败"))?;
             tracing::debug!("{ids_string} `{filename}`封面下载完成");
+        }
+
+        let mut episode_info = None;
+
+        if !progress.nfo_task.is_completed() {
+            self.download_nfo(&progress, &mut episode_info)
+                .await
+                .context(format!("{ids_string} `{filename}`下载NFO失败"))?;
+            tracing::debug!("{ids_string} `{filename}`NFO下载完成");
         }
 
         let completed_ts = SystemTime::now()
@@ -746,6 +762,116 @@ impl DownloadTask {
         Ok(())
     }
 
+    async fn download_nfo(
+        &self,
+        progress: &DownloadProgress,
+        episode_info: &mut Option<EpisodeInfo>,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+        let (aid, ep_id, episode_type) = (progress.aid, progress.ep_id, progress.episode_type);
+
+        let bili_client = self.app.get_bili_client();
+
+        let episode_info = episode_info
+            .get_or_init(&bili_client, aid, ep_id, episode_type)
+            .await?;
+
+        match episode_info {
+            EpisodeInfo::Normal(info) => {
+                let tags = bili_client
+                    .get_tags(aid)
+                    .await
+                    .context("获取视频标签失败")?;
+                let movie_nfo = info
+                    .to_movie_nfo(tags)
+                    .context("将普通视频信息转换为movie NFO失败")?;
+                let nfo_path = episode_dir.join(format!("{filename}.nfo"));
+                std::fs::write(&nfo_path, movie_nfo)
+                    .context(format!("保存普通视频NFO到`{}`失败", nfo_path.display()))?;
+
+                if let Some(ugc_season) = &info.ugc_season {
+                    let collection_cover = &ugc_season.cover;
+                    let (cover_data, ext) = bili_client
+                        .get_cover_data_and_ext(collection_cover)
+                        .await
+                        .context("获取普通视频合集封面失败")?;
+                    let cover_path = episode_dir.join(format!("poster.{ext}"));
+                    std::fs::write(&cover_path, cover_data).context(format!(
+                        "保存普通视频合集封面到`{}`失败",
+                        cover_path.display()
+                    ))?;
+                }
+            }
+            EpisodeInfo::Bangumi(info, ep_id) => {
+                let tvshow_nfo = info
+                    .to_tvshow_nfo()
+                    .context("将番剧信息转换为tvshow NFO失败")?;
+                let tvshow_nfo_path = episode_dir.join("tvshow.nfo");
+                std::fs::write(&tvshow_nfo_path, tvshow_nfo)
+                    .context(format!("保存番剧NFO到`{}`失败", tvshow_nfo_path.display()))?;
+
+                let episode_details_nfo = info
+                    .to_episode_details_nfo(*ep_id)
+                    .context("将番剧信息转换为episodedetail NFO失败")?;
+                let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
+                std::fs::write(&episode_details_nfo_path, episode_details_nfo).context(format!(
+                    "保存番剧NFO到`{}`失败",
+                    episode_details_nfo_path.display()
+                ))?;
+
+                let poster_url = &info.cover;
+                let (poster_data, ext) = bili_client
+                    .get_cover_data_and_ext(poster_url)
+                    .await
+                    .context("获取番剧封面失败")?;
+                let poster_path = episode_dir.join(format!("poster.{ext}"));
+                std::fs::write(&poster_path, poster_data)
+                    .context(format!("保存番剧封面到`{}`失败", poster_path.display()))?;
+
+                let fanart_url = &info.bkg_cover;
+                if !fanart_url.is_empty() {
+                    let (fanart_data, ext) = bili_client
+                        .get_cover_data_and_ext(fanart_url)
+                        .await
+                        .context("获取番剧封面失败")?;
+                    let fanart_path = episode_dir.join(format!("fanart.{ext}"));
+                    std::fs::write(&fanart_path, fanart_data)
+                        .context(format!("保存番剧封面到`{}`失败", fanart_path.display()))?;
+                }
+            }
+            EpisodeInfo::Cheese(info, ep_id) => {
+                let tvshow_nfo = info
+                    .to_tvshow_nfo()
+                    .context("将课程信息转换为tvshow NFO失败")?;
+                let tvshow_nfo_path = episode_dir.join("tvshow.nfo");
+                std::fs::write(&tvshow_nfo_path, tvshow_nfo)
+                    .context(format!("保存课程NFO到`{}`失败", tvshow_nfo_path.display()))?;
+
+                let episode_details_nfo = info
+                    .to_episode_details_nfo(*ep_id)
+                    .context("将课程信息转换为episodedetail NFO失败")?;
+                let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
+                std::fs::write(&episode_details_nfo_path, episode_details_nfo).context(format!(
+                    "保存课程NFO到`{}`失败",
+                    episode_details_nfo_path.display()
+                ))?;
+
+                let poster_url = &info.cover;
+                let (poster_data, ext) = bili_client
+                    .get_cover_data_and_ext(poster_url)
+                    .await
+                    .context("获取课程封面失败")?;
+                let poster_path = episode_dir.join(format!("poster.{ext}"));
+                std::fs::write(&poster_path, poster_data)
+                    .context(format!("保存课程封面到`{}`失败", poster_path.display()))?;
+            }
+        }
+
+        self.update_progress(|p| p.nfo_task.completed = true);
+
+        Ok(())
+    }
+
     async fn sleep_between_task(&self) {
         let task_id = &self.task_id;
         let mut remaining_sec = self.app.get_config().read().task_download_interval_sec;
@@ -976,5 +1102,64 @@ impl DownloadChunkTask {
         };
 
         Ok(())
+    }
+}
+
+#[derive(Clone)]
+enum EpisodeInfo {
+    Normal(NormalInfo),
+    Bangumi(BangumiInfo, i64),
+    Cheese(CheeseInfo, i64),
+}
+
+trait GetOrInitEpisodeInfo {
+    async fn get_or_init<'a>(
+        &'a mut self,
+        bili_client: &BiliClient,
+        aid: i64,
+        ep_id: Option<i64>,
+        episode_type: EpisodeType,
+    ) -> anyhow::Result<&'a mut EpisodeInfo>;
+}
+
+impl GetOrInitEpisodeInfo for Option<EpisodeInfo> {
+    async fn get_or_init<'a>(
+        &'a mut self,
+        bili_client: &BiliClient,
+        aid: i64,
+        ep_id: Option<i64>,
+        episode_type: EpisodeType,
+    ) -> anyhow::Result<&'a mut EpisodeInfo> {
+        if let Some(info) = self {
+            return Ok(info);
+        }
+
+        let new_info = match episode_type {
+            EpisodeType::Normal => {
+                let info = bili_client
+                    .get_normal_info(GetNormalInfoParams::Aid(aid))
+                    .await
+                    .context("获取普通视频信息失败")?;
+                EpisodeInfo::Normal(info)
+            }
+            EpisodeType::Bangumi => {
+                let ep_id = ep_id.context("ep_id为None")?;
+                let info = bili_client
+                    .get_bangumi_info(GetBangumiInfoParams::EpId(ep_id))
+                    .await
+                    .context("获取番剧信息失败")?;
+                EpisodeInfo::Bangumi(info, ep_id)
+            }
+            EpisodeType::Cheese => {
+                let ep_id = ep_id.context("ep_id为None")?;
+                let info = bili_client
+                    .get_cheese_info(GetCheeseInfoParams::EpId(ep_id))
+                    .await
+                    .context("获取课程信息失败")?;
+                EpisodeInfo::Cheese(info, ep_id)
+            }
+        };
+
+        Ok(self.insert(new_info))
     }
 }

@@ -13,7 +13,8 @@ use crate::{
     config::Config,
     downloader::tasks::{
         audio_task::AudioTask, cover_task::CoverTask, danmaku_task::DanmakuTask,
-        merge_task::MergeTask, subtitle_task::SubtitleTask, video_task::VideoTask,
+        merge_task::MergeTask, nfo_task::NfoTask, subtitle_task::SubtitleTask,
+        video_task::VideoTask,
     },
     extensions::AppHandleExt,
     types::{
@@ -55,6 +56,7 @@ pub struct DownloadProgress {
     pub subtitle_task: SubtitleTask,
     pub danmaku_task: DanmakuTask,
     pub cover_task: CoverTask,
+    pub nfo_task: NfoTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
 }
@@ -125,6 +127,7 @@ impl DownloadProgress {
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
+            nfo_task: tasks.nfo,
             create_ts,
             completed_ts: None,
         };
@@ -174,6 +177,7 @@ impl DownloadProgress {
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
+            nfo_task: tasks.nfo,
             create_ts,
             completed_ts: None,
         };
@@ -312,6 +316,7 @@ impl DownloadProgress {
             && self.danmaku_task.is_completed()
             && self.subtitle_task.is_completed()
             && self.cover_task.is_completed()
+            && self.nfo_task.is_completed()
     }
 
     pub fn mark_uncompleted(&mut self) {
@@ -321,6 +326,7 @@ impl DownloadProgress {
         self.danmaku_task.completed = false;
         self.subtitle_task.completed = false;
         self.cover_task.completed = false;
+        self.nfo_task.completed = false;
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -372,6 +378,7 @@ fn create_normal_progresses_for_single(
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
+            nfo_task: tasks.nfo,
             create_ts,
             completed_ts: None,
         };
@@ -410,6 +417,7 @@ fn create_normal_progresses_for_single(
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
+            nfo_task: tasks.nfo,
             create_ts,
             completed_ts: None,
         };
@@ -448,6 +456,7 @@ fn create_normal_progresses_for_single(
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
+            nfo_task: tasks.nfo.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -518,6 +527,7 @@ fn create_normal_progresses_for_season(
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
+            nfo_task: tasks.nfo,
             create_ts,
             completed_ts: None,
         };
@@ -556,6 +566,7 @@ fn create_normal_progresses_for_season(
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
+            nfo_task: tasks.nfo,
             create_ts,
             completed_ts: None,
         };
@@ -595,6 +606,7 @@ fn create_normal_progresses_for_season(
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
+            nfo_task: tasks.nfo.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -615,6 +627,7 @@ struct Tasks {
     danmaku: DanmakuTask,
     subtitle: SubtitleTask,
     cover: CoverTask,
+    nfo: NfoTask,
 }
 
 impl Tasks {
@@ -661,6 +674,11 @@ impl Tasks {
             completed: false,
         };
 
+        let nfo = NfoTask {
+            selected: config.download_nfo,
+            completed: false,
+        };
+
         Self {
             video,
             audio,
@@ -668,6 +686,7 @@ impl Tasks {
             danmaku,
             subtitle,
             cover,
+            nfo,
         }
     }
 }
