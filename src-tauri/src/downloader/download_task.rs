@@ -341,6 +341,13 @@ impl DownloadTask {
             tracing::debug!("{ids_string} `{filename}`NFO下载完成");
         }
 
+        if !progress.json_task.is_completed() {
+            self.download_json(&progress, &mut episode_info)
+                .await
+                .context(format!("{ids_string} `{filename}`下载JSON元数据失败"))?;
+            tracing::debug!("{ids_string} `{filename}`JSON元数据下载完成");
+        }
+
         let completed_ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs())
@@ -868,6 +875,40 @@ impl DownloadTask {
         }
 
         self.update_progress(|p| p.nfo_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn download_json(
+        &self,
+        progress: &DownloadProgress,
+        episode_info: &mut Option<EpisodeInfo>,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+        let (aid, ep_id, episode_type) = (progress.aid, progress.ep_id, progress.episode_type);
+
+        let bili_client = self.app.get_bili_client();
+
+        let episode_info = episode_info
+            .get_or_init(&bili_client, aid, ep_id, episode_type)
+            .await?;
+
+        let json_path = episode_dir.join(format!("{filename}-元数据.json"));
+        let json_string = match episode_info {
+            EpisodeInfo::Normal(info) => {
+                serde_json::to_string(&info).context("将普通视频信息转换为JSON失败")?
+            }
+            EpisodeInfo::Bangumi(info, _ep_id) => {
+                serde_json::to_string(&info).context("将番剧信息转换为JSON失败")?
+            }
+            EpisodeInfo::Cheese(info, _ep_id) => {
+                serde_json::to_string(&info).context("将课程信息转换为JSON失败")?
+            }
+        };
+        std::fs::write(&json_path, json_string)
+            .context(format!("保存JSON到`{}`失败", json_path.display()))?;
+
+        self.update_progress(|p| p.json_task.completed = true);
 
         Ok(())
     }

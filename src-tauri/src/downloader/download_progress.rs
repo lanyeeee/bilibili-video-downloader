@@ -13,7 +13,7 @@ use crate::{
     config::Config,
     downloader::tasks::{
         audio_task::AudioTask, cover_task::CoverTask, danmaku_task::DanmakuTask,
-        merge_task::MergeTask, nfo_task::NfoTask, subtitle_task::SubtitleTask,
+        json_task::JsonTask, merge_task::MergeTask, nfo_task::NfoTask, subtitle_task::SubtitleTask,
         video_task::VideoTask,
     },
     extensions::AppHandleExt,
@@ -57,6 +57,7 @@ pub struct DownloadProgress {
     pub danmaku_task: DanmakuTask,
     pub cover_task: CoverTask,
     pub nfo_task: NfoTask,
+    pub json_task: JsonTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
 }
@@ -128,6 +129,7 @@ impl DownloadProgress {
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
             nfo_task: tasks.nfo,
+            json_task: tasks.json,
             create_ts,
             completed_ts: None,
         };
@@ -178,6 +180,7 @@ impl DownloadProgress {
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
             nfo_task: tasks.nfo,
+            json_task: tasks.json,
             create_ts,
             completed_ts: None,
         };
@@ -317,6 +320,7 @@ impl DownloadProgress {
             && self.subtitle_task.is_completed()
             && self.cover_task.is_completed()
             && self.nfo_task.is_completed()
+            && self.json_task.is_completed()
     }
 
     pub fn mark_uncompleted(&mut self) {
@@ -327,6 +331,7 @@ impl DownloadProgress {
         self.subtitle_task.completed = false;
         self.cover_task.completed = false;
         self.nfo_task.completed = false;
+        self.json_task.completed = false;
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -379,6 +384,7 @@ fn create_normal_progresses_for_single(
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
             nfo_task: tasks.nfo,
+            json_task: tasks.json,
             create_ts,
             completed_ts: None,
         };
@@ -418,6 +424,7 @@ fn create_normal_progresses_for_single(
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
             nfo_task: tasks.nfo,
+            json_task: tasks.json,
             create_ts,
             completed_ts: None,
         };
@@ -457,6 +464,7 @@ fn create_normal_progresses_for_single(
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
             nfo_task: tasks.nfo.clone(),
+            json_task: tasks.json.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -528,6 +536,7 @@ fn create_normal_progresses_for_season(
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
             nfo_task: tasks.nfo,
+            json_task: tasks.json,
             create_ts,
             completed_ts: None,
         };
@@ -567,6 +576,7 @@ fn create_normal_progresses_for_season(
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
             nfo_task: tasks.nfo,
+            json_task: tasks.json,
             create_ts,
             completed_ts: None,
         };
@@ -607,6 +617,7 @@ fn create_normal_progresses_for_season(
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
             nfo_task: tasks.nfo.clone(),
+            json_task: tasks.json.clone(),
             create_ts,
             completed_ts: None,
         };
@@ -628,6 +639,7 @@ struct Tasks {
     subtitle: SubtitleTask,
     cover: CoverTask,
     nfo: NfoTask,
+    json: JsonTask,
 }
 
 impl Tasks {
@@ -679,6 +691,11 @@ impl Tasks {
             completed: false,
         };
 
+        let json = JsonTask {
+            selected: config.download_json,
+            completed: false,
+        };
+
         Self {
             video,
             audio,
@@ -687,6 +704,7 @@ impl Tasks {
             subtitle,
             cover,
             nfo,
+            json,
         }
     }
 }
