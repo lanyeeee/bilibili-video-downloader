@@ -49,6 +49,7 @@ prost = { version = "0.14.1" }
 yaserde = { version = "0.12.0", features = ["yaserde_derive"] }
 float-ord = { version = "0.3.2" }
 memchr = { version = "2.7.5" }
+md-5 = { version = "0.10.6" }
 
 [profile.release]
 strip = true

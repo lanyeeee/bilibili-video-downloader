@@ -11,9 +11,11 @@ use crate::{
         cheese_media_url::CheeseMediaUrl, create_download_task_params::CreateDownloadTaskParams,
         fav_folders::FavFolders, fav_info::FavInfo, get_bangumi_info_params::GetBangumiInfoParams,
         get_cheese_info_params::GetCheeseInfoParams, get_fav_info_params::GetFavInfoParams,
-        get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
+        get_normal_info_params::GetNormalInfoParams,
+        get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
         normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
-        qrcode_status::QrcodeStatus, user_info::UserInfo, watch_later_info::WatchLaterInfo,
+        qrcode_status::QrcodeStatus, user_info::UserInfo, user_video_info::UserVideoInfo,
+        watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -140,6 +142,20 @@ pub async fn get_cheese_info(
         .await
         .map_err(|err| CommandError::from("获取课程视频信息失败", err))?;
     Ok(cheese_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_user_video_info(
+    app: AppHandle,
+    params: GetUserVideoInfoParams,
+) -> CommandResult<UserVideoInfo> {
+    let bili_client = app.get_bili_client();
+    let user_video_info = bili_client
+        .get_user_video_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取用户视频信息失败", err))?;
+    Ok(user_video_info)
 }
 
 #[tauri::command(async)]

@@ -9,6 +9,7 @@ mod extensions;
 mod logger;
 mod types;
 mod utils;
+mod wbi;
 mod protobuf {
     include!("./bilibili.community.service.dm.v1.rs");
 }
@@ -42,6 +43,7 @@ pub fn run() {
             get_normal_info,
             get_bangumi_info,
             get_cheese_info,
+            get_user_video_info,
             get_normal_url,
             get_bangumi_url,
             get_cheese_url,

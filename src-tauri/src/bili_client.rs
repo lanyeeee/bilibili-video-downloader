@@ -23,9 +23,10 @@ use crate::{
         cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
-        normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo,
-        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, subtitle::Subtitle, tags::Tags,
-        user_info::UserInfo, watch_later_info::WatchLaterInfo,
+        get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
+        normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
+        qrcode_status::QrcodeStatus, subtitle::Subtitle, tags::Tags, user_info::UserInfo,
+        user_video_info::UserVideoInfo, watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -33,10 +34,10 @@ const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 const REFERRER: &str = "https://www.bilibili.com/";
 
 pub struct BiliClient {
-    app: AppHandle,
-    api_client: RwLock<ClientWithMiddleware>,
-    media_client: RwLock<ClientWithMiddleware>,
-    content_length_client: RwLock<Client>,
+    pub app: AppHandle,
+    pub api_client: RwLock<ClientWithMiddleware>,
+    pub media_client: RwLock<ClientWithMiddleware>,
+    pub content_length_client: RwLock<Client>,
 }
 
 impl BiliClient {
@@ -279,6 +280,49 @@ impl BiliClient {
             .context(format!("将data解析为CheeseInfo失败: {data_str}"))?;
 
         Ok(cheese_info)
+    }
+
+    pub async fn get_user_video_info(
+        &self,
+        params: GetUserVideoInfoParams,
+    ) -> anyhow::Result<UserVideoInfo> {
+        let mut params: Vec<(&str, String)> = vec![
+            ("pn", params.pn.to_string()),
+            ("ps", "42".to_string()),
+            ("mid", params.mid.to_string()),
+        ];
+        self.wbi(&mut params).await?;
+
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/x/space/wbi/arc/search")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为UserVideoInfo
+        let data_str = data.to_string();
+        let user_video_info: UserVideoInfo = serde_json::from_str(&data_str)
+            .context(format!("将data解析为UserVideoInfo失败: {data_str}"))?;
+
+        Ok(user_video_info)
     }
 
     pub async fn get_normal_url(&self, bvid: &str, cid: i64) -> anyhow::Result<NormalMediaUrl> {
@@ -750,7 +794,7 @@ impl BiliClient {
         Ok(tags)
     }
 
-    fn get_cookie(&self) -> String {
+    pub fn get_cookie(&self) -> String {
         let sessdata = self.app.get_config().read().sessdata.clone();
         format!("SESSDATA={sessdata}")
     }
