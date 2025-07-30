@@ -57,6 +57,7 @@ pub fn run() {
             delete_download_tasks,
             restart_download_tasks,
             restore_download_tasks,
+            search,
         ])
         .events(tauri_specta::collect_events![LogEvent, DownloadEvent]);
 

@@ -7,14 +7,30 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
-        cheese_media_url::CheeseMediaUrl, create_download_task_params::CreateDownloadTaskParams,
-        fav_folders::FavFolders, fav_info::FavInfo, get_bangumi_info_params::GetBangumiInfoParams,
-        get_cheese_info_params::GetCheeseInfoParams, get_fav_info_params::GetFavInfoParams,
+        bangumi_info::{BangumiInfo, EpInBangumi},
+        bangumi_media_url::BangumiMediaUrl,
+        cheese_info::CheeseInfo,
+        cheese_media_url::CheeseMediaUrl,
+        create_download_task_params::CreateDownloadTaskParams,
+        fav_folders::FavFolders,
+        fav_info::FavInfo,
+        get_bangumi_info_params::GetBangumiInfoParams,
+        get_cheese_info_params::GetCheeseInfoParams,
+        get_fav_info_params::GetFavInfoParams,
         get_normal_info_params::GetNormalInfoParams,
-        get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
-        normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
-        qrcode_status::QrcodeStatus, user_info::UserInfo, user_video_info::UserVideoInfo,
+        get_user_video_info_params::GetUserVideoInfoParams,
+        normal_info::NormalInfo,
+        normal_media_url::NormalMediaUrl,
+        player_info::PlayerInfo,
+        qrcode_data::QrcodeData,
+        qrcode_status::QrcodeStatus,
+        search_params::SearchParams,
+        search_result::{
+            BangumiSearchResult, CheeseSearchResult, FavSearchResult, NormalSearchResult,
+            SearchResult, UserVideoSearchResult,
+        },
+        user_info::UserInfo,
+        user_video_info::UserVideoInfo,
         watch_later_info::WatchLaterInfo,
     },
 };
@@ -290,4 +306,75 @@ pub fn restore_download_tasks(app: AppHandle) -> CommandResult<()> {
         .map_err(|err| CommandError::from("恢复下载任务失败", err))?;
     tracing::debug!("恢复下载任务成功");
     Ok(())
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn search(app: AppHandle, params: SearchParams) -> CommandResult<SearchResult> {
+    use SearchParams::{Bangumi, Cheese, Fav, Normal, UserVideo};
+    let bili_client = app.get_bili_client();
+    let search_result = match params {
+        Normal(params) => {
+            let info = bili_client
+                .get_normal_info(params)
+                .await
+                .map_err(|err| CommandError::from("获取普通视频信息失败", err))?;
+            SearchResult::Normal(NormalSearchResult(info))
+        }
+        Bangumi(GetBangumiInfoParams::EpId(ep_id)) => {
+            let info = bili_client
+                .get_bangumi_info(GetBangumiInfoParams::EpId(ep_id))
+                .await
+                .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
+            let episodes: Vec<&EpInBangumi> = info
+                .episodes
+                .iter()
+                .chain(
+                    info.section
+                        .iter()
+                        .flat_map(|sections| sections.iter())
+                        .flat_map(|section| section.episodes.iter()),
+                )
+                .collect();
+            let ep = episodes.iter().find(|ep| ep.id == ep_id).copied().cloned();
+            SearchResult::Bangumi(BangumiSearchResult { ep, info })
+        }
+        Bangumi(GetBangumiInfoParams::SeasonId(season_id)) => {
+            let info = bili_client
+                .get_bangumi_info(GetBangumiInfoParams::SeasonId(season_id))
+                .await
+                .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
+            SearchResult::Bangumi(BangumiSearchResult { ep: None, info })
+        }
+        Cheese(GetCheeseInfoParams::EpId(ep_id)) => {
+            let info = bili_client
+                .get_cheese_info(GetCheeseInfoParams::EpId(ep_id))
+                .await
+                .map_err(|err| CommandError::from("获取课程视频信息失败", err))?;
+            let ep = info.episodes.iter().find(|ep| ep.id == ep_id).cloned();
+            SearchResult::Cheese(CheeseSearchResult { ep, info })
+        }
+        Cheese(GetCheeseInfoParams::SeasonId(season_id)) => {
+            let info = bili_client
+                .get_cheese_info(GetCheeseInfoParams::SeasonId(season_id))
+                .await
+                .map_err(|err| CommandError::from("获取课程视频信息失败", err))?;
+            SearchResult::Cheese(CheeseSearchResult { ep: None, info })
+        }
+        UserVideo(params) => {
+            let info = bili_client
+                .get_user_video_info(params)
+                .await
+                .map_err(|err| CommandError::from("获取用户视频信息失败", err))?;
+            SearchResult::UserVideo(UserVideoSearchResult(info))
+        }
+        Fav(params) => {
+            let info = bili_client
+                .get_fav_info(params)
+                .await
+                .map_err(|err| CommandError::from("获取收藏夹内容失败", err))?;
+            SearchResult::Fav(FavSearchResult(info))
+        }
+    };
+    Ok(search_result)
 }
