@@ -30,6 +30,9 @@ pub struct Config {
     pub dir_fmt: String,
     pub dir_fmt_for_part: String,
     pub time_fmt: String,
+    pub proxy_mode: ProxyMode,
+    pub proxy_host: String,
+    pub proxy_port: u16,
     pub task_concurrency: usize,
     pub task_download_interval_sec: u64,
     pub chunk_concurrency: usize,
@@ -111,6 +114,9 @@ impl Config {
             dir_fmt: "{collection_title}/{episode_title}".to_string(),
             dir_fmt_for_part: DEFAULT_FMT_FOR_PART.to_string(),
             time_fmt: "%Y-%m-%d_%H-%M-%S".to_string(),
+            proxy_mode: ProxyMode::NoProxy,
+            proxy_host: "127.0.0.1".to_string(),
+            proxy_port: 7890,
             task_concurrency: 3,
             task_download_interval_sec: 0,
             chunk_concurrency: 16,
@@ -214,4 +220,12 @@ pub enum PreferAudioQuality {
     AudioDolby = 30250,
     #[serde(rename = "HiRes")]
     AudioHiRes = 30251,
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]
+pub enum ProxyMode {
+    #[default]
+    NoProxy,
+    System,
+    Custom,
 }

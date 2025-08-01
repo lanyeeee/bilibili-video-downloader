@@ -16,7 +16,8 @@ use tauri::{
 use tokio::task::JoinSet;
 
 use crate::{
-    extensions::AppHandleExt,
+    config::ProxyMode,
+    extensions::{AnyhowErrorToStringChain, AppHandleExt},
     protobuf::DmSegMobileReply,
     types::{
         bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
@@ -57,6 +58,15 @@ impl BiliClient {
             media_client,
             content_length_client,
         }
+    }
+
+    pub fn reload_client(&self) {
+        let api_client = create_api_client(&self.app);
+        *self.api_client.write() = api_client;
+        let media_client = create_media_client(&self.app);
+        *self.media_client.write() = media_client;
+        let content_length_client = create_content_length_client(&self.app);
+        *self.content_length_client.write() = content_length_client;
     }
 
     pub async fn generate_qrcode(&self) -> anyhow::Result<QrcodeData> {
@@ -800,7 +810,7 @@ impl BiliClient {
     }
 }
 
-fn create_api_client(_app: &AppHandle) -> ClientWithMiddleware {
+fn create_api_client(app: &AppHandle) -> ClientWithMiddleware {
     let retry_policy = ExponentialBackoff::builder()
         .base(1)
         .jitter(Jitter::Bounded)
@@ -811,6 +821,7 @@ fn create_api_client(_app: &AppHandle) -> ClientWithMiddleware {
     headers.insert("referer", HeaderValue::from_static(REFERRER));
 
     let client = reqwest::ClientBuilder::new()
+        .set_proxy(app, "api_client")
         .timeout(Duration::from_secs(3))
         .default_headers(headers)
         .build()
@@ -821,7 +832,7 @@ fn create_api_client(_app: &AppHandle) -> ClientWithMiddleware {
         .build()
 }
 
-fn create_media_client(_app: &AppHandle) -> ClientWithMiddleware {
+fn create_media_client(app: &AppHandle) -> ClientWithMiddleware {
     let retry_policy = ExponentialBackoff::builder()
         .base(1)
         .jitter(Jitter::Bounded)
@@ -832,6 +843,7 @@ fn create_media_client(_app: &AppHandle) -> ClientWithMiddleware {
     headers.insert("referer", HeaderValue::from_static(REFERRER));
 
     let client = reqwest::ClientBuilder::new()
+        .set_proxy(app, "media_client")
         .default_headers(headers)
         .build()
         .unwrap();
@@ -841,16 +853,47 @@ fn create_media_client(_app: &AppHandle) -> ClientWithMiddleware {
         .build()
 }
 
-fn create_content_length_client(_app: &AppHandle) -> Client {
+fn create_content_length_client(app: &AppHandle) -> Client {
     let mut headers = HeaderMap::new();
     headers.insert("user-agent", HeaderValue::from_static(USER_AGENT));
     headers.insert("referer", HeaderValue::from_static(REFERRER));
 
     reqwest::ClientBuilder::new()
+        .set_proxy(app, "content_length_client")
         .timeout(Duration::from_secs(5))
         .default_headers(headers)
         .build()
         .unwrap()
+}
+
+trait ClientBuilderExt {
+    fn set_proxy(self, app: &AppHandle, client_name: &str) -> Self;
+}
+
+impl ClientBuilderExt for reqwest::ClientBuilder {
+    fn set_proxy(self, app: &AppHandle, client_name: &str) -> reqwest::ClientBuilder {
+        let proxy_mode = app.get_config().read().proxy_mode;
+        match proxy_mode {
+            ProxyMode::NoProxy => self.no_proxy(),
+            ProxyMode::System => self,
+            ProxyMode::Custom => {
+                let config = app.get_config().inner().read();
+                let proxy_host = &config.proxy_host;
+                let proxy_port = &config.proxy_port;
+                let proxy_url = format!("http://{proxy_host}:{proxy_port}");
+
+                match reqwest::Proxy::all(&proxy_url).map_err(anyhow::Error::from) {
+                    Ok(proxy) => self.proxy(proxy),
+                    Err(err) => {
+                        let err_title = format!("{client_name}将`{proxy_url}`设为代理失败，将直连");
+                        let string_chain = err.to_string_chain();
+                        tracing::error!(err_title, message = string_chain);
+                        self.no_proxy()
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
