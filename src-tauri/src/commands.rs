@@ -1,5 +1,7 @@
+use anyhow::Context;
 use parking_lot::RwLock;
 use tauri::AppHandle;
+use tauri_plugin_opener::OpenerExt;
 
 use crate::{
     config::Config,
@@ -386,4 +388,33 @@ pub async fn search(app: AppHandle, params: SearchParams) -> CommandResult<Searc
         }
     };
     Ok(search_result)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn get_logs_dir_size(app: AppHandle) -> CommandResult<u64> {
+    let logs_dir = logger::logs_dir(&app)
+        .context("获取日志目录失败")
+        .map_err(|err| CommandError::from("获取日志目录大小失败", err))?;
+    let logs_dir_size = std::fs::read_dir(&logs_dir)
+        .context(format!("读取日志目录`{}`失败", logs_dir.display()))
+        .map_err(|err| CommandError::from("获取日志目录大小失败", err))?
+        .filter_map(Result::ok)
+        .filter_map(|entry| entry.metadata().ok())
+        .map(|metadata| metadata.len())
+        .sum::<u64>();
+    tracing::debug!("获取日志目录大小成功");
+    Ok(logs_dir_size)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn show_path_in_file_manager(app: AppHandle, path: &str) -> CommandResult<()> {
+    app.opener()
+        .reveal_item_in_dir(path)
+        .context(format!("在文件管理器中打开`{path}`失败"))
+        .map_err(|err| CommandError::from("在文件管理器中打开失败", err))?;
+    Ok(())
 }

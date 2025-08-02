@@ -161,6 +161,22 @@ async search(params: SearchParams) : Promise<Result<SearchResult, CommandError>>
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getLogsDirSize() : Promise<Result<number, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_logs_dir_size") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async showPathInFileManager(path: string) : Promise<Result<null, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("show_path_in_file_manager", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

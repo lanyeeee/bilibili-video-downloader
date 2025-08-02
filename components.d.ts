@@ -9,5 +9,19 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     NButton: typeof import('naive-ui')['NButton']
+    NCheckbox: typeof import('naive-ui')['NCheckbox']
+    NConfigProvider: typeof import('naive-ui')['NConfigProvider']
+    NDialog: typeof import('naive-ui')['NDialog']
+    NDialogProvider: typeof import('naive-ui')['NDialogProvider']
+    NIcon: typeof import('naive-ui')['NIcon']
+    NInput: typeof import('naive-ui')['NInput']
+    NInputGroup: typeof import('naive-ui')['NInputGroup']
+    NMessageProvider: typeof import('naive-ui')['NMessageProvider']
+    NModal: typeof import('naive-ui')['NModal']
+    NModalProvider: typeof import('naive-ui')['NModalProvider']
+    NNotificationProvider: typeof import('naive-ui')['NNotificationProvider']
+    NSelect: typeof import('naive-ui')['NSelect']
+    NTooltip: typeof import('naive-ui')['NTooltip']
+    NVirtualList: typeof import('naive-ui')['NVirtualList']
   }
 }

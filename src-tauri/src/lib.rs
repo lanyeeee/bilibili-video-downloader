@@ -58,6 +58,8 @@ pub fn run() {
             restart_download_tasks,
             restore_download_tasks,
             search,
+            get_logs_dir_size,
+            show_path_in_file_manager,
         ])
         .events(tauri_specta::collect_events![LogEvent, DownloadEvent]);
 
