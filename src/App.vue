@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="tsx">
 import { ref } from 'vue'
 import { commands } from './bindings.ts'
 
@@ -17,6 +17,15 @@ async function test() {
     const result2 = await commands.getQrcodeStatus(result.data.qrcode_key)
     console.log(result2)
   }
+}
+
+function TestComponent() {
+  return (
+    <div>
+      <h2>Test Component</h2>
+      <p>This is a test component.</p>
+    </div>
+  )
 }
 </script>
 
@@ -43,6 +52,7 @@ async function test() {
     </form>
     <p class="text-red">{{ greetMsg }}</p>
     <n-button @click="test">测试</n-button>
+    <TestComponent />
   </main>
 </template>
 
