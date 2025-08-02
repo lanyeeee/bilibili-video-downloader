@@ -31,6 +31,7 @@
     "typescript-eslint": "^8.36.0",
     "unocss": "^66.3.3",
     "vite": "^6.0.3",
+    "vite-plugin-vue-devtools": "^7.7.7",
     "vue-tsc": "^2.1.10"
   }
 }
