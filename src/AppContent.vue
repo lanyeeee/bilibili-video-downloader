@@ -2,12 +2,14 @@
 import { onMounted, ref } from 'vue'
 import { useStore } from './store.ts'
 import LogDialog from './dialogs/LogDialog.vue'
-import { PhClockCounterClockwise } from '@phosphor-icons/vue'
+import { PhClockCounterClockwise, PhInfo } from '@phosphor-icons/vue'
 import { commands } from './bindings.ts'
+import AboutDialog from './dialogs/AboutDialog.vue'
 
 const store = useStore()
 
 const logDialogShowing = ref<boolean>(false)
+const aboutDialogShowing = ref<boolean>(false)
 
 onMounted(async () => {
   // 屏蔽浏览器右键菜单
@@ -33,10 +35,22 @@ onMounted(async () => {
             </n-button>
           </template>
         </n-tooltip>
+
+        <n-tooltip placement="right" trigger="hover" :show-arrow="false">
+          关于
+          <template #trigger>
+            <n-button text class="py-1 px-2 mb-2" @click="aboutDialogShowing = true">
+              <n-icon size="28">
+                <PhInfo />
+              </n-icon>
+            </n-button>
+          </template>
+        </n-tooltip>
       </div>
     </div>
 
     <LogDialog v-model:showing="logDialogShowing" />
+    <AboutDialog v-model:showing="aboutDialogShowing" />
   </div>
 </template>
 
