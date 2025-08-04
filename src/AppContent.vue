@@ -5,6 +5,10 @@ import LogDialog from './dialogs/LogDialog.vue'
 import { PhClockCounterClockwise, PhInfo } from '@phosphor-icons/vue'
 import { commands } from './bindings.ts'
 import AboutDialog from './dialogs/AboutDialog.vue'
+import { platform } from '@tauri-apps/plugin-os'
+import TitleBar from './components/TitleBar.vue'
+
+const currentPlatform = platform()
 
 const store = useStore()
 
@@ -22,7 +26,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col">
+  <div
+    :class="[
+      'h-screen flex flex-col',
+      {
+        'box-border border border-solid border-gray-3': currentPlatform === 'linux',
+      },
+    ]">
+    <TitleBar />
     <div v-if="store.config !== undefined" class="h-full w-full flex overflow-hidden select-none">
       <div class="flex flex-col box-border p-1 border-r-solid border-r-1 border-r-[#DADADA] bg-[#F9F9F9] flex-shrink-0">
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">

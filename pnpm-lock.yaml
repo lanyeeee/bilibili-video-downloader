@@ -17,6 +17,9 @@ importers:
       '@tauri-apps/plugin-opener':
         specifier: ^2
         version: 2.4.0
+      '@tauri-apps/plugin-os':
+        specifier: ^2.3.0
+        version: 2.3.0
       naive-ui:
         specifier: ^2.42.0
         version: 2.42.0(vue@3.5.17(typescript@5.6.3))
@@ -704,6 +707,9 @@ packages:
 
   '@tauri-apps/plugin-opener@2.4.0':
     resolution: {integrity: sha512-43VyN8JJtvKWJY72WI/KNZszTpDpzHULFxQs0CJBIYUdCRowQ6Q1feWTDb979N7nldqSuDOaBupZ6wz2nvuWwQ==}
+
+  '@tauri-apps/plugin-os@2.3.0':
+    resolution: {integrity: sha512-dm3bDsMuUngpIQdJ1jaMkMfyQpHyDcaTIKTFaAMHoKeUd+Is3UHO2uzhElr6ZZkfytIIyQtSVnCWdW2Kc58f3g==}
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
@@ -2524,6 +2530,10 @@ snapshots:
       '@tauri-apps/cli-win32-x64-msvc': 2.6.2
 
   '@tauri-apps/plugin-opener@2.4.0':
+    dependencies:
+      '@tauri-apps/api': 2.6.0
+
+  '@tauri-apps/plugin-os@2.3.0':
     dependencies:
       '@tauri-apps/api': 2.6.0
 

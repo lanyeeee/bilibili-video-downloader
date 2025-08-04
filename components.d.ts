@@ -24,5 +24,6 @@ declare module 'vue' {
     NSelect: typeof import('naive-ui')['NSelect']
     NTooltip: typeof import('naive-ui')['NTooltip']
     NVirtualList: typeof import('naive-ui')['NVirtualList']
+    TitleBar: typeof import('./src/components/TitleBar.vue')['default']
   }
 }

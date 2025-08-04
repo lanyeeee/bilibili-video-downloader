@@ -290,6 +290,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tauri-plugin-os",
  "tauri-specta",
  "tokio",
  "tracing",
@@ -1317,6 +1318,16 @@ checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
 dependencies = [
  "typenum",
  "version_check",
+]
+
+[[package]]
+name = "gethostname"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc257fdb4038301ce4b9cd1b3b51704509692bb3ff716a410cbd07925d9dae55"
+dependencies = [
+ "rustix",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -2698,6 +2709,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "os_info"
+version = "3.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0e1ac5fde8d43c34139135df8ea9ee9465394b2d8d20f032d38998f64afffc3"
+dependencies = [
+ "log",
+ "plist",
+ "serde",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4005,6 +4028,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sys-locale"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eab9a99a024a169fe8a903cf9d4a3b3601109bcc13bd9e3c6fff259138626c4"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "system-configuration"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4245,6 +4277,24 @@ dependencies = [
  "url",
  "windows",
  "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-os"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05bccb4c6de4299beec5a9b070878a01bce9e2c945aa7a75bcea38bcba4c675d"
+dependencies = [
+ "gethostname",
+ "log",
+ "os_info",
+ "serde",
+ "serde_json",
+ "serialize-to-javascript",
+ "sys-locale",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
