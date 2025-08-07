@@ -8,13 +8,16 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ColorfulTag: typeof import('./src/components/ColorfulTag.vue')['default']
     FloatLabelInput: typeof import('./src/components/FloatLabelInput.vue')['default']
     NA: typeof import('naive-ui')['NA']
     NButton: typeof import('naive-ui')['NButton']
     NCheckbox: typeof import('naive-ui')['NCheckbox']
+    NCollapseTransition: typeof import('naive-ui')['NCollapseTransition']
     NConfigProvider: typeof import('naive-ui')['NConfigProvider']
     NDialog: typeof import('naive-ui')['NDialog']
     NDialogProvider: typeof import('naive-ui')['NDialogProvider']
+    NDropdown: typeof import('naive-ui')['NDropdown']
     NEl: typeof import('naive-ui')['NEl']
     NIcon: typeof import('naive-ui')['NIcon']
     NInput: typeof import('naive-ui')['NInput']
@@ -29,10 +32,15 @@ declare module 'vue' {
     NRadioButton: typeof import('naive-ui')['NRadioButton']
     NRadioGroup: typeof import('naive-ui')['NRadioGroup']
     NSelect: typeof import('naive-ui')['NSelect']
+    NTab: typeof import('naive-ui')['NTab']
     NTabPane: typeof import('naive-ui')['NTabPane']
     NTabs: typeof import('naive-ui')['NTabs']
+    NTime: typeof import('naive-ui')['NTime']
     NTooltip: typeof import('naive-ui')['NTooltip']
     NVirtualList: typeof import('naive-ui')['NVirtualList']
+    SimpleCheckbox: typeof import('./src/components/SimpleCheckbox.vue')['default']
+    TaskToQueueAnimation: typeof import('./src/components/TaskToQueueAnimation.vue')['default']
     TitleBar: typeof import('./src/components/TitleBar.vue')['default']
+    UpInfoBadge: typeof import('./src/components/UpInfoBadge.vue')['default']
   }
 }
