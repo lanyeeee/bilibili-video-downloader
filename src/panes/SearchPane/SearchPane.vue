@@ -9,7 +9,7 @@ import NormalSinglePanel from './components/NormalSinglePanel.vue'
 import { extractBvid, extractAid } from '../../utils.tsx'
 import { useStore } from '../../store.ts'
 
-export type SearchType = 'Auto' | 'Normal'
+export type SearchType = 'Auto' | 'Normal' | 'Bangumi' | 'Cheese'
 
 const searchTypeOptions: SelectProps['options'] = [
   { label: '自动', value: 'Auto' },
