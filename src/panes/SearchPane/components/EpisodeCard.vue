@@ -1,11 +1,11 @@
 <script setup lang="tsx">
 import { computed, inject, onMounted, onUpdated, ref } from 'vue'
-import { EpInNormal, NormalInfo, NormalSearchResult } from '../../../bindings.ts'
+import { BangumiSearchResult, EpInBangumi, EpInNormal, NormalInfo, NormalSearchResult } from '../../../bindings.ts'
 import SimpleCheckbox from '../../../components/SimpleCheckbox.vue'
 import { PhDownloadSimple, PhGoogleChromeLogo, PhQueue, PhMagnifyingGlass } from '@phosphor-icons/vue'
 import { useDialog } from 'naive-ui'
 import PartsDialogContent from './PartsDialogContent.vue'
-import { ensureHttps, isElementInViewport, playTaskToQueueAnimation } from '../../../utils.tsx'
+import { ensureHttps, extractBvid, isElementInViewport, playTaskToQueueAnimation } from '../../../utils.tsx'
 import { navDownloadButtonRefKey } from '../../../injection_keys.ts'
 import { SearchType } from '../SearchPane.vue'
 
@@ -29,9 +29,9 @@ export type EpisodeInfo = {
 }
 
 const props = defineProps<{
-  searchResult: NormalSearchResult
-  episode: NormalInfo | EpInNormal
-  episodeType: 'NormalSingle' | 'NormalSeason'
+  searchResult: NormalSearchResult | BangumiSearchResult
+  episode: NormalInfo | EpInNormal | EpInBangumi
+  episodeType: 'NormalSingle' | 'NormalSeason' | 'Bangumi'
   downloadEpisode?: (episodeInfo: EpisodeInfo) => Promise<void>
   checkboxChecked?: (episodeInfo: EpisodeInfo) => boolean
   handleCheckboxClick?: (episodeInfo: EpisodeInfo) => void
@@ -69,6 +69,24 @@ const episodeInfo = computed<EpisodeInfo>(() => {
       upName: episode.arc.author.name,
       upUid: episode.arc.author.mid,
       pubTime: episode.arc.pubdate,
+    }
+  } else if (props.episodeType === 'Bangumi') {
+    const episode = props.episode as EpInBangumi
+    const searchResult = props.searchResult as BangumiSearchResult
+    return {
+      episodeType: 'Bangumi',
+      aid: episode.aid,
+      bvid: episode.bvid ?? undefined,
+      epId: episode.ep_id,
+      href:
+        episode.link_type === null
+          ? `https://www.bilibili.com/bangumi/play/ep${episode.ep_id}`
+          : `https://www.bilibili.com/video/${extractBvid(episode.link)}/`,
+      cover: episode.cover,
+      title: episode.show_title ?? episode.title,
+      upName: searchResult.info.up_info?.uname ?? '无',
+      upUid: searchResult.info.up_info?.mid ?? 0,
+      pubTime: episode.pub_time,
     }
   }
   throw new Error(`错误的 episodeType: ${props.episodeType}`)

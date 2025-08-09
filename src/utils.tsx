@@ -31,6 +31,36 @@ export function extractBvid(url: string): string | undefined {
   }
 }
 
+export function extractEpId(url: string): number | undefined {
+  const parsedUrl = new URL(url)
+  const pathname = parsedUrl.pathname
+  const segments = pathname.split('/')
+  for (const segment of segments) {
+    if (segment.toLowerCase().startsWith('ep')) {
+      const epIdString = segment.substring(2)
+      const epId = parseInt(epIdString, 10)
+      if (!isNaN(epId)) {
+        return epId
+      }
+    }
+  }
+}
+
+export function extractSeasonId(url: string): number | undefined {
+  const parsedUrl = new URL(url)
+  const pathname = parsedUrl.pathname
+  const segments = pathname.split('/')
+  for (const segment of segments) {
+    if (segment.toLowerCase().startsWith('ss')) {
+      const seasonIdString = segment.substring(2)
+      const seasonId = parseInt(seasonIdString, 10)
+      if (!isNaN(seasonId)) {
+        return seasonId
+      }
+    }
+  }
+}
+
 export function useEpisodeDropdown(onCheck: () => void, onUncheck: () => void, onSelectAll: () => void) {
   const dropdownX = ref<number>(0)
   const dropdownY = ref<number>(0)
