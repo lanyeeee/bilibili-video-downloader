@@ -3,19 +3,28 @@ import { computed, ref } from 'vue'
 import { SelectProps, useMessage } from 'naive-ui'
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
 import FloatLabelInput from '../../components/FloatLabelInput.vue'
-import { commands, GetBangumiInfoParams, GetNormalInfoParams, SearchParams, SearchResult } from '../../bindings.ts'
+import {
+  commands,
+  GetBangumiInfoParams,
+  GetCheeseInfoParams,
+  GetNormalInfoParams,
+  SearchParams,
+  SearchResult,
+} from '../../bindings.ts'
 import NormalSeasonPanel from './components/NormalSeasonPanel.vue'
 import NormalSinglePanel from './components/NormalSinglePanel.vue'
 import { extractBvid, extractAid, extractEpId, extractSeasonId } from '../../utils.tsx'
 import { useStore } from '../../store.ts'
 import BangumiPanel from './components/BangumiPanel.vue'
+import CheesePanel from './components/CheesePanel.vue'
 
-export type SearchType = 'Auto' | 'Normal' | 'Bangumi'
+export type SearchType = 'Auto' | 'Normal' | 'Bangumi' | 'Cheese'
 
 const searchTypeOptions: SelectProps['options'] = [
   { label: '自动', value: 'Auto' },
   { label: '视频', value: 'Normal' },
   { label: '番剧', value: 'Bangumi' },
+  { label: '课程', value: 'Cheese' },
 ]
 
 const store = useStore()
@@ -31,6 +40,8 @@ const searchLabel = computed(() => {
   if (searchTypeSelected.value === 'Normal') {
     return '链接 / av... / BV...'
   } else if (searchTypeSelected.value === 'Bangumi') {
+    return '链接 / ep... / ss...'
+  } else if (searchTypeSelected.value === 'Cheese') {
     return '链接 / ep... / ss...'
   }
   return '链接 / av... / BV... / ep... / ss...'
@@ -54,6 +65,8 @@ async function search(input: string, searchType: SearchType) {
     await searchNormal(input, isUrl)
   } else if (searchType === 'Bangumi') {
     await searchBangumi(input, isUrl)
+  } else if (searchType === 'Cheese') {
+    await searchCheese(input, isUrl)
   } else {
     message.error('未知的搜索类型')
   }
@@ -179,6 +192,42 @@ async function searchBangumi(input: string, isUrl: boolean) {
   searchResult.value = result.data
 }
 
+async function searchCheese(input: string, isUrl: boolean) {
+  let params: GetCheeseInfoParams | undefined
+
+  if (isUrl) {
+    const epId = extractEpId(input)
+    const seasonId = extractSeasonId(input)
+    if (epId !== undefined) {
+      params = { EpId: epId }
+    } else if (seasonId !== undefined) {
+      params = { SeasonId: seasonId }
+    }
+  } else if (input.toLowerCase().startsWith('ep')) {
+    const epId = parseInt(input.substring(2), 10)
+    if (!isNaN(epId)) {
+      params = { EpId: epId }
+    }
+  } else if (input.toLowerCase().startsWith('ss')) {
+    const seasonId = parseInt(input.substring(2), 10)
+    if (!isNaN(seasonId)) {
+      params = { SeasonId: seasonId }
+    }
+  }
+
+  if (params === undefined) {
+    message.error('解析输入失败，请输入正确的链接或ID(如 ep... / ss...)')
+    return
+  }
+
+  const result = await commands.search({ Cheese: params })
+  if (result.status === 'error') {
+    console.error(result.error)
+    return
+  }
+  searchResult.value = result.data
+}
+
 defineExpose({ search })
 </script>
 
@@ -217,6 +266,7 @@ defineExpose({ search })
         :ugc-season="searchResult.Normal.ugc_season" />
       <NormalSinglePanel v-else-if="'Normal' in searchResult" :normal-result="searchResult.Normal" />
       <BangumiPanel v-else-if="'Bangumi' in searchResult" :bangumi-result="searchResult.Bangumi" />
+      <CheesePanel v-else-if="'Cheese' in searchResult" :cheese-result="searchResult.Cheese" />
     </div>
   </div>
 </template>

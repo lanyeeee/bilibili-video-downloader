@@ -1,6 +1,14 @@
 <script setup lang="tsx">
 import { computed, inject, onMounted, onUpdated, ref } from 'vue'
-import { BangumiSearchResult, EpInBangumi, EpInNormal, NormalInfo, NormalSearchResult } from '../../../bindings.ts'
+import {
+  BangumiSearchResult,
+  CheeseSearchResult,
+  EpInBangumi,
+  EpInCheese,
+  EpInNormal,
+  NormalInfo,
+  NormalSearchResult,
+} from '../../../bindings.ts'
 import SimpleCheckbox from '../../../components/SimpleCheckbox.vue'
 import { PhDownloadSimple, PhGoogleChromeLogo, PhQueue, PhMagnifyingGlass } from '@phosphor-icons/vue'
 import { useDialog } from 'naive-ui'
@@ -29,9 +37,9 @@ export type EpisodeInfo = {
 }
 
 const props = defineProps<{
-  searchResult: NormalSearchResult | BangumiSearchResult
-  episode: NormalInfo | EpInNormal | EpInBangumi
-  episodeType: 'NormalSingle' | 'NormalSeason' | 'Bangumi'
+  searchResult: NormalSearchResult | BangumiSearchResult | CheeseSearchResult
+  episode: NormalInfo | EpInNormal | EpInBangumi | EpInCheese
+  episodeType: 'NormalSingle' | 'NormalSeason' | 'Bangumi' | 'Cheese'
   downloadEpisode?: (episodeInfo: EpisodeInfo) => Promise<void>
   checkboxChecked?: (episodeInfo: EpisodeInfo) => boolean
   handleCheckboxClick?: (episodeInfo: EpisodeInfo) => void
@@ -87,6 +95,20 @@ const episodeInfo = computed<EpisodeInfo>(() => {
       upName: searchResult.info.up_info?.uname ?? '无',
       upUid: searchResult.info.up_info?.mid ?? 0,
       pubTime: episode.pub_time,
+    }
+  } else if (props.episodeType === 'Cheese') {
+    const episode = props.episode as EpInCheese
+    const searchResult = props.searchResult as CheeseSearchResult
+    return {
+      episodeType: 'Cheese',
+      aid: episode.aid,
+      epId: episode.id,
+      href: `https://www.bilibili.com/cheese/play/ep${episode.id}`,
+      cover: episode.cover,
+      title: episode.title,
+      upName: searchResult.info.up_info.uname,
+      upUid: searchResult.info.up_info.mid,
+      pubTime: episode.release_date,
     }
   }
   throw new Error(`错误的 episodeType: ${props.episodeType}`)
