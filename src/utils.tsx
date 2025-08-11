@@ -61,6 +61,18 @@ export function extractSeasonId(url: string): number | undefined {
   }
 }
 
+export function extractUid(url: string): number | undefined {
+  const parsedUrl = new URL(url)
+  if (parsedUrl.hostname === 'space.bilibili.com') {
+    const segments = parsedUrl.pathname.split('/')
+    const uidSegment = segments[1]
+    const uid = parseInt(uidSegment, 10)
+    if (!isNaN(uid)) {
+      return uid
+    }
+  }
+}
+
 export function useEpisodeDropdown(onCheck: () => void, onUncheck: () => void, onSelectAll: () => void) {
   const dropdownX = ref<number>(0)
   const dropdownY = ref<number>(0)

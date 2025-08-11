@@ -8,23 +8,26 @@ import {
   GetBangumiInfoParams,
   GetCheeseInfoParams,
   GetNormalInfoParams,
+  GetUserVideoInfoParams,
   SearchParams,
   SearchResult,
 } from '../../bindings.ts'
 import NormalSeasonPanel from './components/NormalSeasonPanel.vue'
 import NormalSinglePanel from './components/NormalSinglePanel.vue'
-import { extractBvid, extractAid, extractEpId, extractSeasonId } from '../../utils.tsx'
+import { extractBvid, extractAid, extractEpId, extractSeasonId, extractUid } from '../../utils.tsx'
 import { useStore } from '../../store.ts'
 import BangumiPanel from './components/BangumiPanel.vue'
 import CheesePanel from './components/CheesePanel.vue'
+import UserVideoPanel from './components/UserVideoPanel.vue'
 
-export type SearchType = 'Auto' | 'Normal' | 'Bangumi' | 'Cheese'
+export type SearchType = 'Auto' | 'Normal' | 'Bangumi' | 'Cheese' | 'UserVideo'
 
 const searchTypeOptions: SelectProps['options'] = [
   { label: '自动', value: 'Auto' },
   { label: '视频', value: 'Normal' },
   { label: '番剧', value: 'Bangumi' },
   { label: '课程', value: 'Cheese' },
+  { label: 'UP投稿', value: 'UserVideo' },
 ]
 
 const store = useStore()
@@ -43,8 +46,10 @@ const searchLabel = computed(() => {
     return '链接 / ep... / ss...'
   } else if (searchTypeSelected.value === 'Cheese') {
     return '链接 / ep... / ss...'
+  } else if (searchTypeSelected.value === 'UserVideo') {
+    return '个人空间链接 / uid...'
   }
-  return '链接 / av... / BV... / ep... / ss...'
+  return '链接 / av... / BV... / ep... / ss... / uid...'
 })
 
 async function search(input: string, searchType: SearchType) {
@@ -67,6 +72,8 @@ async function search(input: string, searchType: SearchType) {
     await searchBangumi(input, isUrl)
   } else if (searchType === 'Cheese') {
     await searchCheese(input, isUrl)
+  } else if (searchType === 'UserVideo') {
+    await searchUserVideo(input, isUrl)
   } else {
     message.error('未知的搜索类型')
   }
@@ -81,6 +88,7 @@ async function searchAuto(input: string, isUrl: boolean) {
     const aid = extractAid(input)
     const epId = extractEpId(input)
     const seasonId = extractSeasonId(input)
+    const uid = extractUid(input)
 
     if (bvid !== undefined) {
       params = { Normal: { Bvid: bvid } }
@@ -90,6 +98,8 @@ async function searchAuto(input: string, isUrl: boolean) {
       params = { Bangumi: { EpId: epId } }
     } else if (seasonId !== undefined) {
       params = { Bangumi: { SeasonId: seasonId } }
+    } else if (uid !== undefined) {
+      params = { UserVideo: { mid: uid, pn: 1 } }
     }
   } else if (input.toLowerCase().startsWith('bv')) {
     params = { Normal: { Bvid: input } }
@@ -108,10 +118,15 @@ async function searchAuto(input: string, isUrl: boolean) {
     if (!isNaN(seasonId)) {
       params = { Bangumi: { SeasonId: seasonId } }
     }
+  } else if (input.toLowerCase().startsWith('uid')) {
+    const uid = parseInt(input.substring(3), 10)
+    if (!isNaN(uid)) {
+      params = { UserVideo: { mid: uid, pn: 1 } }
+    }
   }
 
   if (params === undefined) {
-    message.error('解析输入失败，请输入正确的链接或ID(如 av... / BV... / ep... / ss...)')
+    message.error('解析输入失败，请输入正确的链接或ID(如 av... / BV... / ep... / ss... / uid...)')
     return
   }
 
@@ -228,6 +243,39 @@ async function searchCheese(input: string, isUrl: boolean) {
   searchResult.value = result.data
 }
 
+async function searchUserVideo(input: string, isUrl: boolean) {
+  let params: GetUserVideoInfoParams | undefined
+
+  if (isUrl) {
+    const uid = extractUid(input)
+    if (uid !== undefined) {
+      params = { mid: uid, pn: 1 }
+    }
+  } else if (input.toLowerCase().startsWith('uid')) {
+    const uid = parseInt(input.substring(3), 10)
+    if (!isNaN(uid)) {
+      params = { mid: uid, pn: 1 }
+    }
+  } else {
+    const uid = parseInt(input, 10)
+    if (!isNaN(uid)) {
+      params = { mid: uid, pn: 1 }
+    }
+  }
+
+  if (params === undefined) {
+    message.error('解析输入失败，请输入正确的个人空间链接或ID(如 uid...)')
+    return
+  }
+
+  const result = await commands.search({ UserVideo: params })
+  if (result.status === 'error') {
+    console.error(result.error)
+    return
+  }
+  searchResult.value = result.data
+}
+
 defineExpose({ search })
 </script>
 
@@ -267,6 +315,7 @@ defineExpose({ search })
       <NormalSinglePanel v-else-if="'Normal' in searchResult" :normal-result="searchResult.Normal" />
       <BangumiPanel v-else-if="'Bangumi' in searchResult" :bangumi-result="searchResult.Bangumi" />
       <CheesePanel v-else-if="'Cheese' in searchResult" :cheese-result="searchResult.Cheese" />
+      <UserVideoPanel v-else-if="'UserVideo' in searchResult" v-model:user-video-result="searchResult.UserVideo" />
     </div>
   </div>
 </template>

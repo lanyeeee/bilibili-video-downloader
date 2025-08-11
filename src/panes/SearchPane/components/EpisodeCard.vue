@@ -6,8 +6,10 @@ import {
   EpInBangumi,
   EpInCheese,
   EpInNormal,
+  EpInUserVideo,
   NormalInfo,
   NormalSearchResult,
+  UserVideoSearchResult,
 } from '../../../bindings.ts'
 import SimpleCheckbox from '../../../components/SimpleCheckbox.vue'
 import { PhDownloadSimple, PhGoogleChromeLogo, PhQueue, PhMagnifyingGlass } from '@phosphor-icons/vue'
@@ -37,9 +39,9 @@ export type EpisodeInfo = {
 }
 
 const props = defineProps<{
-  searchResult: NormalSearchResult | BangumiSearchResult | CheeseSearchResult
-  episode: NormalInfo | EpInNormal | EpInBangumi | EpInCheese
-  episodeType: 'NormalSingle' | 'NormalSeason' | 'Bangumi' | 'Cheese'
+  searchResult: NormalSearchResult | BangumiSearchResult | CheeseSearchResult | UserVideoSearchResult
+  episode: NormalInfo | EpInNormal | EpInBangumi | EpInCheese | EpInUserVideo
+  episodeType: 'NormalSingle' | 'NormalSeason' | 'Bangumi' | 'Cheese' | 'UserVideo'
   downloadEpisode?: (episodeInfo: EpisodeInfo) => Promise<void>
   checkboxChecked?: (episodeInfo: EpisodeInfo) => boolean
   handleCheckboxClick?: (episodeInfo: EpisodeInfo) => void
@@ -109,6 +111,19 @@ const episodeInfo = computed<EpisodeInfo>(() => {
       upName: searchResult.info.up_info.uname,
       upUid: searchResult.info.up_info.mid,
       pubTime: episode.release_date,
+    }
+  } else if (props.episodeType === 'UserVideo') {
+    const episode = props.episode as EpInUserVideo
+    return {
+      episodeType: 'Normal',
+      aid: episode.aid,
+      bvid: episode.bvid,
+      href: `https://www.bilibili.com/video/${episode.bvid}/`,
+      cover: episode.pic,
+      title: episode.title,
+      upName: episode.author,
+      upUid: episode.mid,
+      pubTime: episode.created,
     }
   }
   throw new Error(`错误的 episodeType: ${props.episodeType}`)
