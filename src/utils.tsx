@@ -73,6 +73,18 @@ export function extractUid(url: string): number | undefined {
   }
 }
 
+export function extractMediaListId(url: string): number | undefined {
+  const parsedUrl = new URL(url)
+  const params = new URLSearchParams(parsedUrl.search)
+  const fid = params.get('fid')
+  if (fid !== null) {
+    const mediaListId = parseInt(fid, 10)
+    if (!isNaN(mediaListId)) {
+      return mediaListId
+    }
+  }
+}
+
 export function useEpisodeDropdown(onCheck: () => void, onUncheck: () => void, onSelectAll: () => void) {
   const dropdownX = ref<number>(0)
   const dropdownY = ref<number>(0)

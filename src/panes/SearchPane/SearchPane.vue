@@ -7,6 +7,7 @@ import {
   commands,
   GetBangumiInfoParams,
   GetCheeseInfoParams,
+  GetFavInfoParams,
   GetNormalInfoParams,
   GetUserVideoInfoParams,
   SearchParams,
@@ -14,13 +15,14 @@ import {
 } from '../../bindings.ts'
 import NormalSeasonPanel from './components/NormalSeasonPanel.vue'
 import NormalSinglePanel from './components/NormalSinglePanel.vue'
-import { extractBvid, extractAid, extractEpId, extractSeasonId, extractUid } from '../../utils.tsx'
-import { useStore } from '../../store.ts'
 import BangumiPanel from './components/BangumiPanel.vue'
 import CheesePanel from './components/CheesePanel.vue'
+import { extractBvid, extractAid, extractEpId, extractSeasonId, extractUid, extractMediaListId } from '../../utils.tsx'
+import { useStore } from '../../store.ts'
 import UserVideoPanel from './components/UserVideoPanel.vue'
+import FavPanel from '../FavPane/components/FavPanel.vue'
 
-export type SearchType = 'Auto' | 'Normal' | 'Bangumi' | 'Cheese' | 'UserVideo'
+export type SearchType = 'Auto' | 'Normal' | 'Bangumi' | 'Cheese' | 'UserVideo' | 'Fav'
 
 const searchTypeOptions: SelectProps['options'] = [
   { label: '自动', value: 'Auto' },
@@ -28,6 +30,7 @@ const searchTypeOptions: SelectProps['options'] = [
   { label: '番剧', value: 'Bangumi' },
   { label: '课程', value: 'Cheese' },
   { label: 'UP投稿', value: 'UserVideo' },
+  { label: '收藏夹', value: 'Fav' },
 ]
 
 const store = useStore()
@@ -48,8 +51,10 @@ const searchLabel = computed(() => {
     return '链接 / ep... / ss...'
   } else if (searchTypeSelected.value === 'UserVideo') {
     return '个人空间链接 / uid...'
+  } else if (searchTypeSelected.value === 'Fav') {
+    return '收藏夹链接 / fid...'
   }
-  return '链接 / av... / BV... / ep... / ss... / uid...'
+  return '链接 / av... / BV... / ep... / ss... / uid... / fid...'
 })
 
 async function search(input: string, searchType: SearchType) {
@@ -74,6 +79,8 @@ async function search(input: string, searchType: SearchType) {
     await searchCheese(input, isUrl)
   } else if (searchType === 'UserVideo') {
     await searchUserVideo(input, isUrl)
+  } else if (searchType === 'Fav') {
+    await searchFav(input, isUrl)
   } else {
     message.error('未知的搜索类型')
   }
@@ -89,6 +96,7 @@ async function searchAuto(input: string, isUrl: boolean) {
     const epId = extractEpId(input)
     const seasonId = extractSeasonId(input)
     const uid = extractUid(input)
+    const mediaListId = extractMediaListId(input)
 
     if (bvid !== undefined) {
       params = { Normal: { Bvid: bvid } }
@@ -98,6 +106,8 @@ async function searchAuto(input: string, isUrl: boolean) {
       params = { Bangumi: { EpId: epId } }
     } else if (seasonId !== undefined) {
       params = { Bangumi: { SeasonId: seasonId } }
+    } else if (mediaListId !== undefined) {
+      params = { Fav: { media_list_id: mediaListId, pn: 1 } }
     } else if (uid !== undefined) {
       params = { UserVideo: { mid: uid, pn: 1 } }
     }
@@ -122,6 +132,11 @@ async function searchAuto(input: string, isUrl: boolean) {
     const uid = parseInt(input.substring(3), 10)
     if (!isNaN(uid)) {
       params = { UserVideo: { mid: uid, pn: 1 } }
+    }
+  } else if (input.toLowerCase().startsWith('fid')) {
+    const mediaListId = parseInt(input.substring(3), 10)
+    if (!isNaN(mediaListId)) {
+      params = { Fav: { media_list_id: mediaListId, pn: 1 } }
     }
   }
 
@@ -276,6 +291,39 @@ async function searchUserVideo(input: string, isUrl: boolean) {
   searchResult.value = result.data
 }
 
+async function searchFav(input: string, isUrl: boolean) {
+  let params: GetFavInfoParams | undefined
+
+  if (isUrl) {
+    const mediaListId = extractMediaListId(input)
+    if (mediaListId !== undefined) {
+      params = { media_list_id: mediaListId, pn: 1 }
+    }
+  } else if (input.toLowerCase().startsWith('fid')) {
+    const mediaListId = parseInt(input.substring(3), 10)
+    if (!isNaN(mediaListId)) {
+      params = { media_list_id: mediaListId, pn: 1 }
+    }
+  } else {
+    const mediaListId = parseInt(input, 10)
+    if (!isNaN(mediaListId)) {
+      params = { media_list_id: mediaListId, pn: 1 }
+    }
+  }
+
+  if (params === undefined) {
+    message.error('解析输入失败，请输入正确的收藏夹链接或ID(如 fid...)')
+    return
+  }
+
+  const result = await commands.search({ Fav: params })
+  if (result.status === 'error') {
+    console.error(result.error)
+    return
+  }
+  searchResult.value = result.data
+}
+
 defineExpose({ search })
 </script>
 
@@ -316,6 +364,7 @@ defineExpose({ search })
       <BangumiPanel v-else-if="'Bangumi' in searchResult" :bangumi-result="searchResult.Bangumi" />
       <CheesePanel v-else-if="'Cheese' in searchResult" :cheese-result="searchResult.Cheese" />
       <UserVideoPanel v-else-if="'UserVideo' in searchResult" v-model:user-video-result="searchResult.UserVideo" />
+      <FavPanel v-else-if="'Fav' in searchResult" :fav-info="searchResult.Fav" />
     </div>
   </div>
 </template>
