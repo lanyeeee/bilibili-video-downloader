@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import icon from '../../src-tauri/icons/128x128.png'
-import { PhCopySimple, PhMinus, PhSquare, PhX } from '@phosphor-icons/vue'
+import { PhCopySimple, PhMinus, PhPushPin, PhSquare, PhX } from '@phosphor-icons/vue'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { onMounted, ref } from 'vue'
 import { useStore } from '../store.ts'
@@ -13,6 +13,7 @@ const store = useStore()
 const appWindow = getCurrentWindow()
 const windowMaximised = ref<boolean>(false)
 const windowFullscreen = ref<boolean>(false)
+const windowAlwaysOnTop = ref<boolean>(false)
 
 const currentPlatform = platform()
 
@@ -20,12 +21,18 @@ const loginDialogShowing = ref<boolean>(false)
 
 onMounted(async () => {
   windowMaximised.value = await appWindow.isMaximized()
+  windowFullscreen.value = await appWindow.isFullscreen()
 
   await appWindow.onResized(async () => {
     windowMaximised.value = await appWindow.isMaximized()
     windowFullscreen.value = await appWindow.isFullscreen()
   })
 })
+
+function handleAlwaysOnTopButton() {
+  windowAlwaysOnTop.value = !windowAlwaysOnTop.value
+  appWindow.setAlwaysOnTop(windowAlwaysOnTop.value)
+}
 </script>
 
 <template>
@@ -53,6 +60,14 @@ onMounted(async () => {
           draggable="false" />
         <div class="line-clamp-1">未登录</div>
       </div>
+    </div>
+
+    <div
+      title="窗口置顶"
+      class="mr-2 cursor-pointer p-1.5 rounded-lg flex items-center justify-between hover:bg-gray-3/70"
+      :class="windowAlwaysOnTop ? 'text-sky-5' : 'text-black'"
+      @click="handleAlwaysOnTopButton">
+      <PhPushPin size="18" :weight="windowAlwaysOnTop ? 'fill' : 'regular'" />
     </div>
 
     <div v-if="currentPlatform !== 'macos'" class="flex items-center select-none">
