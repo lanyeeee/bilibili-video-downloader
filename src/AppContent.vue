@@ -96,13 +96,15 @@ onMounted(() => {
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
           下载
           <template #trigger>
-            <div
-              ref="downloadButtonRef"
-              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
-              @click="store.currentNavName = 'download'"
-              :class="{ 'text-sky-5': store.currentNavName === 'download' }">
-              <PhDownload :weight="store.currentNavName === 'download' ? 'fill' : 'regular'" size="28" />
-            </div>
+            <n-badge :value="store.uncompletedProgressesCount" :offset="[-7, 7]">
+              <div
+                ref="downloadButtonRef"
+                class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+                @click="store.currentNavName = 'download'"
+                :class="{ 'text-sky-5': store.currentNavName === 'download' }">
+                <PhDownload :weight="store.currentNavName === 'download' ? 'fill' : 'regular'" size="28" />
+              </div>
+            </n-badge>
           </template>
         </n-tooltip>
 
