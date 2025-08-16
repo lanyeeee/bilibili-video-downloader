@@ -9,10 +9,7 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::{BangumiInfo, EpInBangumi},
-        bangumi_media_url::BangumiMediaUrl,
-        cheese_info::CheeseInfo,
-        cheese_media_url::CheeseMediaUrl,
+        bangumi_info::EpInBangumi,
         create_download_task_params::CreateDownloadTaskParams,
         fav_folders::FavFolders,
         fav_info::FavInfo,
@@ -22,8 +19,6 @@ use crate::{
         get_normal_info_params::GetNormalInfoParams,
         get_user_video_info_params::GetUserVideoInfoParams,
         normal_info::NormalInfo,
-        normal_media_url::NormalMediaUrl,
-        player_info::PlayerInfo,
         qrcode_data::QrcodeData,
         qrcode_status::QrcodeStatus,
         search_params::SearchParams,
@@ -36,12 +31,6 @@ use crate::{
         watch_later_info::WatchLaterInfo,
     },
 };
-
-#[tauri::command]
-#[specta::specta]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[tauri::command(async)]
 #[specta::specta]
@@ -145,34 +134,6 @@ pub async fn get_normal_info(
 
 #[tauri::command(async)]
 #[specta::specta]
-pub async fn get_bangumi_info(
-    app: AppHandle,
-    params: GetBangumiInfoParams,
-) -> CommandResult<BangumiInfo> {
-    let bili_client = app.get_bili_client();
-    let bangumi_info = bili_client
-        .get_bangumi_info(params)
-        .await
-        .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
-    Ok(bangumi_info)
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-pub async fn get_cheese_info(
-    app: AppHandle,
-    params: GetCheeseInfoParams,
-) -> CommandResult<CheeseInfo> {
-    let bili_client = app.get_bili_client();
-    let cheese_info = bili_client
-        .get_cheese_info(params)
-        .await
-        .map_err(|err| CommandError::from("获取课程视频信息失败", err))?;
-    Ok(cheese_info)
-}
-
-#[tauri::command(async)]
-#[specta::specta]
 pub async fn get_user_video_info(
     app: AppHandle,
     params: GetUserVideoInfoParams,
@@ -183,54 +144,6 @@ pub async fn get_user_video_info(
         .await
         .map_err(|err| CommandError::from("获取用户视频信息失败", err))?;
     Ok(user_video_info)
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-pub async fn get_normal_url(
-    app: AppHandle,
-    bvid: String,
-    cid: i64,
-) -> CommandResult<NormalMediaUrl> {
-    let bili_client = app.get_bili_client();
-    let media_url = bili_client
-        .get_normal_url(&bvid, cid)
-        .await
-        .map_err(|err| CommandError::from("获取普通视频url失败", err))?;
-    Ok(media_url)
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-pub async fn get_bangumi_url(app: AppHandle, cid: i64) -> CommandResult<BangumiMediaUrl> {
-    let bili_client = app.get_bili_client();
-    let media_url = bili_client
-        .get_bangumi_url(cid)
-        .await
-        .map_err(|err| CommandError::from("获取番剧视频url失败", err))?;
-    Ok(media_url)
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-pub async fn get_cheese_url(app: AppHandle, ep_id: i64) -> CommandResult<CheeseMediaUrl> {
-    let bili_client = app.get_bili_client();
-    let media_url = bili_client
-        .get_cheese_url(ep_id)
-        .await
-        .map_err(|err| CommandError::from("获取课程视频url失败", err))?;
-    Ok(media_url)
-}
-
-#[tauri::command(async)]
-#[specta::specta]
-pub async fn get_player_info(app: AppHandle, aid: i64, cid: i64) -> CommandResult<PlayerInfo> {
-    let bili_client = app.get_bili_client();
-    let player_info = bili_client
-        .get_player_info(aid, cid)
-        .await
-        .map_err(|err| CommandError::from("获取播放器信息失败", err))?;
-    Ok(player_info)
 }
 
 #[tauri::command(async)]

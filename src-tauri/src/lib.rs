@@ -34,20 +34,13 @@ fn generate_context() -> tauri::Context<Wry> {
 pub fn run() {
     let builder = tauri_specta::Builder::<Wry>::new()
         .commands(tauri_specta::collect_commands![
-            greet,
             get_config,
             save_config,
             generate_qrcode,
             get_qrcode_status,
             get_user_info,
             get_normal_info,
-            get_bangumi_info,
-            get_cheese_info,
             get_user_video_info,
-            get_normal_url,
-            get_bangumi_url,
-            get_cheese_url,
-            get_player_info,
             get_fav_folders,
             get_fav_info,
             get_watch_later_info,
