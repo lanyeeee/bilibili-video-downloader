@@ -1,0 +1,223 @@
+name: "publish"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  REPO_NAME: bilibili-video-downloader
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version number
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+  windows-build:
+    needs: get-version
+    env:
+      VERSION: ${{ needs.get-version.outputs.VERSION }}
+    outputs:
+      VERSION: ${{ env.VERSION }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Build tauri app
+        uses: tauri-apps/tauri-action@v0
+
+      - name: Create artifacts directory
+        run: mkdir -p artifacts
+
+      - name: Copy nsis to release assets
+        run: cp src-tauri/target/release/bundle/nsis/${{ env.REPO_NAME }}_${{ env.VERSION }}_x64-setup.exe artifacts/${{ env.REPO_NAME }}_${{ env.VERSION }}_windows_x64.exe
+
+      - name: Zip portable to release assets
+        run: |
+          cd src-tauri/target/release
+          7z a -tzip ../../../artifacts/${{ env.REPO_NAME }}_${{ env.VERSION }}_windows_x64_portable.zip ${{ env.REPO_NAME }}.exe com.lanyeeee.bilibili-video-downloader-ffmpeg.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-assets
+          path: artifacts/*
+
+  linux-build:
+    needs: get-version
+    env:
+      VERSION: ${{ needs.get-version.outputs.VERSION }}
+    outputs:
+      VERSION: ${{ env.VERSION }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Build tauri app
+        uses: tauri-apps/tauri-action@v0
+
+      - name: Create artifacts directory
+        run: mkdir -p artifacts
+
+      - name: Copy deb to release assets
+        run: cp src-tauri/target/release/bundle/deb/${{ env.REPO_NAME }}_${{ env.VERSION }}_amd64.deb artifacts/${{ env.REPO_NAME }}_${{ env.VERSION }}_linux_amd64.deb
+
+      - name: Copy rpm to release assets
+        run: cp src-tauri/target/release/bundle/rpm/${{ env.REPO_NAME }}-${{ env.VERSION }}-1.x86_64.rpm artifacts/${{ env.REPO_NAME }}_${{ env.VERSION }}_linux_amd64.rpm
+
+      - name: Zip portable to release assets
+        run: |
+          cd src-tauri/target/release
+          tar -czf ../../../artifacts/${{ env.REPO_NAME }}_${{ env.VERSION }}_linux_amd64_portable.tar.gz ${{ env.REPO_NAME }} com.lanyeeee.bilibili-video-downloader-ffmpeg
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-assets
+          path: artifacts/*
+
+  macos-build:
+    needs: get-version
+    env:
+      VERSION: ${{ needs.get-version.outputs.VERSION }}
+    outputs:
+      VERSION: ${{ env.VERSION }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ aarch64, x86_64 ]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.arch }}-apple-darwin
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Build tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          args: --target ${{ matrix.arch }}-apple-darwin
+
+      - name: Create artifacts directory
+        run: mkdir -p artifacts
+
+      - name: Copy dmg to release assets
+        env:
+          ARCH_ALIAS: ${{ matrix.arch == 'x86_64' && 'x64' || matrix.arch }}
+        run: cp src-tauri/target/${{ matrix.arch }}-apple-darwin/release/bundle/dmg/${{ env.REPO_NAME }}_${{ env.VERSION }}_${{ env.ARCH_ALIAS }}.dmg artifacts/${{ env.REPO_NAME }}_${{ env.VERSION }}_macos_${{ matrix.arch }}.dmg
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-assets-${{ matrix.arch }}
+          path: artifacts/*
+
+  create-release:
+    needs: [ windows-build, linux-build, macos-build ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows assets
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-assets
+          path: artifacts/windows
+
+      - name: Download Linux assets
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-assets
+          path: artifacts/linux
+
+      - name: Download macOS aarch64 assets
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-assets-aarch64
+          path: artifacts/macos-aarch64
+
+      - name: Download macOS x86_64 assets
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-assets-x86_64
+          path: artifacts/macos-x86_64
+
+      - name: List files in artifacts directory
+        run: ls -R artifacts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Desktop App v${{ needs.windows-build.outputs.VERSION }}
+          body: |
+            Take a look at the assets to download and install this app.
+          files: |
+            artifacts/windows/*
+            artifacts/linux/*
+            artifacts/macos-aarch64/*
+            artifacts/macos-x86_64/*
+          draft: true
+          prerelease: false
