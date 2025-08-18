@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use base64::{engine::general_purpose, Engine};
 use bytes::Bytes;
 use parking_lot::RwLock;
 use prost::Message;
@@ -296,10 +297,28 @@ impl BiliClient {
         &self,
         params: GetUserVideoInfoParams,
     ) -> anyhow::Result<UserVideoInfo> {
+        const DM_IMG_INTER: &str = r#"{"ds":[],"wh":[0,0,0],"of":[0,0,0]}"#;
+
+        fn random_base64() -> String {
+            let random_bytes: Vec<u8> = (0..48).map(|_| rand::random_range(32..=127)).collect();
+
+            general_purpose::STANDARD.encode(&random_bytes)
+        }
+
+        let mut dm_img_str = random_base64();
+        dm_img_str.truncate(dm_img_str.len() - 2);
+
+        let mut dm_cover_img_str = random_base64();
+        dm_cover_img_str.truncate(dm_cover_img_str.len() - 2);
+
         let mut params: Vec<(&str, String)> = vec![
             ("pn", params.pn.to_string()),
             ("ps", "42".to_string()),
             ("mid", params.mid.to_string()),
+            ("dm_img_list", "[]".to_string()),
+            ("dm_img_str", dm_img_str),
+            ("dm_cover_img_str", dm_cover_img_str),
+            ("dm_img_inter", DM_IMG_INTER.to_string()),
         ];
         self.wbi(&mut params).await?;
 

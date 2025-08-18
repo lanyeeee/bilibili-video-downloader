@@ -286,6 +286,7 @@ name = "bilibili-video-downloader"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "byteorder",
  "bytes",
  "chrono",
@@ -297,6 +298,7 @@ dependencies = [
  "num_enum",
  "parking_lot 0.12.4",
  "prost",
+ "rand 0.9.1",
  "reqwest",
  "reqwest-middleware",
  "reqwest-retry",
