@@ -1,0 +1,44 @@
+name: Close Issues with Default Title
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  check-issue-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check issue title
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const defaultTitle = '修改我！';
+
+            if (issue.title.includes(defaultTitle)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '检测到此issue的标题未修改\n\n为了更好地管理项目，帮助维护者快速理解问题，方便其他用户检索，请您在编写issue时务必**修改标题**\n\n此issue将被自动关闭。请修改标题后重新提交一个issue。感谢您的理解与合作！'
+              });
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'not_planned'
+              });
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['invalid']
+              });
+            }

@@ -1,0 +1,76 @@
+name: 🐞 反馈 Bug
+description: 反馈遇到的问题
+labels: [bug]
+title: "[Bug] 修改我！未修改标题的issue将被自动关闭"
+body:
+  - type: checkboxes
+    attributes:
+      label: 在提交BUG之前
+      options:
+        - label: 我尝试使用了最新版，我确定这个问题在最新版中依然存在
+          required: true
+  - type: textarea
+    id: desc
+    attributes:
+      label: 问题描述
+      description: 发生了什么情况？有什么现状？哪个视频(链接/Bv号/ep号)？问题能稳定触发吗？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 这是整个issue中**最重要**的部分
+      placeholder: |
+        复现步骤是影响issue处理效率的最大因素
+        没有详细的复现步骤将导致问题难以被定位，开发者需要花费大量时间来回沟通以定位问题
+        仅提供报错信息或截图而没有复现步骤，问题难以被定位，也就难以被解决
+        详细的复现步骤也是对项目维护工作的尊重
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+      description: 正常情况下应该发生什么
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 实际上发生了什么
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: 请提供相关的日志信息
+      placeholder: |
+        如果相关日志比较短可以直接粘贴
+        
+        如果相关日志很长，建议将相关日志保存为txt，然后点击文本框下面小长条上传文件
+    validations:
+      required: false
+  - type: textarea
+    id: media
+    attributes:
+      label: 截图或录屏
+      description: 问题复现时候的截图或录屏
+      placeholder: 点击文本框下面小长条可以上传文件
+  - type: input
+    id: version
+    attributes:
+      label: 工具版本号
+      placeholder: v0.0.1
+    validations:
+      required: true
+  - type: textarea
+    id: other
+    attributes:
+      label: 其他
+      description: 其他要补充的内容
+      placeholder: 其他要补充的内容
+    validations:
+      required: false
