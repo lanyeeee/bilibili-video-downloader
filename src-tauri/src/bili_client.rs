@@ -21,8 +21,10 @@ use crate::{
     extensions::{AnyhowErrorToStringChain, AppHandleExt},
     protobuf::DmSegMobileReply,
     types::{
-        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
+        bangumi_follow_info::BangumiFollowInfo, bangumi_info::BangumiInfo,
+        bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
         cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
+        get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
         get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
@@ -624,6 +626,50 @@ impl BiliClient {
             .context(format!("将data解析为WatchLaterInfo失败: {data_str}"))?;
 
         Ok(watch_later_info)
+    }
+
+    pub async fn get_bangumi_follow_info(
+        &self,
+        params: GetBangumiFollowInfoParams,
+    ) -> anyhow::Result<BangumiFollowInfo> {
+        // 发送获取番剧追踪信息的请求
+        let params = json!({
+            "vmid": params.vmid,
+            "type": params.type_field,
+            "pn": params.pn,
+            "ps": 24,
+            "follow_status": params.follow_status,
+        });
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/x/space/bangumi/follow/list")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为BangumiFollowInfo
+        let data_str = data.to_string();
+        let bangumi_follow_info: BangumiFollowInfo = serde_json::from_str(&data_str)
+            .context(format!("将data解析为BangumiFollowInfo失败: {data_str}"))?;
+
+        Ok(bangumi_follow_info)
     }
 
     pub async fn get_media_chunk(

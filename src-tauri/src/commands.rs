@@ -9,10 +9,12 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
+        bangumi_follow_info::BangumiFollowInfo,
         bangumi_info::EpInBangumi,
         create_download_task_params::CreateDownloadTaskParams,
         fav_folders::FavFolders,
         fav_info::FavInfo,
+        get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams,
         get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams,
@@ -177,6 +179,20 @@ pub async fn get_watch_later_info(app: AppHandle, page: i32) -> CommandResult<Wa
         .await
         .map_err(|err| CommandError::from("获取稍后观看内容失败", err))?;
     Ok(watch_later_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_bangumi_follow_info(
+    app: AppHandle,
+    params: GetBangumiFollowInfoParams,
+) -> CommandResult<BangumiFollowInfo> {
+    let bili_client = app.get_bili_client();
+    let bangumi_follow_info = bili_client
+        .get_bangumi_follow_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取追番信息失败", err))?;
+    Ok(bangumi_follow_info)
 }
 
 #[allow(clippy::needless_pass_by_value)]
