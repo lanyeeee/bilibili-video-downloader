@@ -44,6 +44,7 @@ pub fn run() {
             get_fav_folders,
             get_fav_info,
             get_watch_later_info,
+            get_bangumi_follow_info,
             create_download_tasks,
             pause_download_tasks,
             resume_download_tasks,

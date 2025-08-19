@@ -7,7 +7,7 @@ pub struct BangumiInfo {
     pub activity: Activity,
     pub actors: String,
     pub alias: String,
-    pub areas: Vec<Area>,
+    pub areas: Vec<AreaInBangumi>,
     pub bkg_cover: String,
     pub cover: String,
     pub delivery_fragment_video: bool,
@@ -24,15 +24,15 @@ pub struct BangumiInfo {
     pub payment: Option<PaymentInBangumi>,
     pub play_strategy: Option<PlayStrategy>,
     pub positive: Positive,
-    pub publish: Publish,
-    pub rating: Option<Rating>,
+    pub publish: PublishInBangumi,
+    pub rating: Option<RatingInBangumi>,
     pub record: String,
     pub rights: RightsInBangumi,
     pub season_id: i64,
     pub season_title: String,
     pub seasons: Vec<Season>,
     pub section: Option<Vec<SectionInBangumi>>,
-    pub series: Series,
+    pub series: SeriesInBangumi,
     pub share_copy: String,
     pub share_sub_title: String,
     pub share_url: String,
@@ -95,7 +95,7 @@ pub struct Activity {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
-pub struct Area {
+pub struct AreaInBangumi {
     pub id: i64,
     pub name: String,
 }
@@ -105,7 +105,7 @@ pub struct Area {
 pub struct EpInBangumi {
     pub aid: i64,
     pub badge: String,
-    pub badge_info: BadgeInfo,
+    pub badge_info: BadgeInfoInBangumi,
     pub badge_type: Option<i64>,
     pub bvid: Option<String>,
     pub cid: i64,
@@ -140,7 +140,7 @@ pub struct EpInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
-pub struct BadgeInfo {
+pub struct BadgeInfoInBangumi {
     pub bg_color: String,
     pub bg_color_night: String,
     pub text: String,
@@ -228,7 +228,7 @@ pub struct Positive {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
-pub struct Publish {
+pub struct PublishInBangumi {
     pub is_finish: i64,
     pub is_started: i64,
     pub pub_time: String,
@@ -238,7 +238,7 @@ pub struct Publish {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
-pub struct Rating {
+pub struct RatingInBangumi {
     pub count: i64,
     pub score: f64,
 }
@@ -266,7 +266,7 @@ pub struct RightsInBangumi {
 #[allow(clippy::struct_field_names)]
 pub struct Season {
     pub badge: String,
-    pub badge_info: BadgeInfo,
+    pub badge_info: BadgeInfoInBangumi,
     pub badge_type: i64,
     pub cover: String,
     pub enable_vt: bool,
@@ -298,7 +298,7 @@ pub struct StatInSeason {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[allow(clippy::struct_field_names)]
-pub struct Series {
+pub struct SeriesInBangumi {
     pub display_type: i64,
     pub series_id: i64,
     pub series_title: String,
