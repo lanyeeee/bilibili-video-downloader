@@ -48,6 +48,14 @@ async getNormalInfo(params: GetNormalInfoParams) : Promise<Result<NormalInfo, Co
     else return { status: "error", error: e  as any };
 }
 },
+async getBangumiInfo(params: GetBangumiInfoParams) : Promise<Result<BangumiInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_bangumi_info", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getUserVideoInfo(params: GetUserVideoInfoParams) : Promise<Result<UserVideoInfo, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_user_video_info", { params }) };

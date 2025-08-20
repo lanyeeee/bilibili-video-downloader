@@ -40,6 +40,7 @@ pub fn run() {
             get_qrcode_status,
             get_user_info,
             get_normal_info,
+            get_bangumi_info,
             get_user_video_info,
             get_fav_folders,
             get_fav_info,
