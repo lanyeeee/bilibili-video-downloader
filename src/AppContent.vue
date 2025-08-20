@@ -9,6 +9,7 @@ import {
   PhMagnifyingGlass,
   PhStar,
   PhClock,
+  PhHeart,
   PhDownload,
 } from '@phosphor-icons/vue'
 import AboutDialog from './dialogs/AboutDialog.vue'
@@ -20,8 +21,9 @@ import FavPane from './panes/FavPane/FavPane.vue'
 import WatchLaterPane from './panes/WatchLaterPane/WatchLaterPane.vue'
 import DownloadPane from './panes/DownloadPane/DownloadPane.vue'
 import { searchPaneRefKey, navDownloadButtonRefKey } from './injection_keys.ts'
+import BangumiFollowPane from './panes/BangumiFollow/BangumiFollowPane.vue'
 
-export type CurrentNavName = 'search' | 'fav' | 'watch_later' | 'download'
+export type CurrentNavName = 'search' | 'fav' | 'watch_later' | 'bangumi_follow' | 'download'
 
 const currentPlatform = platform()
 
@@ -94,6 +96,18 @@ onMounted(() => {
         </n-tooltip>
 
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
+          追番追剧
+          <template #trigger>
+            <div
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              @click="store.currentNavName = 'bangumi_follow'"
+              :class="{ 'text-sky-5': store.currentNavName === 'bangumi_follow' }">
+              <PhHeart :weight="store.currentNavName === 'bangumi_follow' ? 'fill' : 'regular'" size="28" />
+            </div>
+          </template>
+        </n-tooltip>
+
+        <n-tooltip placement="right" trigger="hover" :show-arrow="false">
           下载
           <template #trigger>
             <n-badge :value="store.uncompletedProgressesCount" :offset="[-7, 7]">
@@ -145,6 +159,7 @@ onMounted(() => {
         <SearchPane v-show="store.currentNavName === 'search'" ref="searchPaneRef" />
         <FavPane v-show="store.currentNavName === 'fav'" />
         <WatchLaterPane v-show="store.currentNavName === 'watch_later'" />
+        <BangumiFollowPane v-show="store.currentNavName === 'bangumi_follow'" />
         <DownloadPane v-show="store.currentNavName === 'download'" />
       </div>
     </div>

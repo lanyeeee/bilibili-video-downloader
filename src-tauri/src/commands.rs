@@ -10,7 +10,7 @@ use crate::{
     logger,
     types::{
         bangumi_follow_info::BangumiFollowInfo,
-        bangumi_info::EpInBangumi,
+        bangumi_info::{BangumiInfo, EpInBangumi},
         create_download_task_params::CreateDownloadTaskParams,
         fav_folders::FavFolders,
         fav_info::FavInfo,
@@ -118,6 +118,20 @@ pub async fn get_user_info(app: AppHandle, sessdata: String) -> CommandResult<Us
         .await
         .map_err(|err| CommandError::from("获取用户信息失败", err))?;
     Ok(user_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_bangumi_info(
+    app: AppHandle,
+    params: GetBangumiInfoParams,
+) -> CommandResult<BangumiInfo> {
+    let bili_client = app.get_bili_client();
+    let bangumi_info = bili_client
+        .get_bangumi_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
+    Ok(bangumi_info)
 }
 
 #[tauri::command(async)]
