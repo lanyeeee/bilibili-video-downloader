@@ -90,6 +90,10 @@ watch(
   async () => {
     const ep = props.cheeseResult.ep
     if (ep === null) {
+      selectedIds.value.clear()
+      checkedIds.value.clear()
+      selectionAreaRef.value?.selection?.clearSelection()
+      selectionAreaRef.value?.$el.scrollTo({ top: 0, behavior: 'instant' })
       return
     }
     selectedIds.value = new Set([ep.id])

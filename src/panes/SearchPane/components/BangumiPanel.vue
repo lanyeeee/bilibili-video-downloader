@@ -104,6 +104,11 @@ watch(
   async () => {
     const episode = props.bangumiResult.ep
     if (episode === null) {
+      currentTabIndex.value = 0
+      selectedIds.value.clear()
+      checkedIds.value.clear()
+      selectionAreaRef.value?.selection?.clearSelection()
+      selectionAreaRef.value?.$el.scrollTo({ top: 0, behavior: 'instant' })
       return
     }
 
