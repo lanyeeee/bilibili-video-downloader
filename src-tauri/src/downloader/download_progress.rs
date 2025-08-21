@@ -297,15 +297,19 @@ impl DownloadProgress {
         }
     }
 
-    pub fn save(&self, app: &AppHandle) -> anyhow::Result<()> {
+    pub fn save(&self, app: &AppHandle, allow_create: bool) -> anyhow::Result<()> {
         let progress = self.clone();
         let file_name = format!("{}.json", progress.task_id);
 
         let app_data_dir = app.path().app_data_dir()?;
-        let task_dir = app_data_dir.join(".下载任务");
-        std::fs::create_dir_all(&task_dir)?;
+        let tasks_dir = app_data_dir.join(".下载任务");
+        std::fs::create_dir_all(&tasks_dir)?;
 
-        let save_path = task_dir.join(file_name);
+        let save_path = tasks_dir.join(file_name);
+        if !allow_create && !save_path.exists() {
+            return Ok(());
+        }
+
         let progress_json = serde_json::to_string(&progress)?;
         std::fs::write(save_path, progress_json)?;
 

@@ -103,7 +103,7 @@ impl DownloadTask {
 
         let mut tasks = Vec::new();
         for progress in progresses {
-            if let Err(err) = progress.save(app) {
+            if let Err(err) = progress.save(app, true) {
                 let ids_string = progress.get_ids_string();
                 let episode_title = &progress.episode_title;
                 let err_title = format!("{ids_string} `{episode_title}`保存下载进度到文件失败");
@@ -1032,7 +1032,7 @@ impl DownloadTask {
         }
         .emit(&self.app);
 
-        if let Err(err) = updated_progress.save(&self.app) {
+        if let Err(err) = updated_progress.save(&self.app, false) {
             let ids_string = updated_progress.get_ids_string();
             let episode_title = &updated_progress.episode_title;
             let err_title = format!("{ids_string} `{episode_title}`保存下载进度到文件失败");
