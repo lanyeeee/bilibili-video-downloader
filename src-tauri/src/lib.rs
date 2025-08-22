@@ -69,6 +69,10 @@ pub fn run() {
         )
         .expect("Failed to export typescript bindings");
 
+    // 解决Ubuntu24.04窗口全白的问题
+    #[cfg(target_os = "linux")]
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
