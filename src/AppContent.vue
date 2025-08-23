@@ -155,12 +155,22 @@ onMounted(() => {
           </template>
         </n-tooltip>
       </div>
-      <div class="w-full overflow-hidden">
-        <SearchPane v-show="store.currentNavName === 'search'" ref="searchPaneRef" />
-        <FavPane v-show="store.currentNavName === 'fav'" />
-        <WatchLaterPane v-show="store.currentNavName === 'watch_later'" />
-        <BangumiFollowPane v-show="store.currentNavName === 'bangumi_follow'" />
-        <DownloadPane v-show="store.currentNavName === 'download'" />
+      <div class="relative w-full overflow-hidden">
+        <transition name="fade">
+          <SearchPane class="absolute inset-0" v-show="store.currentNavName === 'search'" ref="searchPaneRef" />
+        </transition>
+        <transition name="fade">
+          <FavPane class="absolute inset-0" v-show="store.currentNavName === 'fav'" />
+        </transition>
+        <transition name="fade">
+          <WatchLaterPane class="absolute inset-0" v-show="store.currentNavName === 'watch_later'" />
+        </transition>
+        <transition name="fade">
+          <BangumiFollowPane class="absolute inset-0" v-show="store.currentNavName === 'bangumi_follow'" />
+        </transition>
+        <transition name="fade">
+          <DownloadPane class="absolute inset-0" v-show="store.currentNavName === 'download'" />
+        </transition>
       </div>
     </div>
 
@@ -185,5 +195,15 @@ onMounted(() => {
 
 :deep(.n-badge-sup) {
   @apply pointer-events-none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
