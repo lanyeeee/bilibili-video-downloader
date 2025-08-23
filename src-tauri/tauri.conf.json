@@ -35,6 +35,9 @@
           "SimpChinese"
         ]
       }
+    },
+    "macOS": {
+      "signingIdentity": "-"
     }
   }
 }
