@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{BufReader, Read},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, Context};
@@ -175,4 +175,14 @@ pub fn seconds_to_srt_time(seconds: f64) -> String {
     let m = total_m % 60;
     let h = total_m / 60;
     format!("{h:02}:{m:02}:{s:02},{ms:03}")
+}
+
+pub fn get_ffmpeg_program() -> anyhow::Result<PathBuf> {
+    let ffmpeg_program = std::env::current_exe()
+        .context("获取当前可执行文件路径失败")?
+        .parent()
+        .context("获取当前可执行文件所在目录失败")?
+        .join("com.lanyeeee.bilibili-video-downloader-ffmpeg");
+
+    Ok(ffmpeg_program)
 }

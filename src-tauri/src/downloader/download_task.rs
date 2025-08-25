@@ -1,6 +1,6 @@
 use std::{
     fs::{File, OpenOptions},
-    io::{Seek, Write},
+    io::{Seek, Write as IoWrite},
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -17,7 +17,6 @@ use tokio::{
 };
 
 use crate::{
-    bili_client::BiliClient,
     danmaku_xml_to_ass::xml_to_ass,
     downloader::episode_type::EpisodeType,
     events::DownloadEvent,
@@ -27,6 +26,7 @@ use crate::{
         create_download_task_params::CreateDownloadTaskParams,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_normal_info_params::GetNormalInfoParams, normal_info::NormalInfo,
+        player_info::PlayerInfo,
     },
     utils::{self, ToXml},
 };
@@ -288,6 +288,9 @@ impl DownloadTask {
             episode_dir.display()
         ))?;
 
+        let mut player_info = None;
+        let mut episode_info = None;
+
         if !progress.video_task.is_completed() && progress.video_task.content_length != 0 {
             // 如果视频任务被选中且未完成且有要下载的内容，则下载视频
             self.download_video(&progress)
@@ -304,11 +307,29 @@ impl DownloadTask {
             tracing::debug!("{ids_string} `{filename}`音频下载完成");
         }
 
-        if !progress.merge_task.is_completed() {
+        let merge_completed = progress.merge_task.is_completed();
+        let embed_completed = progress.embed_chapter_task.is_completed();
+
+        if !merge_completed && !embed_completed {
+            // 如果合并任务和嵌入章节任务都未完成，则调用merge_and_embed，将两个任务通过一个ffmpeg命令完成
+            self.merge_and_embed(&progress, &mut player_info)
+                .await
+                .context(format!(
+                    "{ids_string} `{filename}`合并视频和音频失败并+嵌入章节元数据失败"
+                ))?;
+            tracing::debug!("{ids_string} `{filename}`视频和音频合并+嵌入章节元数据完成");
+        } else if !merge_completed {
+            // 如果合并任务未完成，嵌入章节任务已完成，则只合并
             self.merge_video_audio(&progress)
                 .await
                 .context(format!("{ids_string} `{filename}`合并视频和音频失败"))?;
             tracing::debug!("{ids_string} `{filename}`视频和音频合并完成");
+        } else if !embed_completed {
+            // 如果嵌入章节任务未完成，合并任务已完成，则只嵌入
+            self.embed_chapter(&progress, &mut player_info)
+                .await
+                .context(format!("{ids_string} `{filename}`嵌入章节元数据失败"))?;
+            tracing::debug!("{ids_string} `{filename}`嵌入章节元数据完成");
         }
 
         if !progress.danmaku_task.is_completed() {
@@ -319,7 +340,7 @@ impl DownloadTask {
         }
 
         if !progress.subtitle_task.is_completed() {
-            self.download_subtitle(&progress)
+            self.download_subtitle(&progress, &mut player_info)
                 .await
                 .context(format!("{ids_string} `{filename}`下载字幕失败"))?;
             tracing::debug!("{ids_string} `{filename}`字幕下载完成");
@@ -331,8 +352,6 @@ impl DownloadTask {
                 .context(format!("{ids_string} `{filename}`下载封面失败"))?;
             tracing::debug!("{ids_string} `{filename}`封面下载完成");
         }
-
-        let mut episode_info = None;
 
         if !progress.nfo_task.is_completed() {
             self.download_nfo(&progress, &mut episode_info)
@@ -599,11 +618,7 @@ impl DownloadTask {
 
         let output_path = episode_dir.join(format!("{filename}-merged.mp4"));
 
-        let ffmpeg_program = std::env::current_exe()
-            .context("获取当前可执行文件路径失败")?
-            .parent()
-            .context("获取当前可执行文件所在目录失败")?
-            .join("com.lanyeeee.bilibili-video-downloader-ffmpeg");
+        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
 
         let (tx, rx) = tokio::sync::oneshot::channel();
         let video_path_clone = video_path.clone();
@@ -665,6 +680,202 @@ impl DownloadTask {
         Ok(())
     }
 
+    async fn embed_chapter(
+        &self,
+        progress: &DownloadProgress,
+        player_info: &mut Option<PlayerInfo>,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let video_path = episode_dir.join(format!("{filename}.mp4"));
+        if !video_path.exists() {
+            self.update_progress(|p| p.embed_chapter_task.completed = true);
+            return Ok(());
+        }
+
+        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
+        let output_path = episode_dir.join(format!("{filename}-embed.mp4"));
+
+        let player_info = player_info.get_or_init(&self.app, progress).await?;
+
+        let metadata_content = player_info.generate_chapter_metadata();
+        let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
+
+        std::fs::write(&metadata_path, metadata_content)
+            .context(format!("保存章节元数据到`{}`失败", metadata_path.display()))?;
+
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let video_path_clone = video_path.clone();
+        let metadata_path_clone = metadata_path.clone();
+        let output_path_clone = output_path.clone();
+
+        tauri::async_runtime::spawn_blocking(move || {
+            let mut command = std::process::Command::new(ffmpeg_program);
+
+            command
+                .arg("-i")
+                .arg(video_path_clone)
+                .arg("-i")
+                .arg(metadata_path_clone)
+                .arg("-map_metadata")
+                .arg("1")
+                .arg("-c")
+                .arg("copy")
+                .arg(output_path_clone)
+                .arg("-y");
+
+            #[cfg(target_os = "windows")]
+            {
+                // 隐藏窗口
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(0x0800_0000);
+            }
+
+            let output = command.output();
+
+            let _ = tx.send(output);
+        });
+
+        let output = rx.await??;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let err = anyhow!(format!("STDOUT: {stdout}"))
+                .context(format!("STDERR: {stderr}"))
+                .context("原因可能是视频或音频文件损坏，建议[重来]试试");
+            return Err(err);
+        }
+
+        std::fs::remove_file(&video_path)
+            .context(format!("删除视频文件`{}`失败", video_path.display()))?;
+        std::fs::rename(&output_path, &video_path).context(format!(
+            "将`{}`重命名为`{}`失败",
+            output_path.display(),
+            video_path.display()
+        ))?;
+        std::fs::remove_file(&metadata_path).context(format!(
+            "删除章节元数据文件`{}`失败",
+            metadata_path.display()
+        ))?;
+
+        self.update_progress(|p| p.embed_chapter_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn merge_and_embed(
+        &self,
+        progress: &DownloadProgress,
+        player_info: &mut Option<PlayerInfo>,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let video_path = episode_dir.join(format!("{filename}.mp4"));
+        if !video_path.exists() {
+            self.update_progress(|p| {
+                p.merge_task.completed = true;
+                p.embed_chapter_task.completed = true;
+            });
+
+            return Ok(());
+        }
+
+        let audio_path = episode_dir.join(format!("{filename}.m4a"));
+        if !audio_path.exists() {
+            // 如果音频文件不存在，则只嵌入章节元数据
+            self.embed_chapter(progress, player_info)
+                .await
+                .context("嵌入章节元数据失败")?;
+
+            self.update_progress(|p| p.merge_task.completed = true);
+            return Ok(());
+        }
+
+        let player_info = player_info.get_or_init(&self.app, progress).await?;
+
+        let metadata_content = player_info.generate_chapter_metadata();
+        let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
+
+        std::fs::write(&metadata_path, metadata_content)
+            .context(format!("保存章节元数据到`{}`失败", metadata_path.display()))?;
+
+        let output_path = episode_dir.join(format!("{filename}-merged.mp4"));
+
+        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
+
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let video_path_clone = video_path.clone();
+        let audio_path_clone = audio_path.clone();
+        let metadata_path_clone = metadata_path.clone();
+        let output_path_clone = output_path.clone();
+
+        tokio::spawn(async move {
+            let mut command = std::process::Command::new(ffmpeg_program);
+
+            command
+                .arg("-i")
+                .arg(video_path_clone)
+                .arg("-i")
+                .arg(audio_path_clone)
+                .arg("-i")
+                .arg(metadata_path_clone)
+                .arg("-map_metadata")
+                .arg("2")
+                .arg("-c")
+                .arg("copy")
+                .arg("-map")
+                .arg("0:v:0")
+                .arg("-map")
+                .arg("1:a:0")
+                .arg(output_path_clone)
+                .arg("-y");
+
+            #[cfg(target_os = "windows")]
+            {
+                // 隐藏窗口
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(0x0800_0000);
+            }
+
+            let output = command.output();
+
+            let _ = tx.send(output);
+        });
+
+        let output = rx.await??;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let err = anyhow!(format!("STDOUT: {stdout}"))
+                .context(format!("STDERR: {stderr}"))
+                .context("原因可能是视频或音频文件损坏，建议[重来]试试");
+            return Err(err);
+        }
+
+        std::fs::remove_file(&video_path)
+            .context(format!("删除视频文件`{}`失败", video_path.display()))?;
+        std::fs::remove_file(&audio_path)
+            .context(format!("删除音频文件`{}`失败", audio_path.display()))?;
+        std::fs::rename(&output_path, &video_path).context(format!(
+            "将`{}`重命名为`{}`失败",
+            output_path.display(),
+            video_path.display()
+        ))?;
+        std::fs::remove_file(&metadata_path).context(format!(
+            "删除章节元数据文件`{}`失败",
+            metadata_path.display()
+        ))?;
+
+        self.update_progress(|p| {
+            p.merge_task.completed = true;
+            p.embed_chapter_task.completed = true;
+        });
+
+        Ok(())
+    }
+
     async fn download_danmaku(&self, progress: &DownloadProgress) -> anyhow::Result<()> {
         let (aid, cid, duration) = (progress.aid, progress.cid, progress.duration);
         let danmaku_task = &progress.danmaku_task;
@@ -705,24 +916,20 @@ impl DownloadTask {
         Ok(())
     }
 
-    async fn download_subtitle(&self, progress: &DownloadProgress) -> anyhow::Result<()> {
+    async fn download_subtitle(
+        &self,
+        progress: &DownloadProgress,
+        player_info: &mut Option<PlayerInfo>,
+    ) -> anyhow::Result<()> {
         use std::fmt::Write;
 
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
 
-        let (aid, cid) = {
-            let progress = self.progress.read();
-            (progress.aid, progress.cid)
-        };
+        let player_info = player_info.get_or_init(&self.app, progress).await?;
 
         let bili_client = self.app.get_bili_client();
-        let player_info = bili_client
-            .get_player_info(aid, cid)
-            .await
-            .context("获取播放器信息失败")?;
 
-        let subtitle = &player_info.subtitle;
-        for subtitle_detail in &subtitle.subtitles {
+        for subtitle_detail in &player_info.subtitle.subtitles {
             let url = format!("http:{}", subtitle_detail.subtitle_url);
             let subtitle = bili_client
                 .get_subtitle(&url)
@@ -775,18 +982,15 @@ impl DownloadTask {
         episode_info: &mut Option<EpisodeInfo>,
     ) -> anyhow::Result<()> {
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
-        let (aid, ep_id, episode_type) = (progress.aid, progress.ep_id, progress.episode_type);
+
+        let episode_info = episode_info.get_or_init(&self.app, progress).await?;
 
         let bili_client = self.app.get_bili_client();
-
-        let episode_info = episode_info
-            .get_or_init(&bili_client, aid, ep_id, episode_type)
-            .await?;
 
         match episode_info {
             EpisodeInfo::Normal(info) => {
                 let tags = bili_client
-                    .get_tags(aid)
+                    .get_tags(progress.aid)
                     .await
                     .context("获取视频标签失败")?;
                 let movie_nfo = info
@@ -885,13 +1089,8 @@ impl DownloadTask {
         episode_info: &mut Option<EpisodeInfo>,
     ) -> anyhow::Result<()> {
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
-        let (aid, ep_id, episode_type) = (progress.aid, progress.ep_id, progress.episode_type);
 
-        let bili_client = self.app.get_bili_client();
-
-        let episode_info = episode_info
-            .get_or_init(&bili_client, aid, ep_id, episode_type)
-            .await?;
+        let episode_info = episode_info.get_or_init(&self.app, progress).await?;
 
         let json_path = episode_dir.join(format!("{filename}-元数据.json"));
         let json_string = match episode_info {
@@ -1156,24 +1355,23 @@ enum EpisodeInfo {
 trait GetOrInitEpisodeInfo {
     async fn get_or_init<'a>(
         &'a mut self,
-        bili_client: &BiliClient,
-        aid: i64,
-        ep_id: Option<i64>,
-        episode_type: EpisodeType,
+        app: &AppHandle,
+        progress: &DownloadProgress,
     ) -> anyhow::Result<&'a mut EpisodeInfo>;
 }
 
 impl GetOrInitEpisodeInfo for Option<EpisodeInfo> {
     async fn get_or_init<'a>(
         &'a mut self,
-        bili_client: &BiliClient,
-        aid: i64,
-        ep_id: Option<i64>,
-        episode_type: EpisodeType,
+        app: &AppHandle,
+        progress: &DownloadProgress,
     ) -> anyhow::Result<&'a mut EpisodeInfo> {
         if let Some(info) = self {
             return Ok(info);
         }
+
+        let bili_client = app.get_bili_client();
+        let (aid, ep_id, episode_type) = (progress.aid, progress.ep_id, progress.episode_type);
 
         let new_info = match episode_type {
             EpisodeType::Normal => {
@@ -1202,5 +1400,33 @@ impl GetOrInitEpisodeInfo for Option<EpisodeInfo> {
         };
 
         Ok(self.insert(new_info))
+    }
+}
+
+trait GetOrInitPlayerInfo {
+    async fn get_or_init<'a>(
+        &'a mut self,
+        app: &AppHandle,
+        progress: &DownloadProgress,
+    ) -> anyhow::Result<&'a mut PlayerInfo>;
+}
+
+impl GetOrInitPlayerInfo for Option<PlayerInfo> {
+    async fn get_or_init<'a>(
+        &'a mut self,
+        app: &AppHandle,
+        progress: &DownloadProgress,
+    ) -> anyhow::Result<&'a mut PlayerInfo> {
+        if let Some(info) = self {
+            return Ok(info);
+        }
+
+        let bili_client = app.get_bili_client();
+        let info = bili_client
+            .get_player_info(progress.aid, progress.cid)
+            .await
+            .context("获取播放器信息失败")?;
+
+        Ok(self.insert(info))
     }
 }

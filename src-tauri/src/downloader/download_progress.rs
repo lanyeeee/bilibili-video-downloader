@@ -13,8 +13,8 @@ use crate::{
     config::Config,
     downloader::tasks::{
         audio_task::AudioTask, cover_task::CoverTask, danmaku_task::DanmakuTask,
-        json_task::JsonTask, merge_task::MergeTask, nfo_task::NfoTask, subtitle_task::SubtitleTask,
-        video_task::VideoTask,
+        embed_chapter_task::EmbedChapterTask, json_task::JsonTask, merge_task::MergeTask,
+        nfo_task::NfoTask, subtitle_task::SubtitleTask, video_task::VideoTask,
     },
     extensions::AppHandleExt,
     types::{
@@ -53,6 +53,7 @@ pub struct DownloadProgress {
     pub video_task: VideoTask,
     pub audio_task: AudioTask,
     pub merge_task: MergeTask,
+    pub embed_chapter_task: EmbedChapterTask,
     pub subtitle_task: SubtitleTask,
     pub danmaku_task: DanmakuTask,
     pub cover_task: CoverTask,
@@ -125,6 +126,7 @@ impl DownloadProgress {
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            embed_chapter_task: tasks.embed_chapter,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -176,6 +178,7 @@ impl DownloadProgress {
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            embed_chapter_task: tasks.embed_chapter,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -320,6 +323,7 @@ impl DownloadProgress {
         self.video_task.is_completed()
             && self.audio_task.is_completed()
             && self.merge_task.is_completed()
+            && self.embed_chapter_task.is_completed()
             && self.danmaku_task.is_completed()
             && self.subtitle_task.is_completed()
             && self.cover_task.is_completed()
@@ -331,6 +335,7 @@ impl DownloadProgress {
         self.video_task.mark_uncompleted();
         self.audio_task.mark_uncompleted();
         self.merge_task.completed = false;
+        self.embed_chapter_task.completed = false;
         self.danmaku_task.completed = false;
         self.subtitle_task.completed = false;
         self.cover_task.completed = false;
@@ -384,6 +389,7 @@ fn create_normal_progresses_for_single(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            embed_chapter_task: tasks.embed_chapter,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -424,6 +430,7 @@ fn create_normal_progresses_for_single(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            embed_chapter_task: tasks.embed_chapter,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -464,6 +471,7 @@ fn create_normal_progresses_for_single(
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
             merge_task: tasks.merge.clone(),
+            embed_chapter_task: tasks.embed_chapter.clone(),
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
@@ -536,6 +544,7 @@ fn create_normal_progresses_for_season(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            embed_chapter_task: tasks.embed_chapter,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -576,6 +585,7 @@ fn create_normal_progresses_for_season(
             video_task: tasks.video,
             audio_task: tasks.audio,
             merge_task: tasks.merge,
+            embed_chapter_task: tasks.embed_chapter,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -617,6 +627,7 @@ fn create_normal_progresses_for_season(
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
             merge_task: tasks.merge.clone(),
+            embed_chapter_task: tasks.embed_chapter.clone(),
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
@@ -639,6 +650,7 @@ struct Tasks {
     video: VideoTask,
     audio: AudioTask,
     merge: MergeTask,
+    embed_chapter: EmbedChapterTask,
     danmaku: DanmakuTask,
     subtitle: SubtitleTask,
     cover: CoverTask,
@@ -669,6 +681,11 @@ impl Tasks {
 
         let merge = MergeTask {
             selected: config.auto_merge,
+            completed: false,
+        };
+
+        let embed_chapter = EmbedChapterTask {
+            selected: config.embed_chapter,
             completed: false,
         };
 
@@ -704,6 +721,7 @@ impl Tasks {
             video,
             audio,
             merge,
+            embed_chapter,
             danmaku,
             subtitle,
             cover,
