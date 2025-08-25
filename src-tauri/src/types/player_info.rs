@@ -44,6 +44,26 @@ pub struct PlayerInfo {
     pub is_upower_exclusive_with_qa: bool,
 }
 
+impl PlayerInfo {
+    pub fn generate_chapter_metadata(&self) -> String {
+        use std::fmt::Write;
+
+        let mut metadata_content = ";FFMETADATA1\n".to_string();
+
+        for view_point in &self.view_points {
+            let start = view_point.from;
+            let end = view_point.to;
+            let title = &view_point.content;
+            let _ = writeln!(
+                &mut metadata_content,
+                "[CHAPTER]\nTIMEBASE=1/1\nSTART={start}\nEND={end}\ntitle={title}\n"
+            );
+        }
+
+        metadata_content
+    }
+}
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 pub struct IpInfo {
     pub ip: String,
