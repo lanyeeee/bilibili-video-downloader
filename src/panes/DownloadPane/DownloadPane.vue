@@ -97,6 +97,7 @@ onMounted(async () => {
         const videoTask = progressData.video_task
         const audioTask = progressData.audio_task
         const mergeTask = progressData.merge_task
+        const embedChapterTask = progressData.embed_chapter_task
         const danmakuTask = progressData.danmaku_task
         const subtitleTask = progressData.subtitle_task
         const coverTask = progressData.cover_task
@@ -115,9 +116,20 @@ onMounted(async () => {
           const completedChunks = progressData.audio_task.chunks.filter((chunk) => chunk.completed).length
           progressData.percentage = (completedChunks / chunkCount) * 100
           progressData.taskIndicator = `音频分片 ${completedChunks}/${chunkCount}`
+        } else if (
+          mergeTask.selected &&
+          !mergeTask.completed &&
+          embedChapterTask.selected &&
+          !embedChapterTask.completed
+        ) {
+          progressData.percentage = 100
+          progressData.taskIndicator = '合并视频音频+嵌入章节元数据'
         } else if (mergeTask.selected && !mergeTask.completed) {
           progressData.percentage = 100
           progressData.taskIndicator = '合并视频和音频'
+        } else if (embedChapterTask.selected && !embedChapterTask.completed) {
+          progressData.percentage = 100
+          progressData.taskIndicator = '嵌入章节元数据'
         } else if (danmakuSelected && !danmakuTask.completed) {
           progressData.percentage = 100
           progressData.taskIndicator = '弹幕'

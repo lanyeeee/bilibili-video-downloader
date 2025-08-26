@@ -67,6 +67,13 @@ const audioQualitySelectOptions: SelectBaseOption<PreferAudioQuality>[] = [
         </template>
       </n-tooltip>
       <n-checkbox class="w-22" v-model:checked="store.config.download_json">json文件</n-checkbox>
+      <n-tooltip placement="top" trigger="hover">
+        <div>将章节信息嵌入mp4文件的元数据中</div>
+        <div>使视频在各类播放器中支持章节导航(例如进度条分段)</div>
+        <template #trigger>
+          <n-checkbox v-model:checked="store.config.embed_chapter">章节标记</n-checkbox>
+        </template>
+      </n-tooltip>
     </div>
 
     <n-tooltip placement="left" trigger="hover" class="w-20vw">

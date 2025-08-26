@@ -153,7 +153,7 @@ function handleSearchClick() {
           P{{ p.part_order }} {{ p.part_title }}
         </ColorfulTag>
 
-        <div class="mt-auto flex gap-1 flex-wrap" title="下载内容">
+        <div class="mt-auto flex gap-1 flex-wrap pt-2" title="下载内容">
           <ColorfulTag v-if="p.video_task.selected" color="blue">
             视频(编码:{{ p.video_task.codec_type }} 画质:{{ p.video_task.video_quality }})
           </ColorfulTag>
@@ -171,6 +171,7 @@ function handleSearchClick() {
 
           <ColorfulTag v-if="p.nfo_task.selected" color="amber">nfo元数据</ColorfulTag>
           <ColorfulTag v-if="p.json_task.selected" color="amber">json元数据</ColorfulTag>
+          <ColorfulTag v-if="p.embed_chapter_task.selected" color="amber">章节信息</ColorfulTag>
         </div>
       </div>
     </div>
