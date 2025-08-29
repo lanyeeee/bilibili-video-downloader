@@ -142,6 +142,14 @@ async showPathInFileManager(path: string) : Promise<Result<null, CommandError>> 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getSkipSegments(bvid: string, cid: number | null) : Promise<Result<SkipSegments, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_skip_segments", { bvid, cid }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -357,6 +365,8 @@ export type SeriesInBangumi = { display_type: number; series_id: number; series_
 export type SeriesInBangumiFollow = { series_id: number | null; title: string | null; season_count: number | null; new_season_id: number | null; series_ord: number | null }
 export type Show = { wide_screen: number }
 export type Skip = { ed: Ed; op: Op }
+export type SkipSegment = { cid: string; category: string; actionType: string; segment: number[]; UUID: string; videoDuration: number; locked: number; votes: number; description: string }
+export type SkipSegments = SkipSegment[]
 export type Staff = { mid: number; title: string; name: string; face: string; follower: number; label_style: number }
 export type StatInBangumi = { coins: number; danmakus: number; favorite: number; favorites: number; follow_text: string; likes: number; reply: number; share: number; views: number; vt: number }
 export type StatInBangumiFollow = { follow: number; view: number; danmaku: number; reply: number; coin: number; series_follow: number | null; series_view: number | null; likes: number; favorite: number }

@@ -28,6 +28,7 @@ use crate::{
             BangumiSearchResult, CheeseSearchResult, FavSearchResult, NormalSearchResult,
             SearchResult, UserVideoSearchResult,
         },
+        skip_segments::SkipSegments,
         user_info::UserInfo,
         user_video_info::UserVideoInfo,
         watch_later_info::WatchLaterInfo,
@@ -360,4 +361,19 @@ pub fn show_path_in_file_manager(app: AppHandle, path: &str) -> CommandResult<()
         .context(format!("在文件管理器中打开`{path}`失败"))
         .map_err(|err| CommandError::from("在文件管理器中打开失败", err))?;
     Ok(())
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_skip_segments(
+    app: AppHandle,
+    bvid: String,
+    cid: Option<i64>,
+) -> CommandResult<SkipSegments> {
+    let bili_client = app.get_bili_client();
+    let skip_segments = bili_client
+        .get_skip_segments(&bvid, cid)
+        .await
+        .map_err(|err| CommandError::from("获取跳过片段失败", err))?;
+    Ok(skip_segments)
 }
