@@ -22,6 +22,7 @@ pub mod qrcode_data;
 pub mod qrcode_status;
 pub mod search_params;
 pub mod search_result;
+pub mod skip_segments;
 pub mod subtitle;
 pub mod tags;
 pub mod user_info;

@@ -55,6 +55,7 @@ pub fn run() {
             search,
             get_logs_dir_size,
             show_path_in_file_manager,
+            get_skip_segments,
         ])
         .events(tauri_specta::collect_events![LogEvent, DownloadEvent]);
 

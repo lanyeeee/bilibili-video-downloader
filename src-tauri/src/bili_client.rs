@@ -29,8 +29,8 @@ use crate::{
         get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
         get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
         normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
-        qrcode_status::QrcodeStatus, subtitle::Subtitle, tags::Tags, user_info::UserInfo,
-        user_video_info::UserVideoInfo, watch_later_info::WatchLaterInfo,
+        qrcode_status::QrcodeStatus, skip_segments::SkipSegments, subtitle::Subtitle, tags::Tags,
+        user_info::UserInfo, user_video_info::UserVideoInfo, watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -867,6 +867,41 @@ impl BiliClient {
             serde_json::from_str(&data_str).context(format!("将data解析为Tags失败: {data_str}"))?;
 
         Ok(tags)
+    }
+
+    pub async fn get_skip_segments(
+        &self,
+        bvid: &str,
+        cid: Option<i64>,
+    ) -> anyhow::Result<SkipSegments> {
+        // 发送获取跳过片段的请求
+        let mut params = json!({
+            "videoID": bvid,
+            "actionType": "skip",
+        });
+        if let Some(cid) = cid {
+            params["cid"] = cid.into();
+        }
+
+        let request = self
+            .api_client
+            .read()
+            .get("https://bsbsb.top/api/skipSegments")
+            .query(&params);
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status == StatusCode::NOT_FOUND {
+            return Ok(SkipSegments(Vec::new()));
+        } else if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为SkipSegments
+        let skip_segments: SkipSegments =
+            serde_json::from_str(&body).context(format!("将body解析为SkipSegments失败: {body}"))?;
+
+        Ok(skip_segments)
     }
 
     pub fn get_cookie(&self) -> String {
