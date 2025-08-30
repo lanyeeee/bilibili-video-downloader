@@ -1,3 +1,4 @@
+pub mod chapter_segments;
 pub mod download_chunk_task;
 pub mod download_manager;
 pub mod download_progress;
