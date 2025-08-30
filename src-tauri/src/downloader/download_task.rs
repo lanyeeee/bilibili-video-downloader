@@ -13,6 +13,7 @@ use tokio::{
 };
 
 use crate::{
+    downloader::chapter_segments::{ChapterSegment, ChapterSegments},
     events::DownloadEvent,
     extensions::{AnyhowErrorToStringChain, AppHandleExt, GetOrInitPlayerInfo},
     types::{create_download_task_params::CreateDownloadTaskParams, player_info::PlayerInfo},
@@ -280,6 +281,7 @@ impl DownloadTask {
         let audio_task = &progress.audio_task;
         let merge_task = &progress.merge_task;
         let embed_chapter_task = &progress.embed_chapter_task;
+        let embed_skip_task = &progress.embed_skip_task;
         let danmaku_task = &progress.danmaku_task;
         let subtitle_task = &progress.subtitle_task;
         let cover_task = &progress.cover_task;
@@ -308,27 +310,26 @@ impl DownloadTask {
         }
 
         let merge_completed = merge_task.is_completed();
-        let embed_completed = embed_chapter_task.is_completed();
+        let embed_completed = embed_chapter_task.is_completed() && embed_skip_task.is_completed();
 
         if !merge_completed && !embed_completed {
-            // 如果合并任务和嵌入章节任务都未完成，则调用merge_and_embed，将两个任务通过一个ffmpeg命令完成
+            // 如果合并任务和嵌入任务都未完成，则调用merge_and_embed，将两个任务通过一个ffmpeg命令完成
             self.merge_and_embed(&progress, &mut player_info)
                 .await
                 .context(format!(
-                    "{ids_string} `{filename}`合并视频和音频失败并+嵌入章节元数据失败"
+                    "{ids_string} `{filename}`自动合并+嵌入章节元数据失败"
                 ))?;
-            tracing::debug!("{ids_string} `{filename}`视频和音频合并+嵌入章节元数据完成");
+            tracing::debug!("{ids_string} `{filename}`自动合并+嵌入章节元数据完成");
         } else if !merge_completed {
-            // 如果合并任务未完成，嵌入章节任务已完成，则只合并
+            // 如果合并任务未完成，嵌入任务已完成，则只合并
             merge_task
                 .process(self, &progress)
                 .await
-                .context(format!("{ids_string} `{filename}`合并视频和音频失败"))?;
-            tracing::debug!("{ids_string} `{filename}`视频和音频合并完成");
+                .context(format!("{ids_string} `{filename}`自动合并失败"))?;
+            tracing::debug!("{ids_string} `{filename}`自动合并完成");
         } else if !embed_completed {
-            // 如果嵌入章节任务未完成，合并任务已完成，则只嵌入
-            embed_chapter_task
-                .process(self, &progress, &mut player_info)
+            // 如果嵌入任务未完成，合并任务已完成，则只嵌入
+            self.embed_chapter_segments(&progress, &mut player_info)
                 .await
                 .context(format!("{ids_string} `{filename}`嵌入章节元数据失败"))?;
             tracing::debug!("{ids_string} `{filename}`嵌入章节元数据完成");
@@ -385,6 +386,47 @@ impl DownloadTask {
         Ok(())
     }
 
+    async fn create_chapter_segments(
+        self: &Arc<Self>,
+        progress: &DownloadProgress,
+        player_info: &mut Option<PlayerInfo>,
+    ) -> anyhow::Result<ChapterSegments> {
+        let mut chapter_segments = ChapterSegments {
+            segments: Vec::new(),
+        };
+
+        if !progress.embed_chapter_task.is_completed() {
+            let player_info = player_info.get_or_init(&self.app, progress).await?;
+            let segments = player_info
+                .view_points
+                .iter()
+                .map(|vp| ChapterSegment {
+                    title: vp.content.clone(),
+                    start: vp.from,
+                    end: vp.to,
+                })
+                .collect();
+            chapter_segments = ChapterSegments { segments };
+        }
+
+        if !progress.embed_skip_task.is_completed() {
+            let bili_client = self.app.get_bili_client();
+            let Some(bvid) = &progress.bvid else {
+                return Ok(chapter_segments);
+            };
+            let cid = Some(progress.cid);
+
+            let skip_segments = bili_client.get_skip_segments(bvid, cid).await?;
+            for segment in skip_segments.0 {
+                if let Some(chapter_segment) = segment.into_chapter_segment() {
+                    chapter_segments.insert(chapter_segment);
+                }
+            }
+        }
+
+        Ok(chapter_segments)
+    }
+
     async fn merge_and_embed(
         self: &Arc<Self>,
         progress: &DownloadProgress,
@@ -395,8 +437,14 @@ impl DownloadTask {
         let video_path = episode_dir.join(format!("{filename}.mp4"));
         if !video_path.exists() {
             self.update_progress(|p| {
+                if !p.embed_chapter_task.is_completed() {
+                    p.embed_chapter_task.completed = true;
+                }
+                if !p.embed_skip_task.is_completed() {
+                    p.embed_skip_task.completed = true;
+                }
+
                 p.merge_task.completed = true;
-                p.embed_chapter_task.completed = true;
             });
 
             return Ok(());
@@ -405,9 +453,7 @@ impl DownloadTask {
         let audio_path = episode_dir.join(format!("{filename}.m4a"));
         if !audio_path.exists() {
             // 如果音频文件不存在，则只嵌入章节元数据
-            progress
-                .embed_chapter_task
-                .process(self, progress, player_info)
+            self.embed_chapter_segments(progress, player_info)
                 .await
                 .context("嵌入章节元数据失败")?;
 
@@ -415,9 +461,8 @@ impl DownloadTask {
             return Ok(());
         }
 
-        let player_info = player_info.get_or_init(&self.app, progress).await?;
-
-        let metadata_content = player_info.generate_chapter_metadata();
+        let chapter_segments = self.create_chapter_segments(progress, player_info).await?;
+        let metadata_content = chapter_segments.generate_chapter_metadata(progress.duration);
         let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
 
         std::fs::write(&metadata_path, metadata_content)
@@ -492,8 +537,111 @@ impl DownloadTask {
         ))?;
 
         self.update_progress(|p| {
+            if !p.embed_chapter_task.is_completed() {
+                p.embed_chapter_task.completed = true;
+            }
+            if !p.embed_skip_task.is_completed() {
+                p.embed_skip_task.completed = true;
+            }
+
             p.merge_task.completed = true;
-            p.embed_chapter_task.completed = true;
+        });
+
+        Ok(())
+    }
+
+    async fn embed_chapter_segments(
+        self: &Arc<Self>,
+        progress: &DownloadProgress,
+        player_info: &mut Option<PlayerInfo>,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let video_path = episode_dir.join(format!("{filename}.mp4"));
+        if !video_path.exists() {
+            self.update_progress(|p| {
+                if !p.embed_chapter_task.is_completed() {
+                    p.embed_chapter_task.completed = true;
+                }
+                if !p.embed_skip_task.is_completed() {
+                    p.embed_skip_task.completed = true;
+                }
+            });
+            return Ok(());
+        }
+
+        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
+        let output_path = episode_dir.join(format!("{filename}-embed.mp4"));
+
+        let chapter_segments = self.create_chapter_segments(progress, player_info).await?;
+        let metadata_content = chapter_segments.generate_chapter_metadata(progress.duration);
+        let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
+
+        std::fs::write(&metadata_path, metadata_content)
+            .context(format!("保存章节元数据到`{}`失败", metadata_path.display()))?;
+
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let video_path_clone = video_path.clone();
+        let metadata_path_clone = metadata_path.clone();
+        let output_path_clone = output_path.clone();
+
+        tauri::async_runtime::spawn_blocking(move || {
+            let mut command = std::process::Command::new(ffmpeg_program);
+
+            command
+                .arg("-i")
+                .arg(video_path_clone)
+                .arg("-i")
+                .arg(metadata_path_clone)
+                .arg("-map_metadata")
+                .arg("1")
+                .arg("-c")
+                .arg("copy")
+                .arg(output_path_clone)
+                .arg("-y");
+
+            #[cfg(target_os = "windows")]
+            {
+                // 隐藏窗口
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(0x0800_0000);
+            }
+
+            let output = command.output();
+
+            let _ = tx.send(output);
+        });
+
+        let output = rx.await??;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let err = anyhow!(format!("STDOUT: {stdout}"))
+                .context(format!("STDERR: {stderr}"))
+                .context("原因可能是视频或音频文件损坏，建议[重来]试试");
+            return Err(err);
+        }
+
+        std::fs::remove_file(&video_path)
+            .context(format!("删除视频文件`{}`失败", video_path.display()))?;
+        std::fs::rename(&output_path, &video_path).context(format!(
+            "将`{}`重命名为`{}`失败",
+            output_path.display(),
+            video_path.display()
+        ))?;
+        std::fs::remove_file(&metadata_path).context(format!(
+            "删除章节元数据文件`{}`失败",
+            metadata_path.display()
+        ))?;
+
+        self.update_progress(|p| {
+            if !p.embed_chapter_task.is_completed() {
+                p.embed_chapter_task.completed = true;
+            }
+            if !p.embed_skip_task.is_completed() {
+                p.embed_skip_task.completed = true;
+            }
         });
 
         Ok(())
