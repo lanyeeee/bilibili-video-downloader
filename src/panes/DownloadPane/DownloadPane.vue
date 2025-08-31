@@ -98,6 +98,7 @@ onMounted(async () => {
         const audioTask = progressData.audio_task
         const mergeTask = progressData.merge_task
         const embedChapterTask = progressData.embed_chapter_task
+        const embedSkipTask = progressData.embed_skip_task
         const danmakuTask = progressData.danmaku_task
         const subtitleTask = progressData.subtitle_task
         const coverTask = progressData.cover_task
@@ -105,6 +106,9 @@ onMounted(async () => {
         const jsonTask = progressData.json_task
 
         const danmakuSelected = danmakuTask.xml_selected || danmakuTask.ass_selected || danmakuTask.json_selected
+        const embedding =
+          (embedChapterTask.selected && !embedChapterTask.completed) ||
+          (embedSkipTask.selected && !embedSkipTask.completed)
 
         if (videoTask.selected && !videoTask.completed && videoTask.content_length > 0) {
           const chunkCount = progressData.video_task.chunks.length
@@ -116,18 +120,13 @@ onMounted(async () => {
           const completedChunks = progressData.audio_task.chunks.filter((chunk) => chunk.completed).length
           progressData.percentage = (completedChunks / chunkCount) * 100
           progressData.taskIndicator = `音频分片 ${completedChunks}/${chunkCount}`
-        } else if (
-          mergeTask.selected &&
-          !mergeTask.completed &&
-          embedChapterTask.selected &&
-          !embedChapterTask.completed
-        ) {
+        } else if (mergeTask.selected && !mergeTask.completed && embedding) {
           progressData.percentage = 100
-          progressData.taskIndicator = '合并视频音频+嵌入章节元数据'
+          progressData.taskIndicator = '自动合并+嵌入章节元数据'
         } else if (mergeTask.selected && !mergeTask.completed) {
           progressData.percentage = 100
-          progressData.taskIndicator = '合并视频和音频'
-        } else if (embedChapterTask.selected && !embedChapterTask.completed) {
+          progressData.taskIndicator = '自动合并'
+        } else if (embedding) {
           progressData.percentage = 100
           progressData.taskIndicator = '嵌入章节元数据'
         } else if (danmakuSelected && !danmakuTask.completed) {
@@ -141,10 +140,10 @@ onMounted(async () => {
           progressData.taskIndicator = '封面'
         } else if (nfoTask.selected && !nfoTask.completed) {
           progressData.percentage = 100
-          progressData.taskIndicator = 'nfo元数据'
+          progressData.taskIndicator = 'nfo刮削'
         } else if (jsonTask.selected && !jsonTask.completed) {
           progressData.percentage = 100
-          progressData.taskIndicator = 'json元数据'
+          progressData.taskIndicator = 'json刮削'
         }
       })
     }
