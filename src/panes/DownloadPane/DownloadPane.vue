@@ -96,9 +96,7 @@ onMounted(async () => {
 
         const videoTask = progressData.video_task
         const audioTask = progressData.audio_task
-        const mergeTask = progressData.merge_task
-        const embedChapterTask = progressData.embed_chapter_task
-        const embedSkipTask = progressData.embed_skip_task
+        const videoProcessTask = progressData.video_process_task
         const danmakuTask = progressData.danmaku_task
         const subtitleTask = progressData.subtitle_task
         const coverTask = progressData.cover_task
@@ -106,9 +104,6 @@ onMounted(async () => {
         const jsonTask = progressData.json_task
 
         const danmakuSelected = danmakuTask.xml_selected || danmakuTask.ass_selected || danmakuTask.json_selected
-        const embedding =
-          (embedChapterTask.selected && !embedChapterTask.completed) ||
-          (embedSkipTask.selected && !embedSkipTask.completed)
 
         if (videoTask.selected && !videoTask.completed && videoTask.content_length > 0) {
           const chunkCount = progressData.video_task.chunks.length
@@ -120,15 +115,18 @@ onMounted(async () => {
           const completedChunks = progressData.audio_task.chunks.filter((chunk) => chunk.completed).length
           progressData.percentage = (completedChunks / chunkCount) * 100
           progressData.taskIndicator = `音频分片 ${completedChunks}/${chunkCount}`
-        } else if (mergeTask.selected && !mergeTask.completed && embedding) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '自动合并+嵌入章节元数据'
-        } else if (mergeTask.selected && !mergeTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '自动合并'
-        } else if (embedding) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '嵌入章节元数据'
+        } else if (!videoProcessTask.completed) {
+          const embedSelected = videoProcessTask.embed_chapter_selected || videoProcessTask.embed_skip_selected
+          if (videoProcessTask.merge_selected && embedSelected) {
+            progressData.percentage = 100
+            progressData.taskIndicator = '自动合并+嵌入章节元数据'
+          } else if (videoProcessTask.merge_selected) {
+            progressData.percentage = 100
+            progressData.taskIndicator = '自动合并'
+          } else if (embedSelected) {
+            progressData.percentage = 100
+            progressData.taskIndicator = '嵌入章节元数据'
+          }
         } else if (danmakuSelected && !danmakuTask.completed) {
           progressData.percentage = 100
           progressData.taskIndicator = '弹幕'

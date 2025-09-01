@@ -161,9 +161,9 @@ function handleSearchClick() {
             音频(音质:{{ p.audio_task.audio_quality }})
           </ColorfulTag>
 
-          <ColorfulTag v-if="p.merge_task.selected" color="rose">自动合并</ColorfulTag>
-          <ColorfulTag v-if="p.embed_chapter_task.selected" color="rose">标记章节</ColorfulTag>
-          <ColorfulTag v-if="p.embed_skip_task.selected" color="rose">标记广告</ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.merge_selected" color="rose">自动合并</ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.embed_chapter_selected" color="rose">标记章节</ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.embed_skip_selected" color="rose">标记广告</ColorfulTag>
 
           <ColorfulTag v-if="p.danmaku_task.xml_selected" color="purple">xml弹幕</ColorfulTag>
           <ColorfulTag v-if="p.danmaku_task.ass_selected" color="purple">ass弹幕</ColorfulTag>

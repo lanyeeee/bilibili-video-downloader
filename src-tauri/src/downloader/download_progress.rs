@@ -13,9 +13,8 @@ use crate::{
     config::Config,
     downloader::tasks::{
         audio_task::AudioTask, cover_task::CoverTask, danmaku_task::DanmakuTask,
-        embed_chapter_task::EmbedChapterTask, embed_skip_task::EmbedSkipTask, json_task::JsonTask,
-        merge_task::MergeTask, nfo_task::NfoTask, subtitle_task::SubtitleTask,
-        video_task::VideoTask,
+        json_task::JsonTask, nfo_task::NfoTask, subtitle_task::SubtitleTask,
+        video_process_task::VideoProcessTask, video_task::VideoTask,
     },
     extensions::AppHandleExt,
     types::{
@@ -53,9 +52,7 @@ pub struct DownloadProgress {
     pub filename: String,
     pub video_task: VideoTask,
     pub audio_task: AudioTask,
-    pub merge_task: MergeTask,
-    pub embed_chapter_task: EmbedChapterTask,
-    pub embed_skip_task: EmbedSkipTask,
+    pub video_process_task: VideoProcessTask,
     pub subtitle_task: SubtitleTask,
     pub danmaku_task: DanmakuTask,
     pub cover_task: CoverTask,
@@ -127,9 +124,7 @@ impl DownloadProgress {
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
-            merge_task: tasks.merge,
-            embed_chapter_task: tasks.embed_chapter,
-            embed_skip_task: tasks.embed_skip,
+            video_process_task: tasks.video_process,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -180,9 +175,7 @@ impl DownloadProgress {
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
-            merge_task: tasks.merge,
-            embed_chapter_task: tasks.embed_chapter,
-            embed_skip_task: tasks.embed_skip,
+            video_process_task: tasks.video_process,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -326,8 +319,7 @@ impl DownloadProgress {
     pub fn is_completed(&self) -> bool {
         self.video_task.is_completed()
             && self.audio_task.is_completed()
-            && self.merge_task.is_completed()
-            && self.embed_chapter_task.is_completed()
+            && self.video_process_task.is_completed()
             && self.danmaku_task.is_completed()
             && self.subtitle_task.is_completed()
             && self.cover_task.is_completed()
@@ -338,8 +330,7 @@ impl DownloadProgress {
     pub fn mark_uncompleted(&mut self) {
         self.video_task.mark_uncompleted();
         self.audio_task.mark_uncompleted();
-        self.merge_task.completed = false;
-        self.embed_chapter_task.completed = false;
+        self.video_process_task.completed = false;
         self.danmaku_task.completed = false;
         self.subtitle_task.completed = false;
         self.cover_task.completed = false;
@@ -392,9 +383,7 @@ fn create_normal_progresses_for_single(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
-            merge_task: tasks.merge,
-            embed_chapter_task: tasks.embed_chapter,
-            embed_skip_task: tasks.embed_skip,
+            video_process_task: tasks.video_process,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -434,9 +423,7 @@ fn create_normal_progresses_for_single(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
-            merge_task: tasks.merge,
-            embed_chapter_task: tasks.embed_chapter,
-            embed_skip_task: tasks.embed_skip,
+            video_process_task: tasks.video_process,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -476,9 +463,7 @@ fn create_normal_progresses_for_single(
             filename: String::new(),
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
-            merge_task: tasks.merge.clone(),
-            embed_chapter_task: tasks.embed_chapter.clone(),
-            embed_skip_task: tasks.embed_skip.clone(),
+            video_process_task: tasks.video_process.clone(),
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
@@ -550,9 +535,7 @@ fn create_normal_progresses_for_season(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
-            merge_task: tasks.merge,
-            embed_chapter_task: tasks.embed_chapter,
-            embed_skip_task: tasks.embed_skip,
+            video_process_task: tasks.video_process,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -592,9 +575,7 @@ fn create_normal_progresses_for_season(
             filename: String::new(),
             video_task: tasks.video,
             audio_task: tasks.audio,
-            merge_task: tasks.merge,
-            embed_chapter_task: tasks.embed_chapter,
-            embed_skip_task: tasks.embed_skip,
+            video_process_task: tasks.video_process,
             danmaku_task: tasks.danmaku,
             subtitle_task: tasks.subtitle,
             cover_task: tasks.cover,
@@ -635,9 +616,7 @@ fn create_normal_progresses_for_season(
             filename: String::new(),
             video_task: tasks.video.clone(),
             audio_task: tasks.audio.clone(),
-            merge_task: tasks.merge.clone(),
-            embed_chapter_task: tasks.embed_chapter.clone(),
-            embed_skip_task: tasks.embed_skip.clone(),
+            video_process_task: tasks.video_process.clone(),
             danmaku_task: tasks.danmaku.clone(),
             subtitle_task: tasks.subtitle.clone(),
             cover_task: tasks.cover.clone(),
@@ -659,9 +638,7 @@ fn create_normal_progresses_for_season(
 struct Tasks {
     video: VideoTask,
     audio: AudioTask,
-    merge: MergeTask,
-    embed_chapter: EmbedChapterTask,
-    embed_skip: EmbedSkipTask,
+    video_process: VideoProcessTask,
     danmaku: DanmakuTask,
     subtitle: SubtitleTask,
     cover: CoverTask,
@@ -690,18 +667,10 @@ impl Tasks {
             completed: false,
         };
 
-        let merge = MergeTask {
-            selected: config.auto_merge,
-            completed: false,
-        };
-
-        let embed_chapter = EmbedChapterTask {
-            selected: config.embed_chapter,
-            completed: false,
-        };
-
-        let embed_skip = EmbedSkipTask {
-            selected: config.embed_skip,
+        let video_process = VideoProcessTask {
+            merge_selected: config.auto_merge,
+            embed_chapter_selected: config.embed_chapter,
+            embed_skip_selected: config.embed_skip,
             completed: false,
         };
 
@@ -736,9 +705,7 @@ impl Tasks {
         Self {
             video,
             audio,
-            merge,
-            embed_chapter,
-            embed_skip,
+            video_process,
             danmaku,
             subtitle,
             cover,
