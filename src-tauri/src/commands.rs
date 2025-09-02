@@ -9,10 +9,12 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
-        bangumi_info::EpInBangumi,
+        bangumi_follow_info::BangumiFollowInfo,
+        bangumi_info::{BangumiInfo, EpInBangumi},
         create_download_task_params::CreateDownloadTaskParams,
         fav_folders::FavFolders,
         fav_info::FavInfo,
+        get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams,
         get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams,
@@ -26,6 +28,7 @@ use crate::{
             BangumiSearchResult, CheeseSearchResult, FavSearchResult, NormalSearchResult,
             SearchResult, UserVideoSearchResult,
         },
+        skip_segments::SkipSegments,
         user_info::UserInfo,
         user_video_info::UserVideoInfo,
         watch_later_info::WatchLaterInfo,
@@ -120,6 +123,20 @@ pub async fn get_user_info(app: AppHandle, sessdata: String) -> CommandResult<Us
 
 #[tauri::command(async)]
 #[specta::specta]
+pub async fn get_bangumi_info(
+    app: AppHandle,
+    params: GetBangumiInfoParams,
+) -> CommandResult<BangumiInfo> {
+    let bili_client = app.get_bili_client();
+    let bangumi_info = bili_client
+        .get_bangumi_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取番剧视频信息失败", err))?;
+    Ok(bangumi_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
 pub async fn get_normal_info(
     app: AppHandle,
     params: GetNormalInfoParams,
@@ -177,6 +194,20 @@ pub async fn get_watch_later_info(app: AppHandle, page: i32) -> CommandResult<Wa
         .await
         .map_err(|err| CommandError::from("获取稍后观看内容失败", err))?;
     Ok(watch_later_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_bangumi_follow_info(
+    app: AppHandle,
+    params: GetBangumiFollowInfoParams,
+) -> CommandResult<BangumiFollowInfo> {
+    let bili_client = app.get_bili_client();
+    let bangumi_follow_info = bili_client
+        .get_bangumi_follow_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取追番信息失败", err))?;
+    Ok(bangumi_follow_info)
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -330,4 +361,19 @@ pub fn show_path_in_file_manager(app: AppHandle, path: &str) -> CommandResult<()
         .context(format!("在文件管理器中打开`{path}`失败"))
         .map_err(|err| CommandError::from("在文件管理器中打开失败", err))?;
     Ok(())
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_skip_segments(
+    app: AppHandle,
+    bvid: String,
+    cid: Option<i64>,
+) -> CommandResult<SkipSegments> {
+    let bili_client = app.get_bili_client();
+    let skip_segments = bili_client
+        .get_skip_segments(&bvid, cid)
+        .await
+        .map_err(|err| CommandError::from("获取跳过片段失败", err))?;
+    Ok(skip_segments)
 }

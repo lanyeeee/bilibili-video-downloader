@@ -40,10 +40,12 @@ pub fn run() {
             get_qrcode_status,
             get_user_info,
             get_normal_info,
+            get_bangumi_info,
             get_user_video_info,
             get_fav_folders,
             get_fav_info,
             get_watch_later_info,
+            get_bangumi_follow_info,
             create_download_tasks,
             pause_download_tasks,
             resume_download_tasks,
@@ -53,6 +55,7 @@ pub fn run() {
             search,
             get_logs_dir_size,
             show_path_in_file_manager,
+            get_skip_segments,
         ])
         .events(tauri_specta::collect_events![LogEvent, DownloadEvent]);
 
@@ -66,6 +69,10 @@ pub fn run() {
             "../src/bindings.ts",
         )
         .expect("Failed to export typescript bindings");
+
+    // 解决Ubuntu24.04窗口全白的问题
+    #[cfg(target_os = "linux")]
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())

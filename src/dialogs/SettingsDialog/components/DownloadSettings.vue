@@ -37,18 +37,30 @@ const audioQualitySelectOptions: SelectBaseOption<PreferAudioQuality>[] = [
       <span class="font-bold">主要内容</span>
       <n-checkbox v-model:checked="store.config.download_video">下载视频</n-checkbox>
       <n-checkbox v-model:checked="store.config.download_audio">下载音频</n-checkbox>
+    </div>
+
+    <div class="flex gap-2">
+      <span class="font-bold">视频处理</span>
       <n-tooltip placement="top" trigger="hover">
         <div>自动合并音频和视频</div>
         <template #trigger>
           <n-checkbox v-model:checked="store.config.auto_merge">自动合并</n-checkbox>
         </template>
       </n-tooltip>
-    </div>
-
-    <div class="flex gap-2">
-      <span class="font-bold">附加内容</span>
-      <n-checkbox v-model:checked="store.config.download_subtitle">下载字幕</n-checkbox>
-      <n-checkbox v-model:checked="store.config.download_cover">下载封面</n-checkbox>
+      <n-tooltip placement="top" trigger="hover">
+        <div>如果视频有章节分段，则将章节信息嵌入mp4文件的元数据中</div>
+        <div>使视频在各类播放器中支持章节导航(例如进度条分段)</div>
+        <template #trigger>
+          <n-checkbox v-model:checked="store.config.embed_chapter">标记章节</n-checkbox>
+        </template>
+      </n-tooltip>
+      <n-tooltip placement="top" trigger="hover">
+        <div>将视频的广告部分以章节的形式嵌入mp4文件的元数据中</div>
+        <div>可以实现自动跳过广告(如果播放器支持的话)</div>
+        <template #trigger>
+          <n-checkbox v-model:checked="store.config.embed_skip">标记广告</n-checkbox>
+        </template>
+      </n-tooltip>
     </div>
 
     <div class="flex gap-2">
@@ -59,14 +71,20 @@ const audioQualitySelectOptions: SelectBaseOption<PreferAudioQuality>[] = [
     </div>
 
     <div class="flex gap-2">
+      <span class="font-bold">其他内容</span>
+      <n-checkbox v-model:checked="store.config.download_subtitle">下载字幕</n-checkbox>
+      <n-checkbox v-model:checked="store.config.download_cover">下载封面</n-checkbox>
+    </div>
+
+    <div class="flex gap-2">
       <span class="w-14 font-bold">元数据</span>
       <n-tooltip placement="top" trigger="hover">
         <div>还会顺便下载poster和fanart(如果有的话)</div>
         <template #trigger>
-          <n-checkbox class="w-22" v-model:checked="store.config.download_nfo">nfo文件</n-checkbox>
+          <n-checkbox class="w-22" v-model:checked="store.config.download_nfo">nfo刮削</n-checkbox>
         </template>
       </n-tooltip>
-      <n-checkbox class="w-22" v-model:checked="store.config.download_json">json文件</n-checkbox>
+      <n-checkbox class="w-22" v-model:checked="store.config.download_json">json刮削</n-checkbox>
     </div>
 
     <n-tooltip placement="left" trigger="hover" class="w-20vw">

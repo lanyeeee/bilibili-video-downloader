@@ -96,7 +96,7 @@ onMounted(async () => {
 
         const videoTask = progressData.video_task
         const audioTask = progressData.audio_task
-        const mergeTask = progressData.merge_task
+        const videoProcessTask = progressData.video_process_task
         const danmakuTask = progressData.danmaku_task
         const subtitleTask = progressData.subtitle_task
         const coverTask = progressData.cover_task
@@ -115,9 +115,18 @@ onMounted(async () => {
           const completedChunks = progressData.audio_task.chunks.filter((chunk) => chunk.completed).length
           progressData.percentage = (completedChunks / chunkCount) * 100
           progressData.taskIndicator = `音频分片 ${completedChunks}/${chunkCount}`
-        } else if (mergeTask.selected && !mergeTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '合并视频和音频'
+        } else if (!videoProcessTask.completed) {
+          const embedSelected = videoProcessTask.embed_chapter_selected || videoProcessTask.embed_skip_selected
+          if (videoProcessTask.merge_selected && embedSelected) {
+            progressData.percentage = 100
+            progressData.taskIndicator = '自动合并+嵌入章节元数据'
+          } else if (videoProcessTask.merge_selected) {
+            progressData.percentage = 100
+            progressData.taskIndicator = '自动合并'
+          } else if (embedSelected) {
+            progressData.percentage = 100
+            progressData.taskIndicator = '嵌入章节元数据'
+          }
         } else if (danmakuSelected && !danmakuTask.completed) {
           progressData.percentage = 100
           progressData.taskIndicator = '弹幕'
@@ -129,10 +138,10 @@ onMounted(async () => {
           progressData.taskIndicator = '封面'
         } else if (nfoTask.selected && !nfoTask.completed) {
           progressData.percentage = 100
-          progressData.taskIndicator = 'nfo元数据'
+          progressData.taskIndicator = 'nfo刮削'
         } else if (jsonTask.selected && !jsonTask.completed) {
           progressData.percentage = 100
-          progressData.taskIndicator = 'json元数据'
+          progressData.taskIndicator = 'json刮削'
         }
       })
     }

@@ -53,6 +53,8 @@ yaserde = { version = "0.12.0", features = ["yaserde_derive"] }
 float-ord = { version = "0.3.2" }
 memchr = { version = "2.7.5" }
 md-5 = { version = "0.10.6" }
+rand = { version = "0.9.1" }
+base64 = { version = "0.22.1" }
 
 [profile.release]
 strip = true

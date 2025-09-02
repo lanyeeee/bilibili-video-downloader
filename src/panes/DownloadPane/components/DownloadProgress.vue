@@ -153,14 +153,17 @@ function handleSearchClick() {
           P{{ p.part_order }} {{ p.part_title }}
         </ColorfulTag>
 
-        <div class="mt-auto flex gap-1 flex-wrap" title="下载内容">
+        <div class="mt-auto flex gap-1 flex-wrap pt-2" title="下载内容">
           <ColorfulTag v-if="p.video_task.selected" color="blue">
             视频(编码:{{ p.video_task.codec_type }} 画质:{{ p.video_task.video_quality }})
           </ColorfulTag>
           <ColorfulTag v-if="p.audio_task.selected" color="blue">
             音频(音质:{{ p.audio_task.audio_quality }})
           </ColorfulTag>
-          <ColorfulTag v-if="p.merge_task.selected" color="blue">自动合并</ColorfulTag>
+
+          <ColorfulTag v-if="p.video_process_task.merge_selected" color="rose">自动合并</ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.embed_chapter_selected" color="rose">标记章节</ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.embed_skip_selected" color="rose">标记广告</ColorfulTag>
 
           <ColorfulTag v-if="p.danmaku_task.xml_selected" color="purple">xml弹幕</ColorfulTag>
           <ColorfulTag v-if="p.danmaku_task.ass_selected" color="purple">ass弹幕</ColorfulTag>
@@ -169,8 +172,8 @@ function handleSearchClick() {
           <ColorfulTag v-if="p.subtitle_task.selected" color="green">字幕</ColorfulTag>
           <ColorfulTag v-if="p.cover_task.selected" color="green">封面</ColorfulTag>
 
-          <ColorfulTag v-if="p.nfo_task.selected" color="amber">nfo元数据</ColorfulTag>
-          <ColorfulTag v-if="p.json_task.selected" color="amber">json元数据</ColorfulTag>
+          <ColorfulTag v-if="p.nfo_task.selected" color="amber">nfo刮削</ColorfulTag>
+          <ColorfulTag v-if="p.json_task.selected" color="amber">json刮削</ColorfulTag>
         </div>
       </div>
     </div>

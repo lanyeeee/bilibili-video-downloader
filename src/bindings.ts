@@ -48,6 +48,14 @@ async getNormalInfo(params: GetNormalInfoParams) : Promise<Result<NormalInfo, Co
     else return { status: "error", error: e  as any };
 }
 },
+async getBangumiInfo(params: GetBangumiInfoParams) : Promise<Result<BangumiInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_bangumi_info", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getUserVideoInfo(params: GetUserVideoInfoParams) : Promise<Result<UserVideoInfo, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_user_video_info", { params }) };
@@ -75,6 +83,14 @@ async getFavInfo(params: GetFavInfoParams) : Promise<Result<FavInfo, CommandErro
 async getWatchLaterInfo(page: number) : Promise<Result<WatchLaterInfo, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_watch_later_info", { page }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBangumiFollowInfo(params: GetBangumiFollowInfoParams) : Promise<Result<BangumiFollowInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_bangumi_follow_info", { params }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -126,6 +142,14 @@ async showPathInFileManager(path: string) : Promise<Result<null, CommandError>> 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getSkipSegments(bvid: string, cid: number | null) : Promise<Result<SkipSegments, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_skip_segments", { bvid, cid }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -149,13 +173,17 @@ logEvent: "log-event"
 export type AbtestInfo = { style_abtest: number }
 export type Activity = { head_bg_url: string; id: number; title: string }
 export type Arc = { aid: number; videos: number; type_id: number; type_name: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; state: number; duration: number; rights: RightsInNormalEp; author: Author; stat: StatInNormalEp; dynamic: string; dimension: Dimension; is_chargeable_season: boolean; is_blooper: boolean; enable_vt: number; vt_display: string; type_id_v2: number; type_name_v2: string; is_lesson_video: number }
-export type Area = { id: number; name: string }
+export type AreaInBangumi = { id: number; name: string }
+export type AreaInBangumiFollow = { id: number; name: string }
 export type ArgueInfo = { argue_msg: string; argue_type: number; argue_link: string }
 export type AudioQuality = "Unknown" | "64K" | "132K" | "192K" | "Dolby" | "HiRes"
 export type AudioTask = { selected: boolean; url: string; audio_quality: AudioQuality; content_length: number; chunks: MediaChunk[]; completed: boolean }
 export type Author = { mid: number; name: string; face: string }
-export type BadgeInfo = { bg_color: string; bg_color_night: string; text: string }
-export type BangumiInfo = { activity: Activity; actors: string; alias: string; areas: Area[]; bkg_cover: string; cover: string; delivery_fragment_video: boolean; enable_vt: boolean; episodes: EpInBangumi[]; evaluate: string; hide_ep_vv_vt_dm: number; icon_font: IconFont; jp_title: string; link: string; media_id: number; mode: number; new_ep: NewEp; payment: PaymentInBangumi | null; play_strategy: PlayStrategy | null; positive: Positive; publish: Publish; rating: Rating | null; record: string; rights: RightsInBangumi; season_id: number; season_title: string; seasons: Season[]; section: SectionInBangumi[] | null; series: Series; share_copy: string; share_sub_title: string; share_url: string; show: Show; show_season_type: number; square_cover: string; staff: string; stat: StatInBangumi; status: number; styles: string[]; subtitle: string; title: string; total: number; type: number; up_info: UpInfoInBangumi | null; user_status: UserStatusInBangumi }
+export type BadgeInfoInBangumi = { bg_color: string; bg_color_night: string; text: string }
+export type BadgeInfoInBangumiFollow = { text: string | null; bg_color: string; bg_color_night: string; img: string | null; multi_img: MultiImg }
+export type BadgeInfos = { vip_or_pay: VipOrPay | null; content_attr: ContentAttr | null }
+export type BangumiFollowInfo = { list: EpInBangumiFollow[]; pn: number; ps: number; total: number }
+export type BangumiInfo = { activity: Activity; actors: string; alias: string; areas: AreaInBangumi[]; bkg_cover: string; cover: string; delivery_fragment_video: boolean; enable_vt: boolean; episodes: EpInBangumi[]; evaluate: string; hide_ep_vv_vt_dm: number; icon_font: IconFont; jp_title: string; link: string; media_id: number; mode: number; new_ep: NewEp; payment: PaymentInBangumi | null; play_strategy: PlayStrategy | null; positive: Positive; publish: PublishInBangumi; rating: RatingInBangumi | null; record: string; rights: RightsInBangumi; season_id: number; season_title: string; seasons: Season[]; section: SectionInBangumi[] | null; series: SeriesInBangumi; share_copy: string; share_sub_title: string; share_url: string; show: Show; show_season_type: number; square_cover: string; staff: string; stat: StatInBangumi; status: number; styles: string[]; subtitle: string; title: string; total: number; type: number; up_info: UpInfoInBangumi | null; user_status: UserStatusInBangumi }
 export type BangumiSearchResult = { ep: EpInBangumi | null; info: BangumiInfo }
 export type Brief = { content: string; img: Img[]; title: string; type: number }
 export type CanvasConfig = { 
@@ -219,8 +247,9 @@ export type CntInfo = { collect: number; play: number; thumb_up: number; share: 
 export type CntInfoInMedia = { collect: number; play: number; danmaku: number; vt: number; play_switch: number; reply: number; view_text_1: string }
 export type CodecType = "Unknown" | "Audio" | "AVC" | "HEVC" | "AV1"
 export type CommandError = { err_title: string; err_message: string }
-export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; prefer_video_quality: PreferVideoQuality; prefer_codec_type: PreferCodecType; prefer_audio_quality: PreferAudioQuality; download_video: boolean; download_audio: boolean; auto_merge: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; download_subtitle: boolean; download_cover: boolean; download_nfo: boolean; download_json: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; proxy_mode: ProxyMode; proxy_host: string; proxy_port: number; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig }
+export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; prefer_video_quality: PreferVideoQuality; prefer_codec_type: PreferCodecType; prefer_audio_quality: PreferAudioQuality; download_video: boolean; download_audio: boolean; auto_merge: boolean; embed_chapter: boolean; embed_skip: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; download_subtitle: boolean; download_cover: boolean; download_nfo: boolean; download_json: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; proxy_mode: ProxyMode; proxy_host: string; proxy_port: number; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig }
 export type Consulting = { consulting_flag: boolean; consulting_url: string }
+export type ContentAttr = { text: string; bg_color: string; bg_color_night: string; img: string; multi_img: MultiImg }
 export type ContentList = { bold: boolean; content: string; number: string }
 export type Cooperation = { link: string }
 export type CoverTask = { selected: boolean; url: string; completed: boolean }
@@ -234,10 +263,11 @@ export type Dimension = { width: number; height: number; rotate: number }
 export type DimensionInBangumi = { height: number; rotate: number; width: number }
 export type DimensionInWatchLater = { width: number; height: number; rotate: number }
 export type DownloadEvent = { event: "Speed"; data: { speed: string } } | { event: "TaskCreate"; data: { state: DownloadTaskState; progress: DownloadProgress } } | { event: "TaskStateUpdate"; data: { task_id: string; state: DownloadTaskState } } | { event: "TaskSleeping"; data: { task_id: string; remaining_sec: number } } | { event: "TaskDelete"; data: { task_id: string } } | { event: "ProgressPreparing"; data: { task_id: string } } | { event: "ProgressUpdate"; data: { progress: DownloadProgress } }
-export type DownloadProgress = { task_id: string; episode_type: EpisodeType; aid: number; bvid: string | null; cid: number; ep_id: number | null; duration: number; pub_ts: number; collection_title: string; part_title: string | null; part_order: number | null; episode_title: string; episode_order: number; up_name: string | null; up_uid: number | null; up_avatar: string | null; episode_dir: string; filename: string; video_task: VideoTask; audio_task: AudioTask; merge_task: MergeTask; subtitle_task: SubtitleTask; danmaku_task: DanmakuTask; cover_task: CoverTask; nfo_task: NfoTask; json_task: JsonTask; create_ts: number; completed_ts: number | null }
+export type DownloadProgress = { task_id: string; episode_type: EpisodeType; aid: number; bvid: string | null; cid: number; ep_id: number | null; duration: number; pub_ts: number; collection_title: string; part_title: string | null; part_order: number | null; episode_title: string; episode_order: number; up_name: string | null; up_uid: number | null; up_avatar: string | null; episode_dir: string; filename: string; video_task: VideoTask; audio_task: AudioTask; video_process_task: VideoProcessTask; subtitle_task: SubtitleTask; danmaku_task: DanmakuTask; cover_task: CoverTask; nfo_task: NfoTask; json_task: JsonTask; create_ts: number; completed_ts: number | null }
 export type DownloadTaskState = "Pending" | "Downloading" | "Paused" | "Completed" | "Failed"
 export type Ed = { end: number; start: number }
-export type EpInBangumi = { aid: number; badge: string; badge_info: BadgeInfo; badge_type: number | null; bvid: string | null; cid: number; cover: string; dimension: DimensionInBangumi | null; duration: number | null; enable_vt: boolean; ep_id: number; from: string | null; id: number; is_view_hide: boolean; link: string; link_type: string | null; long_title: string | null; pub_time: number; pv: number; release_date: string | null; rights: RightsInBangumiEp | null; section_type: number; share_copy: string | null; share_url: string | null; short_link: string | null; showDrmLoginDialog: boolean; show_title: string | null; skip: Skip | null; status: number; subtitle: string | null; title: string; vid: string | null; icon_font: IconFont | null }
+export type EpInBangumi = { aid: number; badge: string; badge_info: BadgeInfoInBangumi; badge_type: number | null; bvid: string | null; cid: number; cover: string; dimension: DimensionInBangumi | null; duration: number | null; enable_vt: boolean; ep_id: number; from: string | null; id: number; is_view_hide: boolean; link: string; link_type: string | null; long_title: string | null; pub_time: number; pv: number; release_date: string | null; rights: RightsInBangumiEp | null; section_type: number; share_copy: string | null; share_url: string | null; short_link: string | null; showDrmLoginDialog: boolean; show_title: string | null; skip: Skip | null; status: number; subtitle: string | null; title: string; vid: string | null; icon_font: IconFont | null }
+export type EpInBangumiFollow = { season_id: number; media_id: number; season_type: number; season_type_name: string; title: string; cover: string; total_count: number; is_finish: number; is_started: number; is_play: number; badge: string; badge_type: number; rights: RightsInBangumiFollow; stat: StatInBangumiFollow; new_ep: NewEpInBangumiFollow; rating: RatingInBangumiFollow | null; square_cover: string; season_status: number; season_title: string; badge_ep: string; media_attr: number; season_attr: number; evaluate: string; areas: AreaInBangumiFollow[]; subtitle: string; first_ep: number; can_watch: number; release_date_show: string | null; series: SeriesInBangumiFollow; publish: PublishInBangumiFollow; mode: number; section: SectionInBangumiFollow[]; url: string; badge_info: BadgeInfoInBangumiFollow; renewal_time: string | null; first_ep_info: FirstEpInfo; formal_ep_count: number | null; short_url: string; badge_infos: BadgeInfos | null; season_version: string | null; horizontal_cover_16_9: string | null; horizontal_cover_16_10: string | null; subtitle_14: string | null; viewable_crowd_type: number; producers?: Producer[]; summary: string; styles?: string[]; follow_status: number; is_new: number; progress: string; both_follow: boolean; subtitle_25: string | null }
 export type EpInCheese = { aid: number; catalogue_index: number; cid: number; cover: string; duration: number; ep_status: number; episode_can_view: boolean; from: string; id: number; index: number; label: string | null; page: number; play: number; play_way: number; playable: boolean; release_date: number; show_vt: boolean; status: number; subtitle: string; title: string; watched: boolean; watchedHistory: number }
 export type EpInNormal = { season_id: number; section_id: number; id: number; aid: number; cid: number; title: string; attribute: number; arc: Arc; page: PageInNormalEp; bvid: string; pages: PageInNormalEp[] }
 export type EpInUserVideo = { comment: number; typeid: number; play: number; pic: string; subtitle: string; description: string; copyright: string; title: string; review: number; author: string; mid: number; created: number; length: string; video_review: number; aid: number; bvid: string; hide_click: boolean; is_pay: number; is_union_video: number; is_steins_gate: number; is_live_playback: number; is_lesson_video: number; is_lesson_finished: number; lesson_update_info: string; jump_url: string; meta: MetaInUserVideo | null; is_avoided: number; season_id: number; attribute: number; is_charging_arc: boolean; elec_arc_type: number; elec_arc_badge: string; vt: number; enable_vt: number; vt_display: string; playback_position: number; is_self_view: boolean }
@@ -250,7 +280,13 @@ export type Faq1Item = { answer: string; question: string }
 export type FavFolders = { count: number; list: Folder[] }
 export type FavInfo = { info: Info; medias: MediaInFav[] | null; has_more: boolean; ttl: number }
 export type FavSearchResult = FavInfo
+export type FirstEpInfo = { id: number; cover: string; title: string; long_title: string | null; pub_time: string; duration: number }
 export type Folder = { id: number; fid: number; mid: number; attr: number; title: string; fav_state: number; media_count: number }
+export type GetBangumiFollowInfoParams = { vmid: number; 
+/**
+ * 1: 番剧 2: 电视剧或电影
+ */
+type: number; pn: number; follow_status: number }
 export type GetBangumiInfoParams = { EpId: number } | { SeasonId: number }
 export type GetCheeseInfoParams = { EpId: number } | { SeasonId: number }
 export type GetFavInfoParams = { media_list_id: number; pn: number }
@@ -270,9 +306,10 @@ export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"
 export type MediaChunk = { start: number; end: number; completed: boolean }
 export type MediaInFav = { id: number; type: number; title: string; cover: string; intro: string; page: number; duration: number; upper: UpperInMedia; attr: number; cnt_info: CntInfoInMedia; link: string; ctime: number; pubtime: number; fav_time: number; bv_id: string; bvid: string; ugc: Ugc | null; media_list_link: string }
 export type MediaInWatchLater = { aid: number; videos: number; tid: number; tname: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; state: number; duration: number; redirect_url: string | null; mission_id: number | null; rights: RightsInWatchLater; owner: OwnerInWatchLater; stat: StatInWatchLater; dynamic: string; dimension: DimensionInWatchLater; short_link_v2: string; up_from_v2: number | null; first_frame: string | null; pub_location: string | null; cover43: string; tidv2: number; tnamev2: string; pid_v2: number; pid_name_v2: string; page: PageInWatchLater; count: number; cid: number; progress: number; add_at: number; bvid: string; uri: string; enable_vt: number; view_text_1: string; card_type: number; left_icon_type: number; left_text: string; right_icon_type: number; right_text: string; arc_state: number; pgc_label: string; show_up: boolean; forbid_fav: boolean; forbid_sort: boolean; season_title: string; long_title: string; index_title: string; c_source: string; season_id: number | null }
-export type MergeTask = { selected: boolean; completed: boolean }
-export type MetaInUserVideo = { id: number; title: string; cover: string; mid: number; intro: string; sign_state: number; attribute: number; stat: StatInUserVideo; ep_count: number; first_aid: number; ptime: number; ep_num: number }
+export type MetaInUserVideo = { id: number; title: string; cover: string; mid: number; intro: string; sign_state: number; attribute: number; stat: StatInUserVideo; ep_count: number; first_aid: number | null; ptime: number; ep_num: number }
+export type MultiImg = { color: string; medium_remind: string }
 export type NewEp = { desc: string; id: number; is_new: number; title: string }
+export type NewEpInBangumiFollow = { id: number | null; index_show: string | null; cover: string | null; title: string | null; long_title: string | null; pub_time: string | null; duration: number | null }
 export type NewEpInSeason = { cover: string; id: number; index_show: string }
 export type NfoTask = { selected: boolean; completed: boolean }
 export type NormalInfo = { bvid: string; aid: number; videos: number; tid: number; tid_v2: number; tname: string; tname_v2: string; copyright: number; pic: string; title: string; pubdate: number; ctime: number; desc: string; desc_v2: DescV2[] | null; state: number; duration: number; rights: Rights; owner: OwnerInNormal; stat: StatInNormal; argue_info: ArgueInfo; dynamic: string; cid: number; dimension: Dimension; teenage_mode: number; is_chargeable_season: boolean; is_story: boolean; is_upower_exclusive: boolean; is_upower_play: boolean; is_upower_preview: boolean; enable_vt: number; vt_display: string; is_upower_exclusive_with_qa: boolean; no_cache: boolean; pages: PageInNormal[]; subtitle: SubtitleInNormal; staff: Staff[] | null; ugc_season: UgcSeason | null; is_season_display: boolean; user_garb: UserGarb; honor_reply: HonorReply; like_icon: string; need_jump_bv: boolean; disable_show_up_info: boolean; is_story_play: number; is_view_self: boolean }
@@ -298,30 +335,39 @@ export type PreferAudioQuality = "Best" | "64K" | "132K" | "192K" | "Dolby" | "H
 export type PreferCodecType = "Unknown" | "AVC" | "HEVC" | "AV1"
 export type PreferVideoQuality = "Best" | "240P" | "360P" | "480P" | "720P" | "720P60" | "1080P" | "AiRepair" | "1080P+" | "1080P60" | "4K" | "HDR" | "Dolby" | "8K"
 export type PreviewedPurchaseNote = { long_watch_text: string; pay_text: string; price_format: string; watch_text: string; watching_text: string }
+export type Producer = { mid: number; type: number; is_contribute: number | null; title: string }
 export type ProxyMode = "NoProxy" | "System" | "Custom"
-export type Publish = { is_finish: number; is_started: number; pub_time: string; pub_time_show: string; unknow_pub_date: number; weekday: number }
+export type PublishInBangumi = { is_finish: number; is_started: number; pub_time: string; pub_time_show: string; unknow_pub_date: number; weekday: number }
+export type PublishInBangumiFollow = { pub_time: string; pub_time_show: string; release_date: string; release_date_show: string; pub_time_show_db: string | null }
 export type PurchaseFormatNote = { content_list: ContentList[]; link: string; title: string }
 export type PurchaseNote = { content: string; link: string; title: string }
 export type PurchaseProtocol = { link: string; title: string }
 export type QrcodeData = { url: string; qrcode_key: string }
 export type QrcodeStatus = { url: string; refresh_token: string; timestamp: number; code: number; message: string }
-export type Rating = { count: number; score: number }
+export type RatingInBangumi = { count: number; score: number }
+export type RatingInBangumiFollow = { score: number; count: number }
 export type RecommendSeason = { cover: string; ep_count: string; id: number; season_url: string; subtitle: string; title: string; view: number }
 export type Rights = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; no_background: number; clean_mode: number; is_stein_gate: number; is_360: number; no_share: number; arc_pay: number; free_watch: number }
 export type RightsInBangumi = { allow_bp: number; allow_bp_rank: number; allow_download: number; allow_review: number; area_limit: number; ban_area_show: number; can_watch: number; copyright: string; forbid_pre: number; freya_white: number; is_cover_show: number; is_preview: number; only_vip_download: number; resource: string; watch_platform: number }
 export type RightsInBangumiEp = { allow_dm: number; allow_download: number; area_limit: number }
+export type RightsInBangumiFollow = { allow_review: number | null; allow_preview: number | null; is_selection: number; selection_style: number; is_rcmd: number | null; allow_bp_rank: number | null; allow_bp: number | null; allow_download: number | null }
 export type RightsInNormalEp = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; arc_pay: number; free_watch: number }
 export type RightsInWatchLater = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; no_background: number; arc_pay: number; pay_free_watch: number }
 export type SearchParams = { Normal: GetNormalInfoParams } | { Bangumi: GetBangumiInfoParams } | { Cheese: GetCheeseInfoParams } | { UserVideo: GetUserVideoInfoParams } | { Fav: GetFavInfoParams }
 export type SearchResult = { Normal: NormalSearchResult } | { Bangumi: BangumiSearchResult } | { Cheese: CheeseSearchResult } | { UserVideo: UserVideoSearchResult } | { Fav: FavSearchResult }
-export type Season = { badge: string; badge_info: BadgeInfo; badge_type: number; cover: string; enable_vt: boolean; horizontal_cover_1610: string; horizontal_cover_169: string; icon_font: IconFont; media_id: number; new_ep: NewEpInSeason; season_id: number; season_title: string; season_type: number; stat: StatInSeason }
+export type Season = { badge: string; badge_info: BadgeInfoInBangumi; badge_type: number; cover: string; enable_vt: boolean; horizontal_cover_1610: string; horizontal_cover_169: string; icon_font: IconFont; media_id: number; new_ep: NewEpInSeason; season_id: number; season_title: string; season_type: number; stat: StatInSeason }
 export type SectionInBangumi = { attr: number; episodes: EpInBangumi[]; id: number; title: string; type: number; type2: number }
+export type SectionInBangumiFollow = { section_id: number; season_id: number; limit_group: number; watch_platform: number; copyright: string; ban_area_show: number; episode_ids: number[]; type: number | null; title: string | null; attr: number | null }
 export type SectionInNormal = { season_id: number; id: number; title: string; type: number; episodes: EpInNormal[] }
-export type Series = { display_type: number; series_id: number; series_title: string }
+export type SeriesInBangumi = { display_type: number; series_id: number; series_title: string }
+export type SeriesInBangumiFollow = { series_id: number | null; title: string | null; season_count: number | null; new_season_id: number | null; series_ord: number | null }
 export type Show = { wide_screen: number }
 export type Skip = { ed: Ed; op: Op }
+export type SkipSegment = { cid: string; category: string; actionType: string; segment: number[]; UUID: string; videoDuration: number; locked: number; votes: number; description: string }
+export type SkipSegments = SkipSegment[]
 export type Staff = { mid: number; title: string; name: string; face: string; follower: number; label_style: number }
 export type StatInBangumi = { coins: number; danmakus: number; favorite: number; favorites: number; follow_text: string; likes: number; reply: number; share: number; views: number; vt: number }
+export type StatInBangumiFollow = { follow: number; view: number; danmaku: number; reply: number; coin: number; series_follow: number | null; series_view: number | null; likes: number; favorite: number }
 export type StatInCheese = { play: number; play_desc: string; show_vt: boolean }
 export type StatInNormal = { aid: number; view: number; danmaku: number; reply: number; favorite: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; dislike: number; evaluation: string; vt: number }
 export type StatInNormalEp = { aid: number; view: number; danmaku: number; reply: number; fav: number; coin: number; share: number; now_rank: number; his_rank: number; like: number; dislike: number; evaluation: string; argue_msg: string; vt: number; vv: number }
@@ -345,10 +391,12 @@ export type UserStatusInCheese = { bp: number; expire_at: number; favored: numbe
 export type UserVideoInfo = { list: UserVideoList; page: PageInUserVideo }
 export type UserVideoList = { vlist: EpInUserVideo[] }
 export type UserVideoSearchResult = UserVideoInfo
+export type VideoProcessTask = { merge_selected: boolean; embed_chapter_selected: boolean; embed_skip_selected: boolean; completed: boolean }
 export type VideoQuality = "Unknown" | "240P" | "360P" | "480P" | "720P" | "720P60" | "1080P" | "AiRepair" | "1080P+" | "1080P60" | "4K" | "HDR" | "Dolby" | "8K"
 export type VideoTask = { selected: boolean; url: string; video_quality: VideoQuality; codec_type: CodecType; content_length: number; chunks: MediaChunk[]; completed: boolean }
 export type VipInUserInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInUserInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number }
 export type VipLabel = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
+export type VipOrPay = { text: string; bg_color: string; bg_color_night: string; img: string; multi_img: MultiImg }
 export type Wallet = { mid: number; bcoin_balance: number; coupon_balance: number; coupon_due_time: number }
 export type WatchLaterInfo = { count: number; list: MediaInWatchLater[] }
 export type WbiImg = { img_url: string; sub_url: string }

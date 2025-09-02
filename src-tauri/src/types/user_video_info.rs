@@ -64,7 +64,7 @@ pub struct MetaInUserVideo {
     pub attribute: i64,
     pub stat: StatInUserVideo,
     pub ep_count: i64,
-    pub first_aid: i64,
+    pub first_aid: Option<i64>,
     pub ptime: i64,
     pub ep_num: i64,
 }

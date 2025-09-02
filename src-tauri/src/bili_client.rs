@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use base64::{engine::general_purpose, Engine};
 use bytes::Bytes;
 use parking_lot::RwLock;
 use prost::Message;
@@ -20,14 +21,16 @@ use crate::{
     extensions::{AnyhowErrorToStringChain, AppHandleExt},
     protobuf::DmSegMobileReply,
     types::{
-        bangumi_info::BangumiInfo, bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
+        bangumi_follow_info::BangumiFollowInfo, bangumi_info::BangumiInfo,
+        bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
         cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
+        get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
         get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
         normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
-        qrcode_status::QrcodeStatus, subtitle::Subtitle, tags::Tags, user_info::UserInfo,
-        user_video_info::UserVideoInfo, watch_later_info::WatchLaterInfo,
+        qrcode_status::QrcodeStatus, skip_segments::SkipSegments, subtitle::Subtitle, tags::Tags,
+        user_info::UserInfo, user_video_info::UserVideoInfo, watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -296,10 +299,28 @@ impl BiliClient {
         &self,
         params: GetUserVideoInfoParams,
     ) -> anyhow::Result<UserVideoInfo> {
+        const DM_IMG_INTER: &str = r#"{"ds":[],"wh":[0,0,0],"of":[0,0,0]}"#;
+
+        fn random_base64() -> String {
+            let random_bytes: Vec<u8> = (0..48).map(|_| rand::random_range(32..=127)).collect();
+
+            general_purpose::STANDARD.encode(&random_bytes)
+        }
+
+        let mut dm_img_str = random_base64();
+        dm_img_str.truncate(dm_img_str.len() - 2);
+
+        let mut dm_cover_img_str = random_base64();
+        dm_cover_img_str.truncate(dm_cover_img_str.len() - 2);
+
         let mut params: Vec<(&str, String)> = vec![
             ("pn", params.pn.to_string()),
             ("ps", "42".to_string()),
             ("mid", params.mid.to_string()),
+            ("dm_img_list", "[]".to_string()),
+            ("dm_img_str", dm_img_str),
+            ("dm_cover_img_str", dm_cover_img_str),
+            ("dm_img_inter", DM_IMG_INTER.to_string()),
         ];
         self.wbi(&mut params).await?;
 
@@ -607,6 +628,50 @@ impl BiliClient {
         Ok(watch_later_info)
     }
 
+    pub async fn get_bangumi_follow_info(
+        &self,
+        params: GetBangumiFollowInfoParams,
+    ) -> anyhow::Result<BangumiFollowInfo> {
+        // 发送获取番剧追踪信息的请求
+        let params = json!({
+            "vmid": params.vmid,
+            "type": params.type_field,
+            "pn": params.pn,
+            "ps": 24,
+            "follow_status": params.follow_status,
+        });
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/x/space/bangumi/follow/list")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为BangumiFollowInfo
+        let data_str = data.to_string();
+        let bangumi_follow_info: BangumiFollowInfo = serde_json::from_str(&data_str)
+            .context(format!("将data解析为BangumiFollowInfo失败: {data_str}"))?;
+
+        Ok(bangumi_follow_info)
+    }
+
     pub async fn get_media_chunk(
         &self,
         media_url: &str,
@@ -802,6 +867,41 @@ impl BiliClient {
             serde_json::from_str(&data_str).context(format!("将data解析为Tags失败: {data_str}"))?;
 
         Ok(tags)
+    }
+
+    pub async fn get_skip_segments(
+        &self,
+        bvid: &str,
+        cid: Option<i64>,
+    ) -> anyhow::Result<SkipSegments> {
+        // 发送获取跳过片段的请求
+        let mut params = json!({
+            "videoID": bvid,
+            "actionType": "skip",
+        });
+        if let Some(cid) = cid {
+            params["cid"] = cid.into();
+        }
+
+        let request = self
+            .api_client
+            .read()
+            .get("https://bsbsb.top/api/skipSegments")
+            .query(&params);
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status == StatusCode::NOT_FOUND {
+            return Ok(SkipSegments(Vec::new()));
+        } else if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为SkipSegments
+        let skip_segments: SkipSegments =
+            serde_json::from_str(&body).context(format!("将body解析为SkipSegments失败: {body}"))?;
+
+        Ok(skip_segments)
     }
 
     pub fn get_cookie(&self) -> String {

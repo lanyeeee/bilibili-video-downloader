@@ -1,18 +1,28 @@
-use std::cmp::Reverse;
+use std::{
+    cmp::Reverse,
+    fs::{File, OpenOptions},
+    sync::Arc,
+};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
+use fs4::fs_std::FileExt;
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::AppHandle;
 use tokio::task::JoinSet;
 
 use crate::{
-    downloader::media_chunk::MediaChunk,
-    extensions::AppHandleExt,
+    downloader::{
+        download_chunk_task::DownloadChunkTask, download_progress::DownloadProgress,
+        download_task::DownloadTask, media_chunk::MediaChunk,
+    },
+    extensions::{AnyhowErrorToStringChain, AppHandleExt},
     types::{
         audio_quality::AudioQuality, bangumi_media_url::BangumiMediaUrl,
         cheese_media_url::CheeseMediaUrl, normal_media_url::NormalMediaUrl,
     },
+    utils,
 };
 
 const CHUNK_SIZE: u64 = 2 * 1024 * 1024; // 2MB
@@ -296,6 +306,119 @@ impl AudioTask {
 
     pub fn is_completed(&self) -> bool {
         !self.selected || self.completed
+    }
+
+    pub async fn process(
+        &self,
+        download_task: &Arc<DownloadTask>,
+        progress: &DownloadProgress,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+
+        let temp_file_path = episode_dir.join(format!(
+            "{filename}.m4a.com.lanyeeee.bilibili-video-downloader"
+        ));
+        let (audio_task, episode_title, ids_string) = {
+            (
+                progress.audio_task.clone(),
+                progress.episode_title.clone(),
+                progress.get_ids_string(),
+            )
+        };
+
+        let file = if temp_file_path.exists() {
+            // 如果文件已存在，则打开它
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(&temp_file_path)?
+        } else {
+            // 如果文件不存在，创建它并预分配空间
+            let file = File::create(&temp_file_path)?;
+            file.allocate(audio_task.content_length)?;
+            file
+        };
+        let file = Arc::new(Mutex::new(file));
+
+        let chunk_count = audio_task.chunks.len();
+
+        let mut join_set = JoinSet::new();
+        for (chunk_index, chunk) in audio_task.chunks.iter().enumerate() {
+            if chunk.completed {
+                continue;
+            }
+
+            let (start, end) = (chunk.start, chunk.end);
+
+            let download_chunk_task = DownloadChunkTask {
+                download_task: download_task.clone(),
+                start,
+                end,
+                url: audio_task.url.to_string(),
+                file: file.clone(),
+                chunk_index,
+            };
+
+            join_set.spawn(async move {
+                download_chunk_task.process().await.context(format!(
+                    "分片`{chunk_index}/{chunk_count}`下载失败({start}-{end})"
+                ))
+            });
+        }
+
+        while let Some(Ok(download_video_result)) = join_set.join_next().await {
+            match download_video_result {
+                Ok(i) => download_task.update_progress(|p| p.audio_task.chunks[i].completed = true),
+                Err(err) => {
+                    let err_title = format!("{ids_string} `{episode_title}`音频的一个分片下载失败");
+                    let string_chain = err.to_string_chain();
+                    tracing::error!(err_title, message = string_chain);
+                }
+            }
+        }
+
+        let download_completed = download_task
+            .progress
+            .read()
+            .audio_task
+            .chunks
+            .iter()
+            .all(|chunk| chunk.completed);
+        if !download_completed {
+            return Err(anyhow!(
+                "音频文件`{}`有分片未下载完成，[继续]可以跳过已下载分片断点续传",
+                temp_file_path.display()
+            ));
+        }
+
+        let is_audio_file_complete = utils::is_mp4_complete(&temp_file_path).context(format!(
+            "检查音频文件`{}`是否完整失败",
+            temp_file_path.display()
+        ))?;
+
+        if !is_audio_file_complete {
+            download_task.update_progress(|p| p.video_task.mark_uncompleted());
+            return Err(anyhow!(
+                "音频文件`{}`不完整，[继续]会重新下载所有分片",
+                temp_file_path.display()
+            ));
+        }
+
+        // 重命名临时文件
+        let m4a_path = episode_dir.join(format!("{filename}.m4a"));
+        if m4a_path.exists() {
+            std::fs::remove_file(&m4a_path)
+                .context(format!("删除已存在的音频文件`{}`失败", m4a_path.display()))?;
+        }
+        std::fs::rename(&temp_file_path, &m4a_path).context(format!(
+            "将临时文件`{}`重命名为`{}`失败",
+            temp_file_path.display(),
+            m4a_path.display()
+        ))?;
+
+        download_task.update_progress(|p| p.audio_task.completed = true);
+
+        Ok(())
     }
 }
 
