@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::{anyhow, Context};
 use serde::{Deserialize, Serialize};
@@ -65,6 +65,8 @@ impl VideoProcessTask {
     ) -> anyhow::Result<()> {
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
 
+        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
+
         let video_path = episode_dir.join(format!("{filename}.mp4"));
         if !video_path.exists() {
             download_task.update_progress(|p| p.video_process_task.completed = true);
@@ -80,18 +82,12 @@ impl VideoProcessTask {
             return Ok(());
         }
 
-        let chapter_segments = self
-            .create_chapter_segments(&download_task.app, progress, player_info)
-            .await?;
-        let metadata_content = chapter_segments.generate_chapter_metadata(progress.duration);
-        let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
-
-        std::fs::write(&metadata_path, metadata_content)
-            .context(format!("保存章节元数据到`{}`失败", metadata_path.display()))?;
+        let metadata_path = self
+            .create_chapter_metadata(&download_task.app, progress, player_info)
+            .await
+            .context("创建章节元数据失败")?;
 
         let output_path = episode_dir.join(format!("{filename}-merged.mp4"));
-
-        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
 
         let (tx, rx) = tokio::sync::oneshot::channel();
         let video_path_clone = video_path.clone();
@@ -106,19 +102,25 @@ impl VideoProcessTask {
                 .arg("-i")
                 .arg(video_path_clone)
                 .arg("-i")
-                .arg(audio_path_clone)
-                .arg("-i")
-                .arg(metadata_path_clone)
-                .arg("-map_metadata")
-                .arg("2")
+                .arg(audio_path_clone);
+
+            if let Some(metadata_path) = metadata_path_clone {
+                command
+                    .arg("-i")
+                    .arg(metadata_path)
+                    .arg("-map_metadata")
+                    .arg("2");
+            }
+
+            command
                 .arg("-c")
                 .arg("copy")
                 .arg("-map")
                 .arg("0:v:0")
                 .arg("-map")
-                .arg("1:a:0")
-                .arg(output_path_clone)
-                .arg("-y");
+                .arg("1:a:0");
+
+            command.arg(output_path_clone).arg("-y");
 
             #[cfg(target_os = "windows")]
             {
@@ -152,10 +154,13 @@ impl VideoProcessTask {
             output_path.display(),
             video_path.display()
         ))?;
-        std::fs::remove_file(&metadata_path).context(format!(
-            "删除章节元数据文件`{}`失败",
-            metadata_path.display()
-        ))?;
+
+        if let Some(metadata_path) = metadata_path {
+            std::fs::remove_file(&metadata_path).context(format!(
+                "删除章节元数据文件`{}`失败",
+                metadata_path.display()
+            ))?;
+        }
 
         download_task.update_progress(|p| p.video_process_task.completed = true);
 
@@ -253,23 +258,25 @@ impl VideoProcessTask {
     ) -> anyhow::Result<()> {
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
 
+        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
+
         let video_path = episode_dir.join(format!("{filename}.mp4"));
         if !video_path.exists() {
             download_task.update_progress(|p| p.video_process_task.completed = true);
             return Ok(());
         }
 
-        let ffmpeg_program = utils::get_ffmpeg_program().context("获取FFmpeg程序路径失败")?;
         let output_path = episode_dir.join(format!("{filename}-embed.mp4"));
 
-        let chapter_segments = self
-            .create_chapter_segments(&download_task.app, progress, player_info)
-            .await?;
-        let metadata_content = chapter_segments.generate_chapter_metadata(progress.duration);
-        let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
+        let metadata_path = self
+            .create_chapter_metadata(&download_task.app, progress, player_info)
+            .await
+            .context("创建章节元数据失败")?;
 
-        std::fs::write(&metadata_path, metadata_content)
-            .context(format!("保存章节元数据到`{}`失败", metadata_path.display()))?;
+        let Some(metadata_path) = metadata_path else {
+            download_task.update_progress(|p| p.video_process_task.completed = true);
+            return Ok(());
+        };
 
         let (tx, rx) = tokio::sync::oneshot::channel();
         let video_path_clone = video_path.clone();
@@ -331,12 +338,12 @@ impl VideoProcessTask {
         Ok(())
     }
 
-    async fn create_chapter_segments(
+    async fn create_chapter_metadata(
         &self,
         app: &AppHandle,
         progress: &DownloadProgress,
         player_info: &mut Option<PlayerInfo>,
-    ) -> anyhow::Result<ChapterSegments> {
+    ) -> anyhow::Result<Option<PathBuf>> {
         let mut chapter_segments = ChapterSegments {
             segments: Vec::new(),
         };
@@ -355,11 +362,8 @@ impl VideoProcessTask {
             chapter_segments = ChapterSegments { segments };
         }
 
-        if self.embed_skip_selected {
+        if let (true, Some(bvid)) = (self.embed_skip_selected, &progress.bvid) {
             let bili_client = app.get_bili_client();
-            let Some(bvid) = &progress.bvid else {
-                return Ok(chapter_segments);
-            };
             let cid = Some(progress.cid);
 
             let skip_segments = bili_client.get_skip_segments(bvid, cid).await?;
@@ -370,6 +374,16 @@ impl VideoProcessTask {
             }
         }
 
-        Ok(chapter_segments)
+        if chapter_segments.segments.is_empty() {
+            return Ok(None);
+        }
+
+        let metadata_content = chapter_segments.generate_chapter_metadata(progress.duration);
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+        let metadata_path = episode_dir.join(format!("{filename}.FFMETA.ini"));
+        std::fs::write(&metadata_path, metadata_content)
+            .context(format!("保存章节元数据到`{}`失败", metadata_path.display()))?;
+
+        Ok(Some(metadata_path))
     }
 }
