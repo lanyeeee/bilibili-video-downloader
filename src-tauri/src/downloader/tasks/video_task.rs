@@ -1,5 +1,5 @@
 use std::{
-    cmp::Reverse,
+    collections::HashMap,
     fs::{File, OpenOptions},
     sync::Arc,
 };
@@ -74,11 +74,7 @@ impl VideoTask {
             }
         }
 
-        if medias.is_empty() {
-            return Err(anyhow!("获取视频地址失败"));
-        }
-
-        self.prepare(app, medias);
+        self.prepare(app, medias)?;
 
         Ok(())
     }
@@ -144,11 +140,7 @@ impl VideoTask {
             }
         }
 
-        if medias.is_empty() {
-            return Err(anyhow!("获取视频地址失败"));
-        }
-
-        self.prepare(app, medias);
+        self.prepare(app, medias)?;
 
         Ok(())
     }
@@ -214,47 +206,49 @@ impl VideoTask {
             }
         }
 
-        if medias.is_empty() {
-            return Err(anyhow!("获取视频地址失败"));
-        }
-
-        self.prepare(app, medias);
+        self.prepare(app, medias)?;
 
         Ok(())
     }
 
-    fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) {
-        medias.sort_by_key(|m| Reverse(m.id));
-        let best_quality_id = medias[0].id;
+    fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) -> anyhow::Result<()> {
+        if medias.is_empty() {
+            return Err(anyhow!("获取音频地址失败"));
+        }
 
-        let (prefer_quality, prefer_codec_type) = {
+        let (video_quality_priority, codec_type_priority) = {
             let config = app.get_config().inner().read();
-            (config.prefer_video_quality, config.prefer_codec_type)
+            (
+                config.video_quality_priority.clone(),
+                config.codec_type_priority.clone(),
+            )
         };
 
-        let prefer_quality_id: i64 = prefer_quality.into();
-        let prefer_codec_id: i64 = prefer_codec_type.into();
-        let prefer_quality_found = medias.iter().any(|m| m.id == prefer_quality_id);
-        let mut quality_filtered_medias: Vec<MediaForPrepare> = if prefer_quality_found {
-            // 如果用户指定质量存在，则使用用户指定的质量
-            medias
-                .into_iter()
-                .filter(|m| m.id == prefer_quality_id)
-                .collect()
-        } else {
-            // 否则使用最高质量
-            medias
-                .into_iter()
-                .filter(|m| m.id == best_quality_id)
-                .collect()
-        };
-        // 按照 AVC > HEVC > AV1 的顺序排列
-        quality_filtered_medias.sort_by_key(|m| m.codecid);
-
-        let media = quality_filtered_medias
+        let video_priority_map: HashMap<&VideoQuality, usize> = video_quality_priority
             .iter()
-            .find(|m| m.codecid == prefer_codec_id)
-            .unwrap_or(&quality_filtered_medias[0]);
+            .enumerate()
+            .map(|(index, quality)| (quality, index))
+            .collect();
+        medias.sort_by_key(|media| {
+            let quality: VideoQuality = media.id.into();
+            video_priority_map.get(&quality).unwrap_or(&usize::MAX)
+        });
+
+        let retain_id = medias[0].id;
+        medias.retain(|m| m.id == retain_id);
+
+        let codec_priority_map: HashMap<&CodecType, usize> = codec_type_priority
+            .iter()
+            .enumerate()
+            .map(|(index, codec_type)| (codec_type, index))
+            .collect();
+
+        medias.sort_by_key(|m| {
+            let codec_type: CodecType = m.codecid.into();
+            codec_priority_map.get(&codec_type).unwrap_or(&usize::MAX)
+        });
+
+        let media = &medias[0];
 
         self.video_quality = media.id.into();
         self.codec_type = media.codecid.into();
@@ -286,6 +280,8 @@ impl VideoTask {
             self.content_length = content_length;
             self.chunks = chunks;
         }
+
+        Ok(())
     }
 
     pub fn mark_uncompleted(&mut self) {
