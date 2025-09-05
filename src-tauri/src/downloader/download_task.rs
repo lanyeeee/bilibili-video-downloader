@@ -170,7 +170,7 @@ impl DownloadTask {
 
             let download_task = async {
                 download_task_option
-                    .get_or_insert(Box::pin(self.download()))
+                    .get_or_insert_with(|| Box::pin(self.download()))
                     .await;
             };
 
