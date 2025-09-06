@@ -96,6 +96,14 @@ async getBangumiFollowInfo(params: GetBangumiFollowInfoParams) : Promise<Result<
     else return { status: "error", error: e  as any };
 }
 },
+async getHistoryInfo(params: GetHistoryInfoParams) : Promise<Result<HistoryInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_history_info", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async createDownloadTasks(params: CreateDownloadTaskParams) : Promise<void> {
     await TAURI_INVOKE("create_download_tasks", { params });
 },
@@ -259,6 +267,7 @@ export type CreateDownloadTaskParams = { Normal: CreateNormalDownloadTaskParams 
 export type CreateNormalDownloadTaskParams = { info: NormalInfo; aid_cid_pairs: ([number, number | null])[] }
 export type DanmakuTask = { xml_selected: boolean; ass_selected: boolean; json_selected: boolean; completed: boolean }
 export type DescV2 = { raw_text: string; type: number; biz_id: number }
+export type DeviceType = "All" | "PC" | "Mobile" | "Pad" | "TV"
 export type Dimension = { width: number; height: number; rotate: number }
 export type DimensionInBangumi = { height: number; rotate: number; width: number }
 export type DimensionInWatchLater = { width: number; height: number; rotate: number }
@@ -290,8 +299,12 @@ type: number; pn: number; follow_status: number }
 export type GetBangumiInfoParams = { EpId: number } | { SeasonId: number }
 export type GetCheeseInfoParams = { EpId: number } | { SeasonId: number }
 export type GetFavInfoParams = { media_list_id: number; pn: number }
+export type GetHistoryInfoParams = { pn: number; keyword: string; add_time_start: number; add_time_end: number; arc_max_duration: number; arc_min_duration: number; device_type: DeviceType }
 export type GetNormalInfoParams = { Bvid: string } | { Aid: number }
 export type GetUserVideoInfoParams = { pn: number; mid: number }
+export type History = { oid: number; epid: number; bvid: string; page: number; cid: number; part: string; business: string; dt: number }
+export type HistoryDetail = { title: string; long_title: string; cover: string; uri: string; history: History; videos: number; author_name: string; author_face: string; author_mid: number; view_at: number; progress: number; badge: string; show_title: string; duration: number; total: number; new_desc: string; is_finish: number; is_fav: number; kid: number; tag_name: string; live_status: number }
+export type HistoryInfo = { has_more: boolean; page: PageInHistory; list: HistoryDetail[] | null }
 export type Honor = { aid: number; type: number; desc: string; weekly_recommend_num: number }
 export type HonorReply = { honor: Honor[] | null }
 export type IconFont = { name: string; text: string }
@@ -319,6 +332,7 @@ export type OfficialVerify = { type: number; desc: string }
 export type Op = { end: number; start: number }
 export type OwnerInNormal = { mid: number; name: string; face: string }
 export type OwnerInWatchLater = { mid: number; name: string; face: string }
+export type PageInHistory = { pn: number; total: number }
 export type PageInNormal = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension; ctime: number }
 export type PageInNormalEp = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension }
 export type PageInUserVideo = { pn: number; ps: number; count: number }
