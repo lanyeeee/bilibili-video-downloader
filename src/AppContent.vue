@@ -11,6 +11,7 @@ import {
   PhClock,
   PhHeart,
   PhDownload,
+  PhPlayCircle,
 } from '@phosphor-icons/vue'
 import AboutDialog from './dialogs/AboutDialog.vue'
 import { platform } from '@tauri-apps/plugin-os'
@@ -22,8 +23,9 @@ import WatchLaterPane from './panes/WatchLaterPane/WatchLaterPane.vue'
 import DownloadPane from './panes/DownloadPane/DownloadPane.vue'
 import { searchPaneRefKey, navDownloadButtonRefKey } from './injection_keys.ts'
 import BangumiFollowPane from './panes/BangumiFollow/BangumiFollowPane.vue'
+import HistoryPane from './panes/HistoryPane/HistoryPane.vue'
 
-export type CurrentNavName = 'search' | 'fav' | 'watch_later' | 'bangumi_follow' | 'download'
+export type CurrentNavName = 'search' | 'fav' | 'history' | 'bangumi_follow' | 'watch_later' | 'download'
 
 const currentPlatform = platform()
 
@@ -72,7 +74,7 @@ onMounted(() => {
         </n-tooltip>
 
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
-          收藏
+          收藏夹
           <template #trigger>
             <div
               class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
@@ -84,13 +86,13 @@ onMounted(() => {
         </n-tooltip>
 
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
-          稍后再看
+          历史记录
           <template #trigger>
             <div
               class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
-              @click="store.currentNavName = 'watch_later'"
-              :class="{ 'text-sky-5': store.currentNavName === 'watch_later' }">
-              <PhClock :weight="store.currentNavName === 'watch_later' ? 'fill' : 'regular'" size="28" />
+              @click="store.currentNavName = 'history'"
+              :class="{ 'text-sky-5': store.currentNavName === 'history' }">
+              <PhClock :weight="store.currentNavName === 'history' ? 'fill' : 'regular'" size="28" />
             </div>
           </template>
         </n-tooltip>
@@ -108,7 +110,19 @@ onMounted(() => {
         </n-tooltip>
 
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
-          下载
+          稍后再看
+          <template #trigger>
+            <div
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              @click="store.currentNavName = 'watch_later'"
+              :class="{ 'text-sky-5': store.currentNavName === 'watch_later' }">
+              <PhPlayCircle :weight="store.currentNavName === 'watch_later' ? 'fill' : 'regular'" size="28" />
+            </div>
+          </template>
+        </n-tooltip>
+
+        <n-tooltip placement="right" trigger="hover" :show-arrow="false">
+          下载任务
           <template #trigger>
             <n-badge :value="store.uncompletedProgressesCount" :offset="[-7, 7]">
               <div
@@ -163,10 +177,13 @@ onMounted(() => {
           <FavPane class="absolute inset-0" v-show="store.currentNavName === 'fav'" />
         </transition>
         <transition name="fade">
-          <WatchLaterPane class="absolute inset-0" v-show="store.currentNavName === 'watch_later'" />
+          <HistoryPane class="absolute inset-0" v-show="store.currentNavName === 'history'" />
         </transition>
         <transition name="fade">
           <BangumiFollowPane class="absolute inset-0" v-show="store.currentNavName === 'bangumi_follow'" />
+        </transition>
+        <transition name="fade">
+          <WatchLaterPane class="absolute inset-0" v-show="store.currentNavName === 'watch_later'" />
         </transition>
         <transition name="fade">
           <DownloadPane class="absolute inset-0" v-show="store.currentNavName === 'download'" />
