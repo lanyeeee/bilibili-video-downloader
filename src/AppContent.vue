@@ -60,12 +60,13 @@ onMounted(() => {
     <TitleBar />
 
     <div v-if="store.config !== undefined" class="h-full w-full flex overflow-hidden select-none">
-      <div class="flex flex-col box-border p-1 border-r-solid border-r-1 border-r-[#DADADA] bg-[#F9F9F9] flex-shrink-0">
+      <div
+        class="flex flex-col px-1 box-border border-r-solid border-r-1 border-r-[#DADADA] bg-[#F9F9F9] flex-shrink-0">
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
           搜索
           <template #trigger>
             <div
-              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded p-1 my-1"
               @click="store.currentNavName = 'search'"
               :class="{ 'text-sky-5': store.currentNavName === 'search' }">
               <PhMagnifyingGlass :weight="store.currentNavName === 'search' ? 'fill' : 'regular'" size="28" />
@@ -77,7 +78,7 @@ onMounted(() => {
           收藏夹
           <template #trigger>
             <div
-              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded p-1 my-1"
               @click="store.currentNavName = 'fav'"
               :class="{ 'text-sky-5': store.currentNavName === 'fav' }">
               <PhStar :weight="store.currentNavName === 'fav' ? 'fill' : 'regular'" size="28" />
@@ -89,7 +90,7 @@ onMounted(() => {
           历史记录
           <template #trigger>
             <div
-              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded p-1 my-1"
               @click="store.currentNavName = 'history'"
               :class="{ 'text-sky-5': store.currentNavName === 'history' }">
               <PhClock :weight="store.currentNavName === 'history' ? 'fill' : 'regular'" size="28" />
@@ -101,7 +102,7 @@ onMounted(() => {
           追番追剧
           <template #trigger>
             <div
-              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded p-1 my-1"
               @click="store.currentNavName = 'bangumi_follow'"
               :class="{ 'text-sky-5': store.currentNavName === 'bangumi_follow' }">
               <PhHeart :weight="store.currentNavName === 'bangumi_follow' ? 'fill' : 'regular'" size="28" />
@@ -113,7 +114,7 @@ onMounted(() => {
           稍后再看
           <template #trigger>
             <div
-              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+              class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded p-1 my-1"
               @click="store.currentNavName = 'watch_later'"
               :class="{ 'text-sky-5': store.currentNavName === 'watch_later' }">
               <PhPlayCircle :weight="store.currentNavName === 'watch_later' ? 'fill' : 'regular'" size="28" />
@@ -127,7 +128,7 @@ onMounted(() => {
             <n-badge :value="store.uncompletedProgressesCount" :offset="[-7, 7]">
               <div
                 ref="downloadButtonRef"
-                class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded py-1 my-1 px-2"
+                class="flex cursor-pointer hover:text-sky-5 hover:bg-gray-2/70 rounded p-1 my-1"
                 @click="store.currentNavName = 'download'"
                 :class="{ 'text-sky-5': store.currentNavName === 'download' }">
                 <PhDownload :weight="store.currentNavName === 'download' ? 'fill' : 'regular'" size="28" />
@@ -139,7 +140,7 @@ onMounted(() => {
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
           配置
           <template #trigger>
-            <n-button text class="mt-auto py-1 px-2" @click="settingsDialogShowing = true">
+            <n-button text class="mt-auto p-1" @click="settingsDialogShowing = true">
               <n-icon size="28">
                 <PhGearSix />
               </n-icon>
@@ -150,7 +151,7 @@ onMounted(() => {
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
           日志
           <template #trigger>
-            <n-button text class="py-1 px-2" @click="logDialogShowing = true">
+            <n-button text class="p-1" @click="logDialogShowing = true">
               <n-icon size="28">
                 <PhClockCounterClockwise />
               </n-icon>
@@ -161,7 +162,7 @@ onMounted(() => {
         <n-tooltip placement="right" trigger="hover" :show-arrow="false">
           关于
           <template #trigger>
-            <n-button text class="py-1 px-2 mb-2" @click="aboutDialogShowing = true">
+            <n-button text class="p-1 mb-1" @click="aboutDialogShowing = true">
               <n-icon size="28">
                 <PhInfo />
               </n-icon>
