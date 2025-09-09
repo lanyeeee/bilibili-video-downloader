@@ -6,6 +6,7 @@ import { ensureHttps, extractEpId, isElementInViewport, playTaskToQueueAnimation
 import { PhDownloadSimple, PhGoogleChromeLogo, PhMagnifyingGlass } from '@phosphor-icons/vue'
 import SimpleCheckbox from '../../../components/SimpleCheckbox.vue'
 import { SearchType } from '../../SearchPane/SearchPane.vue'
+import IconButton from '../../../components/IconButton.vue'
 
 const props = defineProps<{
   media: MediaInWatchLater
@@ -18,7 +19,7 @@ const props = defineProps<{
 
 const navDownloadButtonRef = inject(navDownloadButtonRefKey)
 const rootDivRef = ref<HTMLDivElement>()
-const downloadButtonRef = ref<HTMLDivElement>()
+const downloadButtonRef = ref<InstanceType<typeof IconButton>>()
 
 const openInBrowserHref = computed<string>(() => {
   if (props.media.redirect_url === null) {
@@ -43,7 +44,7 @@ function playDownloadAnimation() {
     return
   }
 
-  const from = downloadButtonRef.value
+  const from = downloadButtonRef.value?.$el
   const to = navDownloadButtonRef?.value
 
   if (from instanceof Element && to !== undefined) {
@@ -109,31 +110,20 @@ defineExpose({ playDownloadAnimation, media: props.media })
     </div>
 
     <div class="flex gap-1 items-center">
-      <a
-        :href="openInBrowserHref"
-        target="_blank"
-        draggable="false"
-        title="在浏览器中打开"
-        class="p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6">
+      <IconButton title="在浏览器中打开" :href="openInBrowserHref">
         <PhGoogleChromeLogo :size="24" />
-      </a>
-
-      <div
-        v-if="search !== undefined"
-        title="在下载器内搜索"
-        class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
-        @click="searchInSearchPane">
+      </IconButton>
+      <IconButton v-if="search !== undefined" title="在下载器内搜索" @click="searchInSearchPane">
         <PhMagnifyingGlass :size="24" />
-      </div>
-
-      <div
+      </IconButton>
+      <IconButton
         v-if="downloadEpisode !== undefined"
         ref="downloadButtonRef"
         title="一键下载"
-        class="ml-auto cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
+        class="ml-auto"
         @click="handleDownloadClick">
         <PhDownloadSimple :size="24" />
-      </div>
+      </IconButton>
     </div>
   </div>
 </template>

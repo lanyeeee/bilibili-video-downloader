@@ -19,6 +19,7 @@ import ColorfulTag from '../../../components/ColorfulTag.vue'
 import { searchPaneRefKey } from '../../../injection_keys.ts'
 import { ProgressData } from '../DownloadPane.vue'
 import { ensureHttps } from '../../../utils.tsx'
+import IconButton from '../../../components/IconButton.vue'
 
 const store = useStore()
 
@@ -206,34 +207,24 @@ function handleSearchClick() {
       </div>
 
       <div class="ml-auto flex gap-2 items-center">
-        <div
+        <IconButton
           v-if="p.state === 'Completed' && p.video_task.selected"
           title="打开mp4目录"
-          class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
           @click="showMp4InFileManager(p.episode_dir, p.filename)">
           <PhFileVideo :size="24" />
-        </div>
-        <div
+        </IconButton>
+        <IconButton
           v-if="p.state === 'Completed'"
           title="打开下载目录"
-          class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
           @click="showEpisodeDirInFileManager(p.episode_dir)">
           <PhFolderOpen :size="24" />
-        </div>
-        <div
-          title="在下载器内搜索"
-          class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
-          @click="handleSearchClick">
+        </IconButton>
+        <IconButton title="在下载器内搜索" @click="handleSearchClick">
           <PhMagnifyingGlass :size="24" />
-        </div>
-        <a
-          :href="href"
-          target="_blank"
-          draggable="false"
-          title="在浏览器中打开"
-          class="p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6">
+        </IconButton>
+        <IconButton title="在浏览器中打开" :href="href">
           <PhGoogleChromeLogo :size="24" />
-        </a>
+        </IconButton>
       </div>
     </div>
   </div>

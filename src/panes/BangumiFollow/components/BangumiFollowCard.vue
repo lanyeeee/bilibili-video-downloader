@@ -5,6 +5,7 @@ import { ensureHttps, isElementInViewport, playTaskToQueueAnimation } from '../.
 import { PhDownloadSimple, PhGoogleChromeLogo, PhMagnifyingGlass } from '@phosphor-icons/vue'
 import { EpInBangumiFollow } from '../../../bindings.ts'
 import SimpleCheckbox from '../../../components/SimpleCheckbox.vue'
+import IconButton from '../../../components/IconButton.vue'
 
 const searchPaneRef = inject(searchPaneRefKey)
 
@@ -18,7 +19,7 @@ const props = defineProps<{
 
 const navDownloadButtonRef = inject(navDownloadButtonRefKey)
 const rootDivRef = ref<HTMLDivElement>()
-const downloadButtonRef = ref<HTMLDivElement>()
+const downloadButtonRef = ref<InstanceType<typeof IconButton>>()
 
 async function handleDownloadClick() {
   if (props.downloadEpisode === undefined) {
@@ -34,7 +35,7 @@ function playDownloadAnimation() {
     return
   }
 
-  const from = downloadButtonRef.value
+  const from = downloadButtonRef.value?.$el
   const to = navDownloadButtonRef?.value
 
   if (from instanceof Element && to !== undefined) {
@@ -71,29 +72,20 @@ defineExpose({ playDownloadAnimation, ep: props.ep })
     </div>
 
     <div class="flex gap-1 items-center mt-2">
-      <a
-        :href="`https://www.bilibili.com/bangumi/play/ss${ep.season_id}`"
-        target="_blank"
-        draggable="false"
-        title="在浏览器中打开"
-        class="p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6">
+      <IconButton title="在浏览器中打开" :href="`https://www.bilibili.com/bangumi/play/ss${ep.season_id}`">
         <PhGoogleChromeLogo :size="24" />
-      </a>
-      <div
-        title="在下载器内搜索"
-        class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
-        @click="searchPaneRef?.search(`ss${props.ep.season_id}`, 'Bangumi')">
+      </IconButton>
+      <IconButton title="在下载器内搜索" @click="searchPaneRef?.search(`ss${props.ep.season_id}`, 'Bangumi')">
         <PhMagnifyingGlass :size="24" />
-      </div>
-
-      <div
+      </IconButton>
+      <IconButton
         v-if="downloadEpisode !== undefined"
         ref="downloadButtonRef"
+        class="ml-auto"
         title="一键下载"
-        class="ml-auto cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
         @click="handleDownloadClick">
         <PhDownloadSimple :size="24" />
-      </div>
+      </IconButton>
     </div>
   </div>
 </template>

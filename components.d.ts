@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ColorfulTag: typeof import('./src/components/ColorfulTag.vue')['default']
     FloatLabelInput: typeof import('./src/components/FloatLabelInput.vue')['default']
+    IconButton: typeof import('./src/components/IconButton.vue')['default']
     NA: typeof import('naive-ui')['NA']
     NBadge: typeof import('naive-ui')['NBadge']
     NButton: typeof import('naive-ui')['NButton']
