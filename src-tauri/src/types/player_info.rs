@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct PlayerInfo {
     pub aid: i64,
@@ -45,6 +46,7 @@ pub struct PlayerInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct IpInfo {
     pub ip: String,
     pub zone_ip: String,
@@ -55,6 +57,7 @@ pub struct IpInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct LevelInfoInPlayerInfo {
     pub current_level: i64,
     pub current_min: i64,
@@ -64,6 +67,7 @@ pub struct LevelInfoInPlayerInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct VipInPlayerInfo {
     #[serde(rename = "type")]
@@ -84,6 +88,7 @@ pub struct VipInPlayerInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct LabelInPlayerInfo {
     pub path: String,
@@ -101,14 +106,17 @@ pub struct LabelInPlayerInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct AvatarIcon {
     pub icon_resource: IconResource,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct IconResource {}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SubtitleInPlayerInfo {
     pub allow_submit: bool,
     pub lan: String,
@@ -117,6 +125,7 @@ pub struct SubtitleInPlayerInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SubtitleDetailInPlayerInfo {
     pub id: i64,
     pub lan: String,
@@ -131,6 +140,7 @@ pub struct SubtitleDetailInPlayerInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct ViewPoint {
     #[serde(rename = "type")]
     pub type_field: i64,
@@ -144,12 +154,14 @@ pub struct ViewPoint {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Options {
     pub is_360: bool,
     pub without_vip: bool,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct OnlineSwitch {
     pub enable_gray_dash_playback: String,
     pub new_broadcast: String,
@@ -158,17 +170,20 @@ pub struct OnlineSwitch {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Fawkes {
     pub config_version: i64,
     pub ff_version: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct ShowSwitch {
     pub long_progress: bool,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct ElecHighLevel {
     pub privilege_type: i64,
     pub title: String,

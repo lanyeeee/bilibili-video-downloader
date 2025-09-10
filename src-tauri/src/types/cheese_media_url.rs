@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CheeseMediaUrl {
     pub accept_format: String,
     pub code: i64,
@@ -32,16 +33,19 @@ pub struct CheeseMediaUrl {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PlayViewBusinessInfo {
     pub user_status: UserStatusInCheeseUrl,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserStatusInCheeseUrl {
     pub watch_progress: WatchProgress,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct WatchProgress {
     pub current_watch_progress: i64,
@@ -51,6 +55,7 @@ pub struct WatchProgress {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SupportFormatInCheese {
     pub display_desc: String,
     pub superscript: String,
@@ -63,6 +68,7 @@ pub struct SupportFormatInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DashInCheese {
     pub duration: u64,
     pub min_buffer_time: f64,
@@ -71,6 +77,7 @@ pub struct DashInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct MediaInCheese {
     pub start_with_sap: i64,
     pub bandwidth: i64,
@@ -90,18 +97,21 @@ pub struct MediaInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SegmentBaseInCheese {
     pub initialization: String,
     pub index_range: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DurlInCheese {
     pub durl: Vec<DurlDetailInCheese>,
     pub quality: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DurlDetailInCheese {
     pub size: i64,
     pub ahead: String,

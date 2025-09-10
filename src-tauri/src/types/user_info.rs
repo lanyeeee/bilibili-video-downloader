@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserInfo {
     #[serde(rename = "isLogin")]
     pub is_login: bool,
@@ -42,6 +43,7 @@ pub struct UserInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct LevelInfoInUserInfo {
     pub current_level: i64,
@@ -50,6 +52,7 @@ pub struct LevelInfoInUserInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Official {
     pub role: i64,
     pub title: String,
@@ -59,6 +62,7 @@ pub struct Official {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct OfficialVerify {
     #[serde(rename = "type")]
     pub type_field: i64,
@@ -66,6 +70,7 @@ pub struct OfficialVerify {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PendantInUserInfo {
     pub pid: i64,
     pub name: String,
@@ -77,6 +82,7 @@ pub struct PendantInUserInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct VipLabel {
     pub path: String,
     pub text: String,
@@ -93,6 +99,7 @@ pub struct VipLabel {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct VipInUserInfo {
     #[serde(rename = "type")]
@@ -112,6 +119,7 @@ pub struct VipInUserInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct LabelInUserInfo {
     pub path: String,
@@ -129,9 +137,11 @@ pub struct LabelInUserInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct IconResource {}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Wallet {
     pub mid: i64,
     pub bcoin_balance: f64,
@@ -140,6 +150,7 @@ pub struct Wallet {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct WbiImg {
     pub img_url: String,
     pub sub_url: String,

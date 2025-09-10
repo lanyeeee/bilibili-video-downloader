@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Subtitle {
     pub font_size: f64,
     pub font_color: String,
@@ -13,6 +14,7 @@ pub struct Subtitle {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Body {
     pub from: f64,
     pub to: f64,

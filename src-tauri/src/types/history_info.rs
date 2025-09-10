@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct HistoryInfo {
     pub has_more: bool,
     pub page: PageInHistory,
@@ -9,12 +10,14 @@ pub struct HistoryInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PageInHistory {
     pub pn: i64,
     pub total: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct HistoryDetail {
     pub title: String,
     pub long_title: String,
@@ -40,6 +43,7 @@ pub struct HistoryDetail {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct History {
     pub oid: i64,
     pub epid: i64,

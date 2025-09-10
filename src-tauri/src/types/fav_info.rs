@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct FavInfo {
     pub info: Info,
     pub medias: Option<Vec<MediaInFav>>,
@@ -10,6 +11,7 @@ pub struct FavInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct Info {
     pub id: i64,
@@ -34,6 +36,7 @@ pub struct Info {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Upper {
     pub mid: i64,
     pub name: String,
@@ -44,6 +47,7 @@ pub struct Upper {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CntInfo {
     pub collect: i64,
     pub play: i64,
@@ -52,6 +56,7 @@ pub struct CntInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct MediaInFav {
     pub id: i64,
@@ -76,6 +81,7 @@ pub struct MediaInFav {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UpperInMedia {
     pub mid: i64,
     pub name: String,
@@ -84,6 +90,7 @@ pub struct UpperInMedia {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CntInfoInMedia {
     pub collect: i64,
     pub play: i64,
@@ -95,6 +102,7 @@ pub struct CntInfoInMedia {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Ugc {
     pub first_cid: i64,
 }

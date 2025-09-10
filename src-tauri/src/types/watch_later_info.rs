@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct WatchLaterInfo {
     pub count: i64,
     pub list: Vec<MediaInWatchLater>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct MediaInWatchLater {
     pub aid: i64,
     pub videos: i64,
@@ -64,6 +66,7 @@ pub struct MediaInWatchLater {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RightsInWatchLater {
     pub bp: i64,
     pub elec: i64,
@@ -82,6 +85,7 @@ pub struct RightsInWatchLater {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct OwnerInWatchLater {
     pub mid: i64,
     pub name: String,
@@ -89,6 +93,7 @@ pub struct OwnerInWatchLater {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInWatchLater {
     pub aid: i64,
     pub view: i64,
@@ -106,6 +111,7 @@ pub struct StatInWatchLater {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DimensionInWatchLater {
     pub width: i64,
     pub height: i64,
@@ -113,6 +119,7 @@ pub struct DimensionInWatchLater {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PageInWatchLater {
     pub cid: i64,
     pub page: i64,

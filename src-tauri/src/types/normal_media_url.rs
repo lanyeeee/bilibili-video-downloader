@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct NormalMediaUrl {
     pub from: String,
     pub result: String,
@@ -23,6 +24,7 @@ pub struct NormalMediaUrl {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DashInNormal {
     pub duration: u64,
     pub min_buffer_time: f64,
@@ -33,12 +35,14 @@ pub struct DashInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Flac {
     pub display: bool,
     pub audio: Option<MediaInNormal>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct MediaInNormal {
     pub id: i64,
     pub start_with_sap: i64,
@@ -56,12 +60,14 @@ pub struct MediaInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SegmentBaseInNormal {
     pub initialization: String,
     pub index_range: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Dolby {
     #[serde(rename = "type")]
     pub type_field: i64,
@@ -69,6 +75,7 @@ pub struct Dolby {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SupportFormatInNormal {
     pub quality: i64,
     pub format: String,
@@ -79,6 +86,7 @@ pub struct SupportFormatInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PlayConf {
     pub is_new_description: bool,
 }

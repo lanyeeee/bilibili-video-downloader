@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct BangumiInfo {
     pub activity: Activity,
     pub actors: String,
@@ -88,6 +89,7 @@ impl BangumiInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Activity {
     pub head_bg_url: String,
     pub id: i64,
@@ -95,12 +97,14 @@ pub struct Activity {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct AreaInBangumi {
     pub id: i64,
     pub name: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct EpInBangumi {
     pub aid: i64,
@@ -140,6 +144,7 @@ pub struct EpInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct BadgeInfoInBangumi {
     pub bg_color: String,
     pub bg_color_night: String,
@@ -147,6 +152,7 @@ pub struct BadgeInfoInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DimensionInBangumi {
     pub height: i64,
     pub rotate: i64,
@@ -154,6 +160,7 @@ pub struct DimensionInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RightsInBangumiEp {
     pub allow_dm: i64,
     pub allow_download: i64,
@@ -161,30 +168,35 @@ pub struct RightsInBangumiEp {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Skip {
     pub ed: Ed,
     pub op: Op,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Ed {
     pub end: i64,
     pub start: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Op {
     pub end: i64,
     pub start: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct IconFont {
     pub name: String,
     pub text: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct NewEp {
     pub desc: String,
     pub id: i64,
@@ -193,6 +205,7 @@ pub struct NewEp {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PaymentInBangumi {
     pub discount: i64,
     pub pay_type: PayType,
@@ -207,6 +220,7 @@ pub struct PaymentInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PayType {
     pub allow_discount: i64,
     pub allow_pack: i64,
@@ -217,17 +231,20 @@ pub struct PayType {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PlayStrategy {
     pub strategies: Vec<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Positive {
     pub id: i64,
     pub title: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PublishInBangumi {
     pub is_finish: i64,
     pub is_started: i64,
@@ -238,12 +255,14 @@ pub struct PublishInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RatingInBangumi {
     pub count: i64,
     pub score: f64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RightsInBangumi {
     pub allow_bp: i64,
     pub allow_bp_rank: i64,
@@ -263,6 +282,7 @@ pub struct RightsInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct Season {
     pub badge: String,
@@ -282,6 +302,7 @@ pub struct Season {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct NewEpInSeason {
     pub cover: String,
     pub id: i64,
@@ -289,6 +310,7 @@ pub struct NewEpInSeason {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInSeason {
     pub favorites: i64,
     pub series_follow: i64,
@@ -297,6 +319,7 @@ pub struct StatInSeason {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct SeriesInBangumi {
     pub display_type: i64,
@@ -305,11 +328,13 @@ pub struct SeriesInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Show {
     pub wide_screen: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInBangumi {
     pub coins: i64,
     pub danmakus: i64,
@@ -324,6 +349,7 @@ pub struct StatInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UpInfoInBangumi {
     pub avatar: String,
     pub mid: i64,
@@ -331,6 +357,7 @@ pub struct UpInfoInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserStatusInBangumi {
     pub area_limit: i64,
     pub ban_area_show: i64,
@@ -343,6 +370,7 @@ pub struct UserStatusInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SectionInBangumi {
     pub attr: i64,
     pub episodes: Vec<EpInBangumi>,
