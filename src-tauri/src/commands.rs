@@ -18,8 +18,10 @@ use crate::{
         get_bangumi_info_params::GetBangumiInfoParams,
         get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams,
+        get_history_info_params::GetHistoryInfoParams,
         get_normal_info_params::GetNormalInfoParams,
         get_user_video_info_params::GetUserVideoInfoParams,
+        history_info::HistoryInfo,
         normal_info::NormalInfo,
         qrcode_data::QrcodeData,
         qrcode_status::QrcodeStatus,
@@ -208,6 +210,20 @@ pub async fn get_bangumi_follow_info(
         .await
         .map_err(|err| CommandError::from("获取追番信息失败", err))?;
     Ok(bangumi_follow_info)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_history_info(
+    app: AppHandle,
+    params: GetHistoryInfoParams,
+) -> CommandResult<HistoryInfo> {
+    let bili_client = app.get_bili_client();
+    let history_info = bili_client
+        .get_history_info(params)
+        .await
+        .map_err(|err| CommandError::from("获取历史记录失败", err))?;
+    Ok(history_info)
 }
 
 #[allow(clippy::needless_pass_by_value)]

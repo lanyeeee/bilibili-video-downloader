@@ -18,6 +18,7 @@ import PartsDialogContent from './PartsDialogContent.vue'
 import { ensureHttps, extractBvid, isElementInViewport, playTaskToQueueAnimation } from '../../../utils.tsx'
 import { navDownloadButtonRefKey } from '../../../injection_keys.ts'
 import { SearchType } from '../SearchPane.vue'
+import IconButton from '../../../components/IconButton.vue'
 
 onMounted(() => console.log('EpisodeCard mounted'))
 onUpdated(() => console.log('EpisodeCard updated'))
@@ -51,7 +52,7 @@ const props = defineProps<{
 
 const navDownloadButtonRef = inject(navDownloadButtonRefKey)
 const rootDivRef = ref<HTMLDivElement>()
-const downloadButtonRef = ref<HTMLDivElement>()
+const downloadButtonRef = ref<InstanceType<typeof IconButton>>()
 
 const episodeInfo = computed<EpisodeInfo>(() => {
   if (props.episodeType === 'NormalSingle') {
@@ -174,7 +175,7 @@ function playDownloadAnimation() {
     return
   }
 
-  const from = downloadButtonRef.value
+  const from = downloadButtonRef.value?.$el
   const to = navDownloadButtonRef?.value
 
   if (from instanceof Element && to !== undefined) {
@@ -226,38 +227,26 @@ defineExpose({ playDownloadAnimation, episodeInfo })
     </div>
 
     <div class="flex gap-1 items-center">
-      <a
-        v-if="episodeInfo.href !== undefined"
-        :href="episodeInfo.href"
-        target="_blank"
-        draggable="false"
-        title="在浏览器中打开"
-        class="p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6">
+      <IconButton v-if="episodeInfo.href !== undefined" title="在浏览器中打开" :href="episodeInfo.href">
         <PhGoogleChromeLogo :size="24" />
-      </a>
-      <div
-        v-if="partsButtonShowing"
-        title="查看分P"
-        class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
-        @click="handlePartsButtonClick">
+      </IconButton>
+      <IconButton v-if="partsButtonShowing" title="查看分P" @click="handlePartsButtonClick">
         <PhQueue :size="24" />
-      </div>
-      <div
+      </IconButton>
+      <IconButton
         v-if="search !== undefined && episodeInfo.bvid !== undefined"
         title="在下载器内搜索"
-        class="cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
         @click="search(episodeInfo.bvid, 'Normal')">
         <PhMagnifyingGlass :size="24" />
-      </div>
-
-      <div
-        ref="downloadButtonRef"
+      </IconButton>
+      <IconButton
         v-if="downloadEpisode !== undefined"
+        ref="downloadButtonRef"
         title="一键下载"
-        class="ml-auto cursor-pointer p-1 rounded-lg flex items-center justify-between text-gray-6 hover:bg-sky-5 hover:text-white active:bg-sky-6"
+        class="ml-auto"
         @click="handleDownloadClick">
         <PhDownloadSimple :size="24" />
-      </div>
+      </IconButton>
     </div>
   </div>
 </template>

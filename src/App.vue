@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppContent from './AppContent.vue'
-import { GlobalThemeOverrides } from 'naive-ui'
+import { GlobalThemeOverrides, zhCN, dateZhCN } from 'naive-ui'
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -15,6 +15,10 @@ const themeOverrides: GlobalThemeOverrides = {
   Tabs: {
     tabGapSmallLine: '10px',
     tabPaddingSmallLine: '6px 8px',
+    tabTextColorActiveSegment: '#00AEECFF',
+    tabTextColorHoverSegment: '#00AEECFF',
+    tabColorSegment: '#DFF6FDFF',
+    colorSegment: '#FFFFFFFF',
   },
   Button: {
     paddingSmall: '0 8px',
@@ -35,7 +39,7 @@ const themeOverrides: GlobalThemeOverrides = {
 </script>
 
 <template>
-  <n-config-provider :theme-overrides="themeOverrides">
+  <n-config-provider :theme-overrides="themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
     <n-dialog-provider>
       <n-modal-provider>
         <n-notification-provider placement="bottom-right" :max="3">

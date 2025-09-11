@@ -26,11 +26,13 @@ use crate::{
         cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
         get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
-        get_fav_info_params::GetFavInfoParams, get_normal_info_params::GetNormalInfoParams,
-        get_user_video_info_params::GetUserVideoInfoParams, normal_info::NormalInfo,
-        normal_media_url::NormalMediaUrl, player_info::PlayerInfo, qrcode_data::QrcodeData,
-        qrcode_status::QrcodeStatus, skip_segments::SkipSegments, subtitle::Subtitle, tags::Tags,
-        user_info::UserInfo, user_video_info::UserVideoInfo, watch_later_info::WatchLaterInfo,
+        get_fav_info_params::GetFavInfoParams, get_history_info_params::GetHistoryInfoParams,
+        get_normal_info_params::GetNormalInfoParams,
+        get_user_video_info_params::GetUserVideoInfoParams, history_info::HistoryInfo,
+        normal_info::NormalInfo, normal_media_url::NormalMediaUrl, player_info::PlayerInfo,
+        qrcode_data::QrcodeData, qrcode_status::QrcodeStatus, skip_segments::SkipSegments,
+        subtitle::Subtitle, tags::Tags, user_info::UserInfo, user_video_info::UserVideoInfo,
+        watch_later_info::WatchLaterInfo,
     },
 };
 
@@ -670,6 +672,53 @@ impl BiliClient {
             .context(format!("将data解析为BangumiFollowInfo失败: {data_str}"))?;
 
         Ok(bangumi_follow_info)
+    }
+
+    pub async fn get_history_info(
+        &self,
+        params: GetHistoryInfoParams,
+    ) -> anyhow::Result<HistoryInfo> {
+        let device_type: i64 = params.device_type.into();
+        let params = json!({
+            "pn": params.pn,
+            "keyword": params.keyword,
+            "business": "archive",
+            "add_time_start": params.add_time_start,
+            "add_time_end": params.add_time_end,
+            "arc_max_duration": params.arc_max_duration,
+            "arc_min_duration": params.arc_min_duration,
+            "device_type": device_type,
+        });
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/x/web-interface/history/search")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为HistoryInfo
+        let data_str = data.to_string();
+        let history_info: HistoryInfo = serde_json::from_str(&data_str)
+            .context(format!("将data解析为HistoryInfo失败: {data_str}"))?;
+
+        Ok(history_info)
     }
 
     pub async fn get_media_chunk(

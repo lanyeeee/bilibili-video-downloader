@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct CheeseInfo {
     pub abtest_info: AbtestInfo,
@@ -54,11 +55,13 @@ pub struct CheeseInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct AbtestInfo {
     pub style_abtest: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Brief {
     pub content: String,
     pub img: Vec<Img>,
@@ -68,23 +71,27 @@ pub struct Brief {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Img {
     pub aspect_ratio: f64,
     pub url: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Consulting {
     pub consulting_flag: bool,
     pub consulting_url: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Cooperation {
     pub link: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct EpPage {
     pub next: bool,
     pub num: i64,
@@ -93,6 +100,7 @@ pub struct EpPage {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct EpTag {
     pub part_preview_tag: String,
@@ -101,6 +109,7 @@ pub struct EpTag {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_excessive_bools)]
 #[allow(clippy::struct_field_names)]
 pub struct EpInCheese {
@@ -130,6 +139,7 @@ pub struct EpInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Faq {
     pub content: String,
     pub link: String,
@@ -137,24 +147,28 @@ pub struct Faq {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Faq1 {
     pub items: Vec<Faq1Item>,
     pub title: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Faq1Item {
     pub answer: String,
     pub question: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PaidJump {
     pub jump_url_for_app: String,
     pub url: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Payment {
     pub bp_enough: i64,
     pub desc: String,
@@ -168,6 +182,7 @@ pub struct Payment {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PreviewedPurchaseNote {
     pub long_watch_text: String,
     pub pay_text: String,
@@ -177,6 +192,7 @@ pub struct PreviewedPurchaseNote {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PurchaseFormatNote {
     pub content_list: Vec<ContentList>,
     pub link: String,
@@ -184,6 +200,7 @@ pub struct PurchaseFormatNote {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct ContentList {
     pub bold: bool,
     pub content: String,
@@ -191,6 +208,7 @@ pub struct ContentList {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PurchaseNote {
     pub content: String,
     pub link: String,
@@ -198,12 +216,14 @@ pub struct PurchaseNote {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PurchaseProtocol {
     pub link: String,
     pub title: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RecommendSeason {
     pub cover: String,
     pub ep_count: String,
@@ -215,6 +235,7 @@ pub struct RecommendSeason {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInCheese {
     pub play: i64,
     pub play_desc: String,
@@ -222,6 +243,7 @@ pub struct StatInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UpInfoInCheese {
     pub avatar: String,
     pub brief: String,
@@ -236,6 +258,7 @@ pub struct UpInfoInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PendantInCheese {
     pub image: String,
     pub name: String,
@@ -243,6 +266,7 @@ pub struct PendantInCheese {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserStatusInCheese {
     pub bp: i64,
     pub expire_at: i64,

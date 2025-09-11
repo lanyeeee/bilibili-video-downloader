@@ -96,6 +96,14 @@ async getBangumiFollowInfo(params: GetBangumiFollowInfoParams) : Promise<Result<
     else return { status: "error", error: e  as any };
 }
 },
+async getHistoryInfo(params: GetHistoryInfoParams) : Promise<Result<HistoryInfo, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_history_info", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async createDownloadTasks(params: CreateDownloadTaskParams) : Promise<void> {
     await TAURI_INVOKE("create_download_tasks", { params });
 },
@@ -247,7 +255,7 @@ export type CntInfo = { collect: number; play: number; thumb_up: number; share: 
 export type CntInfoInMedia = { collect: number; play: number; danmaku: number; vt: number; play_switch: number; reply: number; view_text_1: string }
 export type CodecType = "Unknown" | "Audio" | "AVC" | "HEVC" | "AV1"
 export type CommandError = { err_title: string; err_message: string }
-export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; prefer_video_quality: PreferVideoQuality; prefer_codec_type: PreferCodecType; prefer_audio_quality: PreferAudioQuality; download_video: boolean; download_audio: boolean; auto_merge: boolean; embed_chapter: boolean; embed_skip: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; download_subtitle: boolean; download_cover: boolean; download_nfo: boolean; download_json: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; proxy_mode: ProxyMode; proxy_host: string; proxy_port: number; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig }
+export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; video_quality_priority: VideoQuality[]; codec_type_priority: CodecType[]; audio_quality_priority: AudioQuality[]; download_video: boolean; download_audio: boolean; auto_merge: boolean; embed_chapter: boolean; embed_skip: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; download_subtitle: boolean; download_cover: boolean; download_nfo: boolean; download_json: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; proxy_mode: ProxyMode; proxy_host: string; proxy_port: number; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig }
 export type Consulting = { consulting_flag: boolean; consulting_url: string }
 export type ContentAttr = { text: string; bg_color: string; bg_color_night: string; img: string; multi_img: MultiImg }
 export type ContentList = { bold: boolean; content: string; number: string }
@@ -259,6 +267,7 @@ export type CreateDownloadTaskParams = { Normal: CreateNormalDownloadTaskParams 
 export type CreateNormalDownloadTaskParams = { info: NormalInfo; aid_cid_pairs: ([number, number | null])[] }
 export type DanmakuTask = { xml_selected: boolean; ass_selected: boolean; json_selected: boolean; completed: boolean }
 export type DescV2 = { raw_text: string; type: number; biz_id: number }
+export type DeviceType = "All" | "PC" | "Mobile" | "Pad" | "TV"
 export type Dimension = { width: number; height: number; rotate: number }
 export type DimensionInBangumi = { height: number; rotate: number; width: number }
 export type DimensionInWatchLater = { width: number; height: number; rotate: number }
@@ -290,8 +299,12 @@ type: number; pn: number; follow_status: number }
 export type GetBangumiInfoParams = { EpId: number } | { SeasonId: number }
 export type GetCheeseInfoParams = { EpId: number } | { SeasonId: number }
 export type GetFavInfoParams = { media_list_id: number; pn: number }
+export type GetHistoryInfoParams = { pn: number; keyword: string; add_time_start: number; add_time_end: number; arc_max_duration: number; arc_min_duration: number; device_type: DeviceType }
 export type GetNormalInfoParams = { Bvid: string } | { Aid: number }
 export type GetUserVideoInfoParams = { pn: number; mid: number }
+export type History = { oid: number; epid: number; bvid: string; page: number; cid: number; part: string; business: string; dt: number }
+export type HistoryDetail = { title: string; long_title: string; cover: string; uri: string; history: History; videos: number; author_name: string; author_face: string; author_mid: number; view_at: number; progress: number; badge: string; show_title: string; duration: number; total: number; new_desc: string; is_finish: number; is_fav: number; kid: number; tag_name: string; live_status: number }
+export type HistoryInfo = { has_more: boolean; page: PageInHistory; list: HistoryDetail[] | null }
 export type Honor = { aid: number; type: number; desc: string; weekly_recommend_num: number }
 export type HonorReply = { honor: Honor[] | null }
 export type IconFont = { name: string; text: string }
@@ -319,6 +332,7 @@ export type OfficialVerify = { type: number; desc: string }
 export type Op = { end: number; start: number }
 export type OwnerInNormal = { mid: number; name: string; face: string }
 export type OwnerInWatchLater = { mid: number; name: string; face: string }
+export type PageInHistory = { pn: number; total: number }
 export type PageInNormal = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension; ctime: number }
 export type PageInNormalEp = { cid: number; page: number; from: string; part: string; duration: number; vid: string; weblink: string; dimension: Dimension }
 export type PageInUserVideo = { pn: number; ps: number; count: number }
@@ -331,9 +345,6 @@ export type PendantInCheese = { image: string; name: string; pid: number }
 export type PendantInUserInfo = { pid: number; name: string; image: string; expire: number; image_enhance: string; image_enhance_frame: string; n_pid: number }
 export type PlayStrategy = { strategies: string[] }
 export type Positive = { id: number; title: string }
-export type PreferAudioQuality = "Best" | "64K" | "132K" | "192K" | "Dolby" | "HiRes"
-export type PreferCodecType = "Unknown" | "AVC" | "HEVC" | "AV1"
-export type PreferVideoQuality = "Best" | "240P" | "360P" | "480P" | "720P" | "720P60" | "1080P" | "AiRepair" | "1080P+" | "1080P60" | "4K" | "HDR" | "Dolby" | "8K"
 export type PreviewedPurchaseNote = { long_watch_text: string; pay_text: string; price_format: string; watch_text: string; watching_text: string }
 export type Producer = { mid: number; type: number; is_contribute: number | null; title: string }
 export type ProxyMode = "NoProxy" | "System" | "Custom"

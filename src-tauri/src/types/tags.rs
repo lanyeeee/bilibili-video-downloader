@@ -4,6 +4,7 @@ use specta::Type;
 pub type Tags = Vec<Tag>;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct Tag {
     pub tag_id: i64,

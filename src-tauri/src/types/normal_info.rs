@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct NormalInfo {
     pub bvid: String,
@@ -52,6 +53,7 @@ pub struct NormalInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DescV2 {
     pub raw_text: String,
     #[serde(rename = "type")]
@@ -60,6 +62,7 @@ pub struct DescV2 {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Rights {
     pub bp: i64,
     pub elec: i64,
@@ -82,6 +85,7 @@ pub struct Rights {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct OwnerInNormal {
     pub mid: i64,
     pub name: String,
@@ -89,6 +93,7 @@ pub struct OwnerInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInNormal {
     pub aid: i64,
     pub view: i64,
@@ -106,6 +111,7 @@ pub struct StatInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct ArgueInfo {
     pub argue_msg: String,
@@ -114,6 +120,7 @@ pub struct ArgueInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Dimension {
     pub width: i64,
     pub height: i64,
@@ -121,6 +128,7 @@ pub struct Dimension {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_field_names)]
 pub struct PageInNormal {
     pub cid: i64,
@@ -135,12 +143,14 @@ pub struct PageInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SubtitleInNormal {
     pub allow_submit: bool,
     pub list: Vec<SubtitleDetailInNormal>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SubtitleDetailInNormal {
     pub id: i64,
     pub lan: String,
@@ -155,16 +165,19 @@ pub struct SubtitleDetailInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserGarb {
     pub url_image_ani_cut: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct HonorReply {
     pub honor: Option<Vec<Honor>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Honor {
     pub aid: i64,
     #[serde(rename = "type")]
@@ -174,6 +187,7 @@ pub struct Honor {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UgcSeason {
     pub id: i64,
     pub title: String,
@@ -191,6 +205,7 @@ pub struct UgcSeason {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SectionInNormal {
     pub season_id: i64,
     pub id: i64,
@@ -201,6 +216,7 @@ pub struct SectionInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct EpInNormal {
     pub season_id: i64,
     pub section_id: i64,
@@ -216,6 +232,7 @@ pub struct EpInNormal {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Arc {
     pub aid: i64,
     pub videos: i64,
@@ -244,6 +261,7 @@ pub struct Arc {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Author {
     pub mid: i64,
     pub name: String,
@@ -251,6 +269,7 @@ pub struct Author {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInNormalEp {
     pub aid: i64,
     pub view: i64,
@@ -270,6 +289,7 @@ pub struct StatInNormalEp {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInNormalSeason {
     pub season_id: i64,
     pub view: i64,
@@ -286,6 +306,7 @@ pub struct StatInNormalSeason {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PageInNormalEp {
     pub cid: i64,
     pub page: i64,
@@ -298,6 +319,7 @@ pub struct PageInNormalEp {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RightsInNormalEp {
     pub bp: i64,
     pub elec: i64,
@@ -315,6 +337,7 @@ pub struct RightsInNormalEp {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct Staff {
     pub mid: i64,
     pub title: String,

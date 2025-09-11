@@ -98,27 +98,16 @@ impl VideoProcessTask {
         tokio::spawn(async move {
             let mut command = std::process::Command::new(ffmpeg_program);
 
-            command
-                .arg("-i")
-                .arg(video_path_clone)
-                .arg("-i")
-                .arg(audio_path_clone);
-
+            command.arg("-i").arg(video_path_clone);
+            command.arg("-i").arg(audio_path_clone);
             if let Some(metadata_path) = metadata_path_clone {
-                command
-                    .arg("-i")
-                    .arg(metadata_path)
-                    .arg("-map_metadata")
-                    .arg("2");
+                command.arg("-i").arg(metadata_path);
+                command.arg("-map_metadata").arg("2");
             }
 
-            command
-                .arg("-c")
-                .arg("copy")
-                .arg("-map")
-                .arg("0:v:0")
-                .arg("-map")
-                .arg("1:a:0");
+            command.arg("-c").arg("copy");
+            command.arg("-map").arg("0:v:0");
+            command.arg("-map").arg("1:a:0");
 
             command.arg(output_path_clone).arg("-y");
 
@@ -198,19 +187,14 @@ impl VideoProcessTask {
         tauri::async_runtime::spawn_blocking(move || {
             let mut command = std::process::Command::new(ffmpeg_program);
 
-            command
-                .arg("-i")
-                .arg(video_path_clone)
-                .arg("-i")
-                .arg(audio_path_clone)
-                .arg("-c")
-                .arg("copy")
-                .arg("-map")
-                .arg("0:v:0")
-                .arg("-map")
-                .arg("1:a:0")
-                .arg(output_path_clone)
-                .arg("-y");
+            command.arg("-i").arg(video_path_clone);
+            command.arg("-i").arg(audio_path_clone);
+
+            command.arg("-c").arg("copy");
+            command.arg("-map").arg("0:v:0");
+            command.arg("-map").arg("1:a:0");
+
+            command.arg(output_path_clone).arg("-y");
 
             #[cfg(target_os = "windows")]
             {
@@ -286,17 +270,13 @@ impl VideoProcessTask {
         tauri::async_runtime::spawn_blocking(move || {
             let mut command = std::process::Command::new(ffmpeg_program);
 
-            command
-                .arg("-i")
-                .arg(video_path_clone)
-                .arg("-i")
-                .arg(metadata_path_clone)
-                .arg("-map_metadata")
-                .arg("1")
-                .arg("-c")
-                .arg("copy")
-                .arg(output_path_clone)
-                .arg("-y");
+            command.arg("-i").arg(video_path_clone);
+            command.arg("-i").arg(metadata_path_clone);
+
+            command.arg("-map_metadata").arg("1");
+            command.arg("-c").arg("copy");
+
+            command.arg(output_path_clone).arg("-y");
 
             #[cfg(target_os = "windows")]
             {

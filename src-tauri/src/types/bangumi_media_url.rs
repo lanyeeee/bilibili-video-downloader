@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct BangumiMediaUrl {
     pub accept_format: String,
     pub code: i64,
@@ -38,12 +39,14 @@ pub struct BangumiMediaUrl {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct RecordInfo {
     pub record_icon: String,
     pub record: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SupportFormatInBangumi {
     pub display_desc: String,
     pub has_preview: bool,
@@ -60,6 +63,7 @@ pub struct SupportFormatInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DashInBangumi {
     pub duration: u64,
     pub min_buffer_time: f64,
@@ -68,6 +72,7 @@ pub struct DashInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct MediaInBangumi {
     pub start_with_sap: i64,
     pub bandwidth: i64,
@@ -87,12 +92,14 @@ pub struct MediaInBangumi {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SegmentBaseInBangumi {
     pub initialization: String,
     pub index_range: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct ClipInfoList {
     #[serde(rename = "materialNo")]
     pub material_no: i64,
@@ -105,12 +112,14 @@ pub struct ClipInfoList {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DurlInBangumi {
     pub durl: Vec<DurlDetailInBangumi>,
     pub quality: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct DurlDetailInBangumi {
     pub size: i64,
     pub ahead: String,

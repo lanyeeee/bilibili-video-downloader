@@ -1,11 +1,13 @@
 use std::path::{Path, PathBuf};
 
-use num_enum::{FromPrimitive, IntoPrimitive};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{AppHandle, Manager};
 
-use crate::danmaku_xml_to_ass::canvas::CanvasConfig;
+use crate::{
+    danmaku_xml_to_ass::canvas::CanvasConfig,
+    types::{audio_quality::AudioQuality, codec_type::CodecType, video_quality::VideoQuality},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[allow(clippy::struct_excessive_bools)]
@@ -14,9 +16,9 @@ pub struct Config {
     pub download_dir: PathBuf,
     pub enable_file_logger: bool,
     pub sessdata: String,
-    pub prefer_video_quality: PreferVideoQuality,
-    pub prefer_codec_type: PreferCodecType,
-    pub prefer_audio_quality: PreferAudioQuality,
+    pub video_quality_priority: Vec<VideoQuality>,
+    pub codec_type_priority: Vec<CodecType>,
+    pub audio_quality_priority: Vec<AudioQuality>,
     pub download_video: bool,
     pub download_audio: bool,
     pub auto_merge: bool,
@@ -96,13 +98,36 @@ impl Config {
     fn default(app_data_dir: &Path) -> Config {
         const DEFAULT_FMT_FOR_PART: &str =
             "{collection_title}/{episode_title}/{episode_title}-P{part_order} {part_title}";
+        let default_video_quality_priority = vec![
+            VideoQuality::Video8K,
+            VideoQuality::VideoDolby,
+            VideoQuality::VideoHDR,
+            VideoQuality::Video4K,
+            VideoQuality::Video1080P60,
+            VideoQuality::Video1080PPlus,
+            VideoQuality::Video1080P,
+            VideoQuality::VideoAiRepair,
+            VideoQuality::Video720P60,
+            VideoQuality::Video720P,
+            VideoQuality::Video480P,
+            VideoQuality::Video360P,
+            VideoQuality::Video240P,
+        ];
+        let default_audio_quality_priority = vec![
+            AudioQuality::AudioHiRes,
+            AudioQuality::AudioDolby,
+            AudioQuality::Audio192K,
+            AudioQuality::Audio132K,
+            AudioQuality::Audio64K,
+        ];
+
         Config {
             download_dir: app_data_dir.join("视频下载"),
             enable_file_logger: true,
             sessdata: String::new(),
-            prefer_video_quality: PreferVideoQuality::Best,
-            prefer_codec_type: PreferCodecType::AVC,
-            prefer_audio_quality: PreferAudioQuality::Best,
+            video_quality_priority: default_video_quality_priority,
+            codec_type_priority: vec![CodecType::AVC, CodecType::HEVC, CodecType::AV1],
+            audio_quality_priority: default_audio_quality_priority,
             download_video: true,
             download_audio: true,
             auto_merge: true,
@@ -128,102 +153,6 @@ impl Config {
             danmaku_config: CanvasConfig::default(),
         }
     }
-}
-
-#[derive(
-    Debug,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Type,
-    IntoPrimitive,
-    FromPrimitive,
-)]
-#[repr(i64)]
-pub enum PreferVideoQuality {
-    #[default]
-    Best = -1,
-
-    #[serde(rename = "240P")]
-    Video240P = 6,
-    #[serde(rename = "360P")]
-    Video360P = 16,
-    #[serde(rename = "480P")]
-    Video480P = 32,
-    #[serde(rename = "720P")]
-    Video720P = 64,
-    #[serde(rename = "720P60")]
-    Video720P60 = 74,
-    #[serde(rename = "1080P")]
-    Video1080P = 80,
-    #[serde(rename = "AiRepair")]
-    VideoAiRepair = 100,
-    #[serde(rename = "1080P+")]
-    Video1080PPlus = 112,
-    #[serde(rename = "1080P60")]
-    Video1080P60 = 116,
-    #[serde(rename = "4K")]
-    Video4K = 120,
-    #[serde(rename = "HDR")]
-    VideoHDR = 125,
-    #[serde(rename = "Dolby")]
-    VideoDolby = 126,
-    #[serde(rename = "8K")]
-    Video8K = 127,
-}
-
-#[derive(
-    Debug,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Type,
-    IntoPrimitive,
-    FromPrimitive,
-)]
-#[repr(i64)]
-#[allow(clippy::upper_case_acronyms)]
-pub enum PreferCodecType {
-    #[default]
-    Unknown = -1,
-
-    AVC = 7,
-    HEVC = 12,
-    AV1 = 13,
-}
-
-#[derive(
-    Debug,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Type,
-    IntoPrimitive,
-    FromPrimitive,
-)]
-#[repr(i64)]
-pub enum PreferAudioQuality {
-    #[default]
-    Best = -1,
-    #[serde(rename = "64K")]
-    Audio64K = 30216,
-    #[serde(rename = "132K")]
-    Audio132K = 30232,
-    #[serde(rename = "192K")]
-    Audio192K = 30280,
-    #[serde(rename = "Dolby")]
-    AudioDolby = 30250,
-    #[serde(rename = "HiRes")]
-    AudioHiRes = 30251,
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]

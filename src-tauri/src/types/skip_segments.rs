@@ -4,9 +4,11 @@ use specta::Type;
 use crate::downloader::chapter_segments::ChapterSegment;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SkipSegments(pub Vec<SkipSegment>);
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SkipSegment {
     pub cid: String,
     pub category: String,

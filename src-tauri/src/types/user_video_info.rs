@@ -2,17 +2,20 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserVideoInfo {
     pub list: UserVideoList,
     pub page: PageInUserVideo,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserVideoList {
     pub vlist: Vec<EpInUserVideo>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct EpInUserVideo {
     pub comment: i64,
     pub typeid: i64,
@@ -54,6 +57,7 @@ pub struct EpInUserVideo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct MetaInUserVideo {
     pub id: i64,
     pub title: String,
@@ -70,6 +74,7 @@ pub struct MetaInUserVideo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct StatInUserVideo {
     pub season_id: i64,
     pub view: i64,
@@ -85,6 +90,7 @@ pub struct StatInUserVideo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct PageInUserVideo {
     pub pn: i64,
     pub ps: i64,

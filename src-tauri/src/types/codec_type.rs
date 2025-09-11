@@ -7,6 +7,8 @@ use specta::Type;
     Debug,
     Clone,
     Copy,
+    Hash,
+    Eq,
     PartialEq,
     Serialize,
     Deserialize,
@@ -19,6 +21,7 @@ use specta::Type;
 pub enum CodecType {
     #[default]
     Unknown = -1,
+
     Audio = 0,
     AVC = 7,
     HEVC = 12,

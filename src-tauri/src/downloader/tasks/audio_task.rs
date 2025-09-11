@@ -1,5 +1,5 @@
 use std::{
-    cmp::Reverse,
+    collections::HashMap,
     fs::{File, OpenOptions},
     sync::Arc,
 };
@@ -114,11 +114,7 @@ impl AudioTask {
             }
         }
 
-        if medias.is_empty() {
-            return Err(anyhow!("获取音频地址失败"));
-        }
-
-        self.prepare(app, medias);
+        self.prepare(app, medias)?;
 
         Ok(())
     }
@@ -174,11 +170,7 @@ impl AudioTask {
             }
         }
 
-        if medias.is_empty() {
-            return Err(anyhow!("获取音频地址失败"));
-        }
-
-        self.prepare(app, medias);
+        self.prepare(app, medias)?;
 
         Ok(())
     }
@@ -234,37 +226,28 @@ impl AudioTask {
             }
         }
 
-        if medias.is_empty() {
-            return Err(anyhow!("获取音频地址失败"));
-        }
-
-        self.prepare(app, medias);
+        self.prepare(app, medias)?;
 
         Ok(())
     }
 
-    fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) {
-        medias.sort_by_key(|m| Reverse(m.id.to_audio_quality_for_prepare()));
-        let best_quality_id = medias[0].id;
+    fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) -> anyhow::Result<()> {
+        if medias.is_empty() {
+            return Err(anyhow!("获取音频地址失败"));
+        }
 
-        let prefer_quality = app.get_config().read().prefer_audio_quality;
-        let prefer_quality_id: i64 = prefer_quality.into();
-        let prefer_quality_found = medias.iter().any(|m| m.id == prefer_quality_id);
-        let quality_filtered_medias: Vec<MediaForPrepare> = if prefer_quality_found {
-            // 如果用户指定质量存在，则使用用户指定的质量
-            medias
-                .into_iter()
-                .filter(|m| m.id == prefer_quality_id)
-                .collect()
-        } else {
-            // 否则使用最高质量
-            medias
-                .into_iter()
-                .filter(|m| m.id == best_quality_id)
-                .collect()
-        };
+        let quality_priority = app.get_config().read().audio_quality_priority.clone();
+        let priority_map: HashMap<&AudioQuality, usize> = quality_priority
+            .iter()
+            .enumerate()
+            .map(|(index, quality)| (quality, index))
+            .collect();
+        medias.sort_by_key(|media| {
+            let quality: AudioQuality = media.id.into();
+            priority_map.get(&quality).unwrap_or(&usize::MAX)
+        });
 
-        let media = &quality_filtered_medias[0];
+        let media = &medias[0];
 
         self.audio_quality = media.id.into();
 
@@ -295,6 +278,8 @@ impl AudioTask {
             self.content_length = content_length;
             self.chunks = chunks;
         }
+
+        Ok(())
     }
 
     pub fn mark_uncompleted(&mut self) {
@@ -426,31 +411,4 @@ impl AudioTask {
 struct MediaForPrepare {
     pub id: i64,
     pub url_with_content_length: Vec<(String, u64)>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum AudioQualityForPrepare {
-    Audio64K,
-    Audio132K,
-    Audio192K,
-    AudioDolby,
-    AudioHiRes,
-}
-
-trait ToAudioQualityForPrepare {
-    fn to_audio_quality_for_prepare(self) -> Option<AudioQualityForPrepare>;
-}
-
-impl ToAudioQualityForPrepare for i64 {
-    fn to_audio_quality_for_prepare(self) -> Option<AudioQualityForPrepare> {
-        let audio_quality: AudioQuality = self.into();
-        match audio_quality {
-            AudioQuality::Audio64K => Some(AudioQualityForPrepare::Audio64K),
-            AudioQuality::Audio132K => Some(AudioQualityForPrepare::Audio132K),
-            AudioQuality::Audio192K => Some(AudioQualityForPrepare::Audio192K),
-            AudioQuality::AudioDolby => Some(AudioQualityForPrepare::AudioDolby),
-            AudioQuality::AudioHiRes => Some(AudioQualityForPrepare::AudioHiRes),
-            AudioQuality::Unknown => None,
-        }
-    }
 }

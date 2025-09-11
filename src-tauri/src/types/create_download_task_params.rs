@@ -11,18 +11,21 @@ pub enum CreateDownloadTaskParams {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CreateNormalDownloadTaskParams {
     pub info: NormalInfo,
     pub aid_cid_pairs: Vec<(i64, Option<i64>)>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CreateBangumiDownloadTaskParams {
     pub ep_ids: Vec<i64>,
     pub info: BangumiInfo,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CreateCheeseDownloadTaskParams {
     pub ep_ids: Vec<i64>,
     pub info: CheeseInfo,

@@ -19,22 +19,27 @@ pub enum SearchResult {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct NormalSearchResult(pub NormalInfo);
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct BangumiSearchResult {
     pub ep: Option<bangumi_info::EpInBangumi>,
     pub info: BangumiInfo,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CheeseSearchResult {
     pub ep: Option<cheese_info::EpInCheese>,
     pub info: CheeseInfo,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct UserVideoSearchResult(pub UserVideoInfo);
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct FavSearchResult(pub FavInfo);

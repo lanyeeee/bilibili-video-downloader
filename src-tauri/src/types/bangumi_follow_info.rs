@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct BangumiFollowInfo {
     pub list: Vec<EpInBangumiFollow>,
     pub pn: i64,
@@ -10,6 +11,7 @@ pub struct BangumiFollowInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct EpInBangumiFollow {
     pub season_id: i64,
     pub media_id: i64,

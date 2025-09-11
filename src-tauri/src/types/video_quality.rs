@@ -7,6 +7,8 @@ use specta::Type;
     Debug,
     Clone,
     Copy,
+    Hash,
+    Eq,
     PartialEq,
     Serialize,
     Deserialize,
