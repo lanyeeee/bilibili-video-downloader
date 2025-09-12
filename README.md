@@ -15,7 +15,7 @@
 
 ## 🖥️图形界面
 
-![](https://github.com/user-attachments/assets/ad1cebcb-bce5-47e7-b898-ce1d1e7c5eff)
+![](https://github.com/user-attachments/assets/73d4a9d7-644b-43f2-9b25-66212e8fd9a8)
 
 ## ✨ 主要特性
 
@@ -40,7 +40,7 @@
 
 这个视频是主要功能的演示
 
-https://github.com/user-attachments/assets/17a6c068-a952-4a3e-82f4-06205a869e08
+https://github.com/user-attachments/assets/adf84b93-684f-43f3-9948-6ba527213812
 
 
 
