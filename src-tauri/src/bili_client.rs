@@ -955,7 +955,7 @@ impl BiliClient {
 
     pub fn get_cookie(&self) -> String {
         let sessdata = self.app.get_config().read().sessdata.clone();
-        format!("SESSDATA={sessdata}")
+        format!("SESSDATA={}", sessdata.trim_end_matches(';'))
     }
 }
 
