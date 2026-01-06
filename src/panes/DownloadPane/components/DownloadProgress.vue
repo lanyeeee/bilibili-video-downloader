@@ -11,8 +11,9 @@ import {
   PhFolderOpen,
   PhFileVideo,
   PhMagnifyingGlass,
+  PhWrench,
 } from '@phosphor-icons/vue'
-import { ProgressProps } from 'naive-ui'
+import { ProgressProps, useDialog } from 'naive-ui'
 import UpInfoBadge from '../../../components/UpInfoBadge.vue'
 import { computed, DeepReadonly, inject } from 'vue'
 import ColorfulTag from '../../../components/ColorfulTag.vue'
@@ -20,6 +21,9 @@ import { searchPaneRefKey } from '../../../injection_keys.ts'
 import { ProgressData } from '../DownloadPane.vue'
 import { ensureHttps } from '../../../utils.tsx'
 import IconButton from '../../../components/IconButton.vue'
+import ModifyProgressDialogContent from './ModifyProgressDialogContent.vue'
+
+const dialog = useDialog()
 
 const store = useStore()
 
@@ -127,6 +131,15 @@ function handleSearchClick() {
   } else if (props.p.episode_type === 'Cheese' && props.p.ep_id !== null) {
     searchPaneRef?.value?.search(`ep${props.p.ep_id}`, 'Cheese')
   }
+}
+
+function handleModifyClick() {
+  const dialogReactive = dialog.create({
+    title: '修改下载内容',
+    showIcon: false,
+    draggable: true,
+    content: () => <ModifyProgressDialogContent p={props.p} destroyDialog={() => dialogReactive.destroy()} />,
+  })
 }
 </script>
 
@@ -251,6 +264,9 @@ function handleSearchClick() {
         </IconButton>
         <IconButton title="在浏览器中打开" :href="href">
           <PhGoogleChromeLogo :size="24" />
+        </IconButton>
+        <IconButton title="修改下载内容" @click="handleModifyClick">
+          <PhWrench :size="24" />
         </IconButton>
       </div>
     </div>
