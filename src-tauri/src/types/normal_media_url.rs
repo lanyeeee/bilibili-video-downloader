@@ -82,7 +82,7 @@ pub struct SupportFormatInNormal {
     pub new_description: String,
     pub display_desc: String,
     pub superscript: String,
-    pub codecs: Vec<String>,
+    pub codecs: Option<Vec<String>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
