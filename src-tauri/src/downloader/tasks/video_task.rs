@@ -66,6 +66,26 @@ impl VideoTask {
             });
         }
 
+        for durl in &media_url.durl {
+            let app = app.clone();
+            let id = media_url.quality;
+            let codecid = media_url.video_codecid;
+
+            let mut urls = Vec::new();
+            urls.extend_from_slice(&durl.backup_url);
+            urls.push(durl.url.clone());
+
+            join_set.spawn(async move {
+                let bili_client = app.get_bili_client();
+                let url_with_content_length = bili_client.get_url_with_content_length(urls).await;
+                MediaForPrepare {
+                    id,
+                    url_with_content_length,
+                    codecid,
+                }
+            });
+        }
+
         let mut medias: Vec<MediaForPrepare> = Vec::new();
 
         while let Some(Ok(media)) = join_set.join_next().await {
@@ -213,7 +233,7 @@ impl VideoTask {
 
     fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) -> anyhow::Result<()> {
         if medias.is_empty() {
-            return Err(anyhow!("获取音频地址失败"));
+            return Err(anyhow!("获取视频地址失败"));
         }
 
         let (video_quality_priority, codec_type_priority) = {

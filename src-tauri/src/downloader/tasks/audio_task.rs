@@ -114,7 +114,7 @@ impl AudioTask {
             }
         }
 
-        self.prepare(app, medias)?;
+        self.prepare(app, medias);
 
         Ok(())
     }
@@ -170,7 +170,7 @@ impl AudioTask {
             }
         }
 
-        self.prepare(app, medias)?;
+        self.prepare(app, medias);
 
         Ok(())
     }
@@ -226,14 +226,15 @@ impl AudioTask {
             }
         }
 
-        self.prepare(app, medias)?;
+        self.prepare(app, medias);
 
         Ok(())
     }
 
-    fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) -> anyhow::Result<()> {
+    fn prepare(&mut self, app: &AppHandle, mut medias: Vec<MediaForPrepare>) {
         if medias.is_empty() {
-            return Err(anyhow!("获取音频地址失败"));
+            self.completed = true;
+            return;
         }
 
         let quality_priority = app.get_config().read().audio_quality_priority.clone();
@@ -278,8 +279,6 @@ impl AudioTask {
             self.content_length = content_length;
             self.chunks = chunks;
         }
-
-        Ok(())
     }
 
     pub fn mark_uncompleted(&mut self) {

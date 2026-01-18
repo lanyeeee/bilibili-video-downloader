@@ -16,6 +16,7 @@ pub struct NormalMediaUrl {
     pub video_codecid: i64,
     pub seek_param: String,
     pub seek_type: String,
+    pub durl: Vec<DurlInNormal>,
     pub dash: DashInNormal,
     pub support_formats: Vec<SupportFormatInNormal>,
     pub last_play_time: i64,
@@ -32,6 +33,18 @@ pub struct DashInNormal {
     pub audio: Option<Vec<MediaInNormal>>,
     pub dolby: Dolby,
     pub flac: Option<Flac>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
+pub struct DurlInNormal {
+    pub order: i64,
+    pub length: i64,
+    pub size: i64,
+    pub ahead: String,
+    pub vhead: String,
+    pub url: String,
+    pub backup_url: Vec<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
