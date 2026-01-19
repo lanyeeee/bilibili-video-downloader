@@ -11,12 +11,17 @@ use crate::downloader::{
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct JsonTask {
     pub selected: bool,
     pub completed: bool,
 }
 
 impl JsonTask {
+    pub fn mark_uncompleted(&mut self) {
+        self.completed = false;
+    }
+
     pub fn is_completed(&self) -> bool {
         !self.selected || self.completed
     }

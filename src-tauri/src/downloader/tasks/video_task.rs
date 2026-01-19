@@ -13,6 +13,7 @@ use tauri::AppHandle;
 use tokio::task::JoinSet;
 
 use crate::{
+    config::FileExistAction,
     downloader::{
         download_chunk_task::DownloadChunkTask, download_progress::DownloadProgress,
         download_task::DownloadTask, media_chunk::MediaChunk,
@@ -28,6 +29,7 @@ use crate::{
 const CHUNK_SIZE: u64 = 2 * 1024 * 1024; // 2MB
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct VideoTask {
     pub selected: bool,
     pub url: String,
@@ -36,6 +38,7 @@ pub struct VideoTask {
     pub content_length: u64,
     pub chunks: Vec<MediaChunk>,
     pub completed: bool,
+    pub skipped: bool,
 }
 
 impl VideoTask {
@@ -309,23 +312,20 @@ impl VideoTask {
         self.chunks.iter_mut().for_each(|chunk| {
             chunk.completed = false;
         });
+        self.skipped = false;
     }
 
     pub fn is_completed(&self) -> bool {
         !self.selected || self.completed
     }
 
+    #[allow(clippy::too_many_lines)]
     pub async fn process(
         &self,
         download_task: &Arc<DownloadTask>,
         progress: &DownloadProgress,
     ) -> anyhow::Result<()> {
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
-
-        let temp_file_path = episode_dir.join(format!(
-            "{filename}.mp4.com.lanyeeee.bilibili-video-downloader"
-        ));
-
         let (video_task, episode_title, ids_string) = {
             let progress = download_task.progress.read();
             (
@@ -334,6 +334,21 @@ impl VideoTask {
                 progress.get_ids_string(),
             )
         };
+
+        let mp4_path = episode_dir.join(format!("{filename}.mp4"));
+        let file_exist_action = download_task.app.get_config().read().file_exist_action;
+        if file_exist_action == FileExistAction::Skip && mp4_path.exists() {
+            tracing::debug!("{ids_string} `{filename}`视频文件已存在，跳过下载");
+            download_task.update_progress(|p| {
+                p.video_task.skipped = true;
+                p.video_task.completed = true;
+            });
+            return Ok(());
+        }
+
+        let temp_file_path = episode_dir.join(format!(
+            "{filename}.mp4.com.lanyeeee.bilibili-video-downloader"
+        ));
 
         let file = if temp_file_path.exists() {
             // 如果临时文件已存在，则打开它
@@ -416,7 +431,6 @@ impl VideoTask {
         }
 
         // 重命名临时文件
-        let mp4_path = episode_dir.join(format!("{filename}.mp4"));
         if mp4_path.exists() {
             std::fs::remove_file(&mp4_path)
                 .context(format!("删除已存在的视频文件`{}`失败", mp4_path.display()))?;

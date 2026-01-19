@@ -17,6 +17,7 @@ use crate::{
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct VideoProcessTask {
     pub merge_selected: bool,
@@ -26,6 +27,10 @@ pub struct VideoProcessTask {
 }
 
 impl VideoProcessTask {
+    pub fn mark_uncompleted(&mut self) {
+        self.completed = false;
+    }
+
     pub fn is_completed(&self) -> bool {
         !self.merge_selected && !self.embed_chapter_selected && !self.embed_skip_selected
             || self.completed
@@ -44,7 +49,6 @@ impl VideoProcessTask {
                 .await
                 .context("自动合并+嵌入章节元数据失败")?;
         } else if self.merge_selected {
-            println!("merge1");
             self.merge(download_task, progress)
                 .await
                 .context("自动合并失败")?;

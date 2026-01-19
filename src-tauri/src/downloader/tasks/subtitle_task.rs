@@ -12,12 +12,17 @@ use crate::{
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct SubtitleTask {
     pub selected: bool,
     pub completed: bool,
 }
 
 impl SubtitleTask {
+    pub fn mark_uncompleted(&mut self) {
+        self.completed = false;
+    }
+
     pub fn is_completed(&self) -> bool {
         !self.selected || self.completed
     }

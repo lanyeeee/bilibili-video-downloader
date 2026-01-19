@@ -292,7 +292,7 @@ impl DownloadTask {
                 .process(self, &progress)
                 .await
                 .context(format!("{ids_string} `{filename}`下载视频文件失败"))?;
-            tracing::debug!("{ids_string} `{filename}`视频下载完成");
+            tracing::debug!("{ids_string} `{filename}`视频下载任务完成");
         }
 
         if !audio_task.is_completed() && audio_task.content_length != 0 {
@@ -300,7 +300,7 @@ impl DownloadTask {
                 .process(self, &progress)
                 .await
                 .context(format!("{ids_string} `{filename}`下载音频文件失败"))?;
-            tracing::debug!("{ids_string} `{filename}`音频下载完成");
+            tracing::debug!("{ids_string} `{filename}`音频下载任务完成");
         }
 
         if !video_process_task.is_completed() {
@@ -308,7 +308,7 @@ impl DownloadTask {
                 .process(self, &progress, &mut player_info)
                 .await
                 .context(format!("{ids_string} `{filename}`视频处理失败"))?;
-            tracing::debug!("{ids_string} `{filename}`视频处理完成");
+            tracing::debug!("{ids_string} `{filename}`视频处理任务完成");
         }
 
         if !danmaku_task.is_completed() {
@@ -316,7 +316,7 @@ impl DownloadTask {
                 .process(self, &progress)
                 .await
                 .context(format!("{ids_string} `{filename}`下载弹幕失败"))?;
-            tracing::debug!("{ids_string} `{filename}`弹幕下载完成");
+            tracing::debug!("{ids_string} `{filename}`弹幕下载任务完成");
         }
 
         if !subtitle_task.is_completed() {
@@ -324,7 +324,7 @@ impl DownloadTask {
                 .process(self, &progress, &mut player_info)
                 .await
                 .context(format!("{ids_string} `{filename}`下载字幕失败"))?;
-            tracing::debug!("{ids_string} `{filename}`字幕下载完成");
+            tracing::debug!("{ids_string} `{filename}`字幕下载任务完成");
         }
 
         if !cover_task.is_completed() {
@@ -332,7 +332,7 @@ impl DownloadTask {
                 .process(self, &progress)
                 .await
                 .context(format!("{ids_string} `{filename}`下载封面失败"))?;
-            tracing::debug!("{ids_string} `{filename}`封面下载完成");
+            tracing::debug!("{ids_string} `{filename}`封面下载任务完成");
         }
 
         if !nfo_task.is_completed() {
@@ -340,7 +340,7 @@ impl DownloadTask {
                 .process(self, &progress, &mut episode_info)
                 .await
                 .context(format!("{ids_string} `{filename}`下载NFO失败"))?;
-            tracing::debug!("{ids_string} `{filename}`NFO下载完成");
+            tracing::debug!("{ids_string} `{filename}`NFO下载任务完成");
         }
 
         if !json_task.is_completed() {
@@ -348,7 +348,7 @@ impl DownloadTask {
                 .process(self, &progress, &mut episode_info)
                 .await
                 .context(format!("{ids_string} `{filename}`下载JSON元数据失败"))?;
-            tracing::debug!("{ids_string} `{filename}`JSON元数据下载完成");
+            tracing::debug!("{ids_string} `{filename}`JSON元数据下载任务完成");
         }
 
         let completed_ts = SystemTime::now()

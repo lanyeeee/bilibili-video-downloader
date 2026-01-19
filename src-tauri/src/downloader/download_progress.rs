@@ -330,12 +330,12 @@ impl DownloadProgress {
     pub fn mark_uncompleted(&mut self) {
         self.video_task.mark_uncompleted();
         self.audio_task.mark_uncompleted();
-        self.video_process_task.completed = false;
-        self.danmaku_task.completed = false;
-        self.subtitle_task.completed = false;
-        self.cover_task.completed = false;
-        self.nfo_task.completed = false;
-        self.json_task.completed = false;
+        self.video_process_task.mark_uncompleted();
+        self.danmaku_task.mark_uncompleted();
+        self.subtitle_task.mark_uncompleted();
+        self.cover_task.mark_uncompleted();
+        self.nfo_task.mark_uncompleted();
+        self.json_task.mark_uncompleted();
     }
 
     pub fn get_ids_string(&self) -> String {
@@ -656,6 +656,7 @@ impl Tasks {
             content_length: 0,
             chunks: Vec::new(),
             completed: false,
+            skipped: false,
         };
 
         let audio = AudioTask {
@@ -665,6 +666,7 @@ impl Tasks {
             content_length: 0,
             chunks: Vec::new(),
             completed: false,
+            skipped: false,
         };
 
         let video_process = VideoProcessTask {
@@ -679,6 +681,7 @@ impl Tasks {
             ass_selected: config.download_ass_danmaku,
             json_selected: config.download_json_danmaku,
             completed: false,
+            skipped: false,
         };
 
         let subtitle = SubtitleTask {
@@ -695,6 +698,7 @@ impl Tasks {
         let nfo = NfoTask {
             selected: config.download_nfo,
             completed: false,
+            skipped: false,
         };
 
         let json = JsonTask {

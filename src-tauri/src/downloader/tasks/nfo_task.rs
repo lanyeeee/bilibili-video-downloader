@@ -7,6 +7,7 @@ use specta::Type;
 use yaserde::{YaDeserialize, YaSerialize};
 
 use crate::{
+    config::FileExistAction,
     downloader::{
         download_progress::DownloadProgress,
         download_task::DownloadTask,
@@ -19,12 +20,19 @@ use crate::{
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct NfoTask {
     pub selected: bool,
     pub completed: bool,
+    pub skipped: bool,
 }
 
 impl NfoTask {
+    pub fn mark_uncompleted(&mut self) {
+        self.completed = false;
+        self.skipped = false;
+    }
+
     pub fn is_completed(&self) -> bool {
         !self.selected || self.completed
     }
@@ -35,104 +43,187 @@ impl NfoTask {
         progress: &DownloadProgress,
         episode_info: &mut Option<EpisodeInfo>,
     ) -> anyhow::Result<()> {
-        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
-
         let episode_info = episode_info
             .get_or_init(&download_task.app, progress)
             .await?;
 
-        let bili_client = download_task.app.get_bili_client();
-
         match episode_info {
             EpisodeInfo::Normal(info) => {
-                let tags = bili_client
-                    .get_tags(progress.aid)
-                    .await
-                    .context("获取视频标签失败")?;
-                let movie_nfo = info
-                    .to_movie_nfo(tags)
-                    .context("将普通视频信息转换为movie NFO失败")?;
-                let nfo_path = episode_dir.join(format!("{filename}.nfo"));
-                std::fs::write(&nfo_path, movie_nfo)
-                    .context(format!("保存普通视频NFO到`{}`失败", nfo_path.display()))?;
-
-                if let Some(ugc_season) = &info.ugc_season {
-                    let collection_cover = &ugc_season.cover;
-                    let (cover_data, ext) = bili_client
-                        .get_cover_data_and_ext(collection_cover)
-                        .await
-                        .context("获取普通视频合集封面失败")?;
-                    let cover_path = episode_dir.join(format!("poster.{ext}"));
-                    std::fs::write(&cover_path, cover_data).context(format!(
-                        "保存普通视频合集封面到`{}`失败",
-                        cover_path.display()
-                    ))?;
-                }
+                self.process_normal(download_task, progress, info).await?;
             }
             EpisodeInfo::Bangumi(info, ep_id) => {
-                let tvshow_nfo = info
-                    .to_tvshow_nfo()
-                    .context("将番剧信息转换为tvshow NFO失败")?;
-                let tvshow_nfo_path = episode_dir.join("tvshow.nfo");
-                std::fs::write(&tvshow_nfo_path, tvshow_nfo)
-                    .context(format!("保存番剧NFO到`{}`失败", tvshow_nfo_path.display()))?;
-
-                let episode_details_nfo = info
-                    .to_episode_details_nfo(*ep_id)
-                    .context("将番剧信息转换为episodedetail NFO失败")?;
-                let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
-                std::fs::write(&episode_details_nfo_path, episode_details_nfo).context(format!(
-                    "保存番剧NFO到`{}`失败",
-                    episode_details_nfo_path.display()
-                ))?;
-
-                let poster_url = &info.cover;
-                let (poster_data, ext) = bili_client
-                    .get_cover_data_and_ext(poster_url)
-                    .await
-                    .context("获取番剧封面失败")?;
-                let poster_path = episode_dir.join(format!("poster.{ext}"));
-                std::fs::write(&poster_path, poster_data)
-                    .context(format!("保存番剧封面到`{}`失败", poster_path.display()))?;
-
-                let fanart_url = &info.bkg_cover;
-                if !fanart_url.is_empty() {
-                    let (fanart_data, ext) = bili_client
-                        .get_cover_data_and_ext(fanart_url)
-                        .await
-                        .context("获取番剧封面失败")?;
-                    let fanart_path = episode_dir.join(format!("fanart.{ext}"));
-                    std::fs::write(&fanart_path, fanart_data)
-                        .context(format!("保存番剧封面到`{}`失败", fanart_path.display()))?;
-                }
+                self.process_bangumi(download_task, progress, info, ep_id)
+                    .await?;
             }
             EpisodeInfo::Cheese(info, ep_id) => {
-                let tvshow_nfo = info
-                    .to_tvshow_nfo()
-                    .context("将课程信息转换为tvshow NFO失败")?;
-                let tvshow_nfo_path = episode_dir.join("tvshow.nfo");
-                std::fs::write(&tvshow_nfo_path, tvshow_nfo)
-                    .context(format!("保存课程NFO到`{}`失败", tvshow_nfo_path.display()))?;
-
-                let episode_details_nfo = info
-                    .to_episode_details_nfo(*ep_id)
-                    .context("将课程信息转换为episodedetail NFO失败")?;
-                let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
-                std::fs::write(&episode_details_nfo_path, episode_details_nfo).context(format!(
-                    "保存课程NFO到`{}`失败",
-                    episode_details_nfo_path.display()
-                ))?;
-
-                let poster_url = &info.cover;
-                let (poster_data, ext) = bili_client
-                    .get_cover_data_and_ext(poster_url)
-                    .await
-                    .context("获取课程封面失败")?;
-                let poster_path = episode_dir.join(format!("poster.{ext}"));
-                std::fs::write(&poster_path, poster_data)
-                    .context(format!("保存课程封面到`{}`失败", poster_path.display()))?;
+                self.process_cheese(download_task, progress, info, ep_id)
+                    .await?;
             }
         }
+
+        Ok(())
+    }
+
+    async fn process_normal(
+        &self,
+        download_task: &Arc<DownloadTask>,
+        progress: &DownloadProgress,
+        info: &NormalInfo,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+        let ids_string = progress.get_ids_string();
+        let nfo_path = episode_dir.join(format!("{filename}.nfo"));
+
+        let file_exist_action = download_task.app.get_config().read().file_exist_action;
+        if file_exist_action == FileExistAction::Skip && nfo_path.exists() {
+            tracing::debug!("{ids_string} `{filename}`NFO文件已存在，跳过下载");
+            download_task.update_progress(|p| {
+                p.nfo_task.skipped = true;
+                p.nfo_task.completed = true;
+            });
+            return Ok(());
+        }
+
+        let bili_client = download_task.app.get_bili_client();
+
+        let tags = bili_client
+            .get_tags(progress.aid)
+            .await
+            .context("获取视频标签失败")?;
+        let movie_nfo = info
+            .to_movie_nfo(tags)
+            .context("将普通视频信息转换为movie NFO失败")?;
+        std::fs::write(&nfo_path, movie_nfo)
+            .context(format!("保存普通视频NFO到`{}`失败", nfo_path.display()))?;
+
+        if let Some(ugc_season) = &info.ugc_season {
+            let collection_cover = &ugc_season.cover;
+            let (cover_data, ext) = bili_client
+                .get_cover_data_and_ext(collection_cover)
+                .await
+                .context("获取普通视频合集封面失败")?;
+            let cover_path = episode_dir.join(format!("poster.{ext}"));
+            std::fs::write(&cover_path, cover_data).context(format!(
+                "保存普通视频合集封面到`{}`失败",
+                cover_path.display()
+            ))?;
+        }
+
+        download_task.update_progress(|p| p.nfo_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn process_bangumi(
+        &self,
+        download_task: &Arc<DownloadTask>,
+        progress: &DownloadProgress,
+        info: &BangumiInfo,
+        ep_id: &i64,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+        let ids_string = progress.get_ids_string();
+        let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
+
+        let file_exist_action = download_task.app.get_config().read().file_exist_action;
+        if file_exist_action == FileExistAction::Skip && episode_details_nfo_path.exists() {
+            tracing::debug!("{ids_string} `{filename}`NFO文件已存在，跳过下载");
+            download_task.update_progress(|p| {
+                p.nfo_task.skipped = true;
+                p.nfo_task.completed = true;
+            });
+            return Ok(());
+        }
+
+        let bili_client = download_task.app.get_bili_client();
+
+        let tvshow_nfo = info
+            .to_tvshow_nfo()
+            .context("将番剧信息转换为tvshow NFO失败")?;
+        let tvshow_nfo_path = episode_dir.join("tvshow.nfo");
+        std::fs::write(&tvshow_nfo_path, tvshow_nfo)
+            .context(format!("保存番剧NFO到`{}`失败", tvshow_nfo_path.display()))?;
+
+        let episode_details_nfo = info
+            .to_episode_details_nfo(*ep_id)
+            .context("将番剧信息转换为episodedetail NFO失败")?;
+        let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
+        std::fs::write(&episode_details_nfo_path, episode_details_nfo).context(format!(
+            "保存番剧NFO到`{}`失败",
+            episode_details_nfo_path.display()
+        ))?;
+
+        let poster_url = &info.cover;
+        let (poster_data, ext) = bili_client
+            .get_cover_data_and_ext(poster_url)
+            .await
+            .context("获取番剧封面失败")?;
+        let poster_path = episode_dir.join(format!("poster.{ext}"));
+        std::fs::write(&poster_path, poster_data)
+            .context(format!("保存番剧封面到`{}`失败", poster_path.display()))?;
+
+        let fanart_url = &info.bkg_cover;
+        if !fanart_url.is_empty() {
+            let (fanart_data, ext) = bili_client
+                .get_cover_data_and_ext(fanart_url)
+                .await
+                .context("获取番剧封面失败")?;
+            let fanart_path = episode_dir.join(format!("fanart.{ext}"));
+            std::fs::write(&fanart_path, fanart_data)
+                .context(format!("保存番剧封面到`{}`失败", fanart_path.display()))?;
+        }
+
+        download_task.update_progress(|p| p.nfo_task.completed = true);
+
+        Ok(())
+    }
+
+    async fn process_cheese(
+        &self,
+        download_task: &Arc<DownloadTask>,
+        progress: &DownloadProgress,
+        info: &CheeseInfo,
+        ep_id: &i64,
+    ) -> anyhow::Result<()> {
+        let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
+        let ids_string = progress.get_ids_string();
+        let episode_details_nfo_path = episode_dir.join(format!("{filename}.nfo"));
+
+        let file_exist_action = download_task.app.get_config().read().file_exist_action;
+        if file_exist_action == FileExistAction::Skip && episode_details_nfo_path.exists() {
+            tracing::debug!("{ids_string} `{filename}`NFO文件已存在，跳过下载");
+            download_task.update_progress(|p| {
+                p.nfo_task.skipped = true;
+                p.nfo_task.completed = true;
+            });
+            return Ok(());
+        }
+
+        let bili_client = download_task.app.get_bili_client();
+
+        let tvshow_nfo = info
+            .to_tvshow_nfo()
+            .context("将课程信息转换为tvshow NFO失败")?;
+        let tvshow_nfo_path = episode_dir.join("tvshow.nfo");
+        std::fs::write(&tvshow_nfo_path, tvshow_nfo)
+            .context(format!("保存课程NFO到`{}`失败", tvshow_nfo_path.display()))?;
+
+        let episode_details_nfo = info
+            .to_episode_details_nfo(*ep_id)
+            .context("将课程信息转换为episodedetail NFO失败")?;
+        std::fs::write(&episode_details_nfo_path, episode_details_nfo).context(format!(
+            "保存课程NFO到`{}`失败",
+            episode_details_nfo_path.display()
+        ))?;
+
+        let poster_url = &info.cover;
+        let (poster_data, ext) = bili_client
+            .get_cover_data_and_ext(poster_url)
+            .await
+            .context("获取课程封面失败")?;
+        let poster_path = episode_dir.join(format!("poster.{ext}"));
+        std::fs::write(&poster_path, poster_data)
+            .context(format!("保存课程封面到`{}`失败", poster_path.display()))?;
 
         download_task.update_progress(|p| p.nfo_task.completed = true);
 

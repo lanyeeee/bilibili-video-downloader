@@ -13,6 +13,7 @@ use tauri::AppHandle;
 use tokio::task::JoinSet;
 
 use crate::{
+    config::FileExistAction,
     downloader::{
         download_chunk_task::DownloadChunkTask, download_progress::DownloadProgress,
         download_task::DownloadTask, media_chunk::MediaChunk,
@@ -28,6 +29,7 @@ use crate::{
 const CHUNK_SIZE: u64 = 2 * 1024 * 1024; // 2MB
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct AudioTask {
     pub selected: bool,
     pub url: String,
@@ -35,6 +37,7 @@ pub struct AudioTask {
     pub content_length: u64,
     pub chunks: Vec<MediaChunk>,
     pub completed: bool,
+    pub skipped: bool,
 }
 
 impl AudioTask {
@@ -286,6 +289,7 @@ impl AudioTask {
         self.chunks.iter_mut().for_each(|chunk| {
             chunk.completed = false;
         });
+        self.skipped = false;
     }
 
     pub fn is_completed(&self) -> bool {
@@ -298,10 +302,6 @@ impl AudioTask {
         progress: &DownloadProgress,
     ) -> anyhow::Result<()> {
         let (episode_dir, filename) = (&progress.episode_dir, &progress.filename);
-
-        let temp_file_path = episode_dir.join(format!(
-            "{filename}.m4a.com.lanyeeee.bilibili-video-downloader"
-        ));
         let (audio_task, episode_title, ids_string) = {
             (
                 progress.audio_task.clone(),
@@ -309,6 +309,21 @@ impl AudioTask {
                 progress.get_ids_string(),
             )
         };
+
+        let m4a_path = episode_dir.join(format!("{filename}.m4a"));
+        let file_exist_action = download_task.app.get_config().read().file_exist_action;
+        if file_exist_action == FileExistAction::Skip && m4a_path.exists() {
+            tracing::debug!("{ids_string} `{filename}`音频文件已存在，跳过下载");
+            download_task.update_progress(|p| {
+                p.audio_task.skipped = true;
+                p.audio_task.completed = true;
+            });
+            return Ok(());
+        }
+
+        let temp_file_path = episode_dir.join(format!(
+            "{filename}.m4a.com.lanyeeee.bilibili-video-downloader"
+        ));
 
         let file = if temp_file_path.exists() {
             // 如果文件已存在，则打开它
@@ -389,7 +404,6 @@ impl AudioTask {
         }
 
         // 重命名临时文件
-        let m4a_path = episode_dir.join(format!("{filename}.m4a"));
         if m4a_path.exists() {
             std::fs::remove_file(&m4a_path)
                 .context(format!("删除已存在的音频文件`{}`失败", m4a_path.display()))?;

@@ -10,6 +10,7 @@ use crate::{
 };
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(default)]
 pub struct CoverTask {
     pub selected: bool,
     pub url: String,
@@ -17,6 +18,10 @@ pub struct CoverTask {
 }
 
 impl CoverTask {
+    pub fn mark_uncompleted(&mut self) {
+        self.completed = false;
+    }
+
     pub fn is_completed(&self) -> bool {
         !self.selected || self.completed
     }

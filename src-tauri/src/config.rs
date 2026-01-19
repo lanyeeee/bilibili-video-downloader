@@ -42,6 +42,7 @@ pub struct Config {
     pub chunk_concurrency: usize,
     pub chunk_download_interval_sec: u64,
     pub danmaku_config: CanvasConfig,
+    pub file_exist_action: FileExistAction,
 }
 
 impl Config {
@@ -151,6 +152,7 @@ impl Config {
             chunk_concurrency: 16,
             chunk_download_interval_sec: 0,
             danmaku_config: CanvasConfig::default(),
+            file_exist_action: FileExistAction::Overwrite,
         }
     }
 }
@@ -161,4 +163,11 @@ pub enum ProxyMode {
     NoProxy,
     System,
     Custom,
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]
+pub enum FileExistAction {
+    #[default]
+    Overwrite,
+    Skip,
 }
