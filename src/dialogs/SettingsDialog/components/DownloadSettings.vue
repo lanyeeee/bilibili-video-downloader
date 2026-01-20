@@ -83,7 +83,7 @@ const codecTypeNameMap: Map<CodecType, string> = new Map([
     </div>
 
     <div class="flex gap-2">
-      <span class="w-14 w-15 font-bold">元数据</span>
+      <span class="w-15 font-bold">元数据</span>
       <n-tooltip placement="top" trigger="hover">
         <div>还会顺便下载poster和fanart(如果有的话)</div>
         <template #trigger>
@@ -152,6 +152,14 @@ const codecTypeNameMap: Map<CodecType, string> = new Map([
           </ColorfulTag>
         </VueDraggable>
       </div>
+    </div>
+
+    <div class="flex flex-col">
+      <span class="font-bold">文件已存在时</span>
+      <n-radio-group v-model:value="store.config.file_exist_action" size="small">
+        <n-radio-button value="Overwrite">覆盖旧文件</n-radio-button>
+        <n-radio-button value="Skip">跳过下载</n-radio-button>
+      </n-radio-group>
     </div>
   </div>
 </template>

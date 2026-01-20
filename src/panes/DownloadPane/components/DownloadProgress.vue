@@ -156,24 +156,51 @@ function handleSearchClick() {
 
         <div class="mt-auto flex gap-1 flex-wrap pt-2" title="任务内容">
           <ColorfulTag v-if="p.video_task.selected" color="blue">
-            视频(编码:{{ p.video_task.codec_type }} 画质:{{ p.video_task.video_quality }})
+            <span :class="{ 'text-gray': p.video_task.skipped }">
+              <span>视频(编码:{{ p.video_task.codec_type }} 画质:{{ p.video_task.video_quality }})</span>
+              <span v-if="p.video_task.skipped">(跳过)</span>
+            </span>
           </ColorfulTag>
+
           <ColorfulTag v-if="p.audio_task.selected" color="blue">
-            音频(音质:{{ p.audio_task.audio_quality }})
+            <span :class="{ 'text-gray': p.audio_task.skipped }">
+              <span>音频(音质:{{ p.audio_task.audio_quality }})</span>
+              <span v-if="p.audio_task.skipped">(跳过)</span>
+            </span>
           </ColorfulTag>
 
           <ColorfulTag v-if="p.video_process_task.merge_selected" color="purple">自动合并</ColorfulTag>
           <ColorfulTag v-if="p.video_process_task.embed_chapter_selected" color="purple">标记章节</ColorfulTag>
           <ColorfulTag v-if="p.video_process_task.embed_skip_selected" color="purple">标记广告</ColorfulTag>
 
-          <ColorfulTag v-if="p.danmaku_task.xml_selected" color="green">xml弹幕</ColorfulTag>
-          <ColorfulTag v-if="p.danmaku_task.ass_selected" color="green">ass弹幕</ColorfulTag>
-          <ColorfulTag v-if="p.danmaku_task.json_selected" color="green">json弹幕</ColorfulTag>
+          <ColorfulTag v-if="p.danmaku_task.xml_selected" color="green">
+            <span :class="{ 'text-gray': p.danmaku_task.skipped }">
+              <span>xml弹幕</span>
+              <span v-if="p.danmaku_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
+          <ColorfulTag v-if="p.danmaku_task.ass_selected" color="green">
+            <span :class="{ 'text-gray': p.danmaku_task.skipped }">
+              <span>ass弹幕</span>
+              <span v-if="p.danmaku_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
+          <ColorfulTag v-if="p.danmaku_task.json_selected" color="green">
+            <span :class="{ 'text-gray': p.danmaku_task.skipped }">
+              <span>json弹幕</span>
+              <span v-if="p.danmaku_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
 
           <ColorfulTag v-if="p.subtitle_task.selected" color="amber">字幕</ColorfulTag>
           <ColorfulTag v-if="p.cover_task.selected" color="amber">封面</ColorfulTag>
 
-          <ColorfulTag v-if="p.nfo_task.selected" color="rose">nfo刮削</ColorfulTag>
+          <ColorfulTag v-if="p.nfo_task.selected" color="rose">
+            <span :class="{ 'text-gray': p.nfo_task.skipped }">
+              <span>nfo刮削</span>
+              <span v-if="p.nfo_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
           <ColorfulTag v-if="p.json_task.selected" color="rose">json刮削</ColorfulTag>
         </div>
       </div>
