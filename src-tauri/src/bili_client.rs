@@ -403,6 +403,7 @@ impl BiliClient {
             "cid": cid,
             "qn": 127,
             "fnval": 4048,
+            "drm_tech_type": 2,
         });
         // 发送获取番剧url的请求
         let request = self
