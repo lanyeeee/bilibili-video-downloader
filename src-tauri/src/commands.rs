@@ -25,6 +25,7 @@ use crate::{
         normal_info::NormalInfo,
         qrcode_data::QrcodeData,
         qrcode_status::QrcodeStatus,
+        restart_download_task_params::RestartDownloadTaskParams,
         search_params::SearchParams,
         search_result::{
             BangumiSearchResult, CheeseSearchResult, FavSearchResult, NormalSearchResult,
@@ -265,6 +266,14 @@ pub fn delete_download_tasks(app: AppHandle, task_ids: Vec<String>) {
 pub fn restart_download_tasks(app: AppHandle, task_ids: Vec<String>) {
     let download_manager = app.get_download_manager();
     download_manager.restart_download_tasks(&task_ids);
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+pub fn restart_download_task(app: AppHandle, params: RestartDownloadTaskParams) {
+    let download_manager = app.get_download_manager();
+    download_manager.restart_download_task(&params);
 }
 
 #[allow(clippy::needless_pass_by_value)]

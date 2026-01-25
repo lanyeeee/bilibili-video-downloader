@@ -119,6 +119,9 @@ async deleteDownloadTasks(taskIds: string[]) : Promise<void> {
 async restartDownloadTasks(taskIds: string[]) : Promise<void> {
     await TAURI_INVOKE("restart_download_tasks", { taskIds });
 },
+async restartDownloadTask(params: RestartDownloadTaskParams) : Promise<void> {
+    await TAURI_INVOKE("restart_download_task", { params });
+},
 async restoreDownloadTasks() : Promise<Result<null, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("restore_download_tasks") };
@@ -359,6 +362,7 @@ export type QrcodeStatus = { url: string; refresh_token: string; timestamp: numb
 export type RatingInBangumi = { count: number; score: number }
 export type RatingInBangumiFollow = { score: number; count: number }
 export type RecommendSeason = { cover: string; ep_count: string; id: number; season_url: string; subtitle: string; title: string; view: number }
+export type RestartDownloadTaskParams = { task_id: string; video_task_selected: boolean; audio_task_selected: boolean; merge_selected: boolean; embed_chapter_selected: boolean; embed_skip_selected: boolean; subtitle_task_selected: boolean; xml_danmaku_selected: boolean; ass_danmaku_selected: boolean; json_danmaku_selected: boolean; cover_task_selected: boolean; nfo_task_selected: boolean; json_task_selected: boolean; video_quality: VideoQuality; codec_type: CodecType; audio_quality: AudioQuality }
 export type Rights = { bp: number; elec: number; download: number; movie: number; pay: number; hd5: number; no_reprint: number; autoplay: number; ugc_pay: number; is_cooperation: number; ugc_pay_preview: number; no_background: number; clean_mode: number; is_stein_gate: number; is_360: number; no_share: number; arc_pay: number; free_watch: number }
 export type RightsInBangumi = { allow_bp: number; allow_bp_rank: number; allow_download: number; allow_review: number; area_limit: number; ban_area_show: number; can_watch: number; copyright: string; forbid_pre: number; freya_white: number; is_cover_show: number; is_preview: number; only_vip_download: number; resource: string; watch_platform: number }
 export type RightsInBangumiEp = { allow_dm: number; allow_download: number; area_limit: number }

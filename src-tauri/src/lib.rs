@@ -53,6 +53,7 @@ pub fn run() {
             resume_download_tasks,
             delete_download_tasks,
             restart_download_tasks,
+            restart_download_task,
             restore_download_tasks,
             search,
             get_logs_dir_size,

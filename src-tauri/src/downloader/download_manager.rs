@@ -17,7 +17,10 @@ use tokio::sync::Semaphore;
 use crate::{
     events::DownloadEvent,
     extensions::{AnyhowErrorToStringChain, AppHandleExt},
-    types::create_download_task_params::CreateDownloadTaskParams,
+    types::{
+        create_download_task_params::CreateDownloadTaskParams,
+        restart_download_task_params::RestartDownloadTaskParams,
+    },
 };
 
 use super::{
@@ -180,6 +183,49 @@ impl DownloadManager {
 
             tracing::debug!("已通知ID为`{task_id}`的下载任务重来");
         }
+    }
+
+    pub fn restart_download_task(&self, params: &RestartDownloadTaskParams) {
+        let task_id = &params.task_id;
+
+        let tasks = self.download_tasks.read();
+        let Some(task) = tasks.get(task_id) else {
+            let err_title = "重来下载任务失败";
+            let err_msg = format!("未找到ID为`{task_id}`的下载任务");
+            tracing::error!(err_title, message = err_msg);
+            return;
+        };
+
+        {
+            let mut progress = task.progress.write();
+
+            progress.video_task.selected = params.video_task_selected;
+            progress.audio_task.selected = params.audio_task_selected;
+            progress.video_process_task.merge_selected = params.merge_selected;
+            progress.video_process_task.embed_chapter_selected = params.embed_chapter_selected;
+            progress.video_process_task.embed_skip_selected = params.embed_skip_selected;
+            progress.subtitle_task.selected = params.subtitle_task_selected;
+            progress.danmaku_task.xml_selected = params.xml_danmaku_selected;
+            progress.danmaku_task.ass_selected = params.ass_danmaku_selected;
+            progress.danmaku_task.json_selected = params.json_danmaku_selected;
+            progress.cover_task.selected = params.cover_task_selected;
+            progress.nfo_task.selected = params.nfo_task_selected;
+            progress.json_task.selected = params.json_task_selected;
+
+            progress.video_task.video_quality = params.video_quality;
+            progress.video_task.codec_type = params.codec_type;
+            progress.audio_task.audio_quality = params.audio_quality;
+        }
+
+        if let Err(err) = task.restart_sender.send(()).map_err(anyhow::Error::from) {
+            let err_title = "重来下载任务失败";
+            let err = err.context(format!("通知ID为`{task_id}`的下载任务重来失败"));
+            let string_chain = err.to_string_chain();
+            tracing::error!(err_title, message = string_chain);
+            return;
+        }
+
+        tracing::debug!("已通知ID为`{task_id}`的下载任务重来");
     }
 
     async fn emit_download_speed_loop(app: AppHandle, byte_per_sec: Arc<AtomicU64>) {

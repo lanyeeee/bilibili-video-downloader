@@ -337,14 +337,19 @@ impl VideoTask {
             "{filename}.mp4.com.lanyeeee.bilibili-video-downloader"
         ));
 
-        let file = if temp_file_path.exists() {
-            // 如果临时文件已存在，则打开它
+        let should_reuse_temp_file = temp_file_path
+            .metadata()
+            .map(|m| m.len() == video_task.content_length)
+            .unwrap_or(false);
+
+        let file = if should_reuse_temp_file {
+            // 如果临时文件可以重用，则直接打开它
             OpenOptions::new()
                 .read(true)
                 .write(true)
                 .open(&temp_file_path)?
         } else {
-            // 如果临时文件不存在，创建它并预分配空间
+            // 如果临时文件不能重用，则创建个新的
             let file = File::create(&temp_file_path)?;
             file.allocate(video_task.content_length)?;
             file
