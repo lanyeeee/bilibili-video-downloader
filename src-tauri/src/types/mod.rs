@@ -1,4 +1,5 @@
 pub mod audio_quality;
+pub mod available_media_formats;
 pub mod bangumi_follow_info;
 pub mod bangumi_info;
 pub mod bangumi_media_url;
@@ -8,6 +9,7 @@ pub mod codec_type;
 pub mod create_download_task_params;
 pub mod fav_folders;
 pub mod fav_info;
+pub mod get_available_media_formats_params;
 pub mod get_bangumi_follow_info_params;
 pub mod get_bangumi_info_params;
 pub mod get_cheese_info_params;

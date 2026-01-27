@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use crate::types::{
+    audio_quality::AudioQuality,
+    available_media_formats::{AvailableMediaFormats, VideoQualityAndCodecType},
+};
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(default)]
 pub struct CheeseMediaUrl {
@@ -121,4 +126,44 @@ pub struct DurlDetailInCheese {
     pub url: String,
     pub order: i64,
     pub md5: String,
+}
+
+impl CheeseMediaUrl {
+    pub fn to_get_available_media_formats_result(&self) -> AvailableMediaFormats {
+        let mut video_qualities_and_codec_types: Vec<VideoQualityAndCodecType> = Vec::new();
+        let mut audio_qualities: Vec<AudioQuality> = Vec::new();
+
+        if let Some(dash) = &self.dash {
+            for media in &dash.video {
+                let video_qualities_and_codec_type = VideoQualityAndCodecType {
+                    video_quality: media.id.into(),
+                    codec_type: media.codecid.into(),
+                };
+
+                video_qualities_and_codec_types.push(video_qualities_and_codec_type);
+            }
+        }
+
+        for durl in &self.durls {
+            if !durl.durl.is_empty() {
+                let video_qualities_and_codec_type = VideoQualityAndCodecType {
+                    video_quality: durl.quality.into(),
+                    codec_type: self.video_codecid.into(),
+                };
+
+                video_qualities_and_codec_types.push(video_qualities_and_codec_type);
+            }
+        }
+
+        if let Some(medias) = self.dash.as_ref().and_then(|dash| dash.audio.as_ref()) {
+            for media in medias {
+                audio_qualities.push(media.id.into());
+            }
+        }
+
+        AvailableMediaFormats {
+            video_qualities_and_codec_types,
+            audio_qualities,
+        }
+    }
 }

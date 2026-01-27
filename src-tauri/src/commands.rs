@@ -9,11 +9,13 @@ use crate::{
     extensions::AppHandleExt,
     logger,
     types::{
+        available_media_formats::AvailableMediaFormats,
         bangumi_follow_info::BangumiFollowInfo,
         bangumi_info::{BangumiInfo, EpInBangumi},
         create_download_task_params::CreateDownloadTaskParams,
         fav_folders::FavFolders,
         fav_info::FavInfo,
+        get_available_media_formats_params::GetAvailableMediaFormatsParams,
         get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams,
         get_cheese_info_params::GetCheeseInfoParams,
@@ -401,4 +403,41 @@ pub async fn get_skip_segments(
         .await
         .map_err(|err| CommandError::from("获取跳过片段失败", err))?;
     Ok(skip_segments)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+pub async fn get_available_media_formats(
+    app: AppHandle,
+    params: GetAvailableMediaFormatsParams,
+) -> CommandResult<AvailableMediaFormats> {
+    let bili_client = app.get_bili_client();
+    let result = match params {
+        GetAvailableMediaFormatsParams::Normal(params) => {
+            let media_url = bili_client
+                .get_normal_url(&params.bvid, params.cid)
+                .await
+                .map_err(|err| CommandError::from("获取普通视频可用格式失败", err))?;
+
+            media_url.to_get_available_media_formats_result()
+        }
+        GetAvailableMediaFormatsParams::Bangumi(params) => {
+            let media_url = bili_client
+                .get_bangumi_url(params.cid)
+                .await
+                .map_err(|err| CommandError::from("获取番剧视频可用格式失败", err))?;
+
+            media_url.to_get_available_media_formats_result()
+        }
+        GetAvailableMediaFormatsParams::Cheese(params) => {
+            let media_url = bili_client
+                .get_cheese_url(params.ep_id)
+                .await
+                .map_err(|err| CommandError::from("获取课程视频可用格式失败", err))?;
+
+            media_url.to_get_available_media_formats_result()
+        }
+    };
+
+    Ok(result)
 }

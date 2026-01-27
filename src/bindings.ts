@@ -161,6 +161,14 @@ async getSkipSegments(bvid: string, cid: number | null) : Promise<Result<SkipSeg
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getAvailableMediaFormats(params: GetAvailableMediaFormatsParams) : Promise<Result<AvailableMediaFormats, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_available_media_formats", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -190,6 +198,7 @@ export type ArgueInfo = { argue_msg: string; argue_type: number; argue_link: str
 export type AudioQuality = "Unknown" | "64K" | "132K" | "192K" | "Dolby" | "HiRes"
 export type AudioTask = { selected: boolean; url: string; audio_quality: AudioQuality; content_length: number; chunks: MediaChunk[]; completed: boolean; skipped: boolean }
 export type Author = { mid: number; name: string; face: string }
+export type AvailableMediaFormats = { video_qualities_and_codec_types: VideoQualityAndCodecType[]; audio_qualities: AudioQuality[] }
 export type BadgeInfoInBangumi = { bg_color: string; bg_color_night: string; text: string }
 export type BadgeInfoInBangumiFollow = { text: string | null; bg_color: string; bg_color_night: string; img: string | null; multi_img: MultiImg }
 export type BadgeInfos = { vip_or_pay: VipOrPay | null; content_attr: ContentAttr | null }
@@ -295,15 +304,19 @@ export type FavSearchResult = FavInfo
 export type FileExistAction = "Overwrite" | "Skip"
 export type FirstEpInfo = { id: number; cover: string; title: string; long_title: string | null; pub_time: string; duration: number }
 export type Folder = { id: number; fid: number; mid: number; attr: number; title: string; fav_state: number; media_count: number }
+export type GetAvailableMediaFormatsParams = { Normal: GetNormalAvailableMediaFormatsParams } | { Bangumi: GetBangumiAvailableMediaFormatsParams } | { Cheese: GetCheeseAvailableMediaFormatsParams }
+export type GetBangumiAvailableMediaFormatsParams = { cid: number }
 export type GetBangumiFollowInfoParams = { vmid: number; 
 /**
  * 1: 番剧 2: 电视剧或电影
  */
 type: number; pn: number; follow_status: number }
 export type GetBangumiInfoParams = { EpId: number } | { SeasonId: number }
+export type GetCheeseAvailableMediaFormatsParams = { ep_id: number }
 export type GetCheeseInfoParams = { EpId: number } | { SeasonId: number }
 export type GetFavInfoParams = { media_list_id: number; pn: number }
 export type GetHistoryInfoParams = { pn: number; keyword: string; add_time_start: number; add_time_end: number; arc_max_duration: number; arc_min_duration: number; device_type: DeviceType }
+export type GetNormalAvailableMediaFormatsParams = { bvid: string; cid: number }
 export type GetNormalInfoParams = { Bvid: string } | { Aid: number }
 export type GetUserVideoInfoParams = { pn: number; mid: number }
 export type History = { oid: number; epid: number; bvid: string; page: number; cid: number; part: string; business: string; dt: number }
@@ -409,6 +422,7 @@ export type UserVideoList = { vlist: EpInUserVideo[] }
 export type UserVideoSearchResult = UserVideoInfo
 export type VideoProcessTask = { merge_selected: boolean; embed_chapter_selected: boolean; embed_skip_selected: boolean; completed: boolean }
 export type VideoQuality = "Unknown" | "240P" | "360P" | "480P" | "720P" | "720P60" | "1080P" | "AiRepair" | "1080P+" | "1080P60" | "4K" | "HDR" | "Dolby" | "8K"
+export type VideoQualityAndCodecType = { video_quality: VideoQuality; codec_type: CodecType }
 export type VideoTask = { selected: boolean; url: string; video_quality: VideoQuality; codec_type: CodecType; content_length: number; chunks: MediaChunk[]; completed: boolean; skipped: boolean }
 export type VipInUserInfo = { type: number; status: number; due_date: number; vip_pay_type: number; theme_type: number; label: LabelInUserInfo; avatar_subscript: number; nickname_color: string; role: number; avatar_subscript_url: string; tv_vip_status: number; tv_vip_pay_type: number; tv_due_date: number }
 export type VipLabel = { path: string; text: string; label_theme: string; text_color: string; bg_style: number; bg_color: string; border_color: string; use_img_label: boolean; img_label_uri_hans: string; img_label_uri_hant: string; img_label_uri_hans_static: string; img_label_uri_hant_static: string }
