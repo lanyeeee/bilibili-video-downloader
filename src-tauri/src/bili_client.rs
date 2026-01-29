@@ -772,13 +772,9 @@ impl BiliClient {
                 .context("Content-Range 总大小无法转换为整数")
         }
 
-        // 优先使用 HEAD 获取 Content-Length（最快且不产生流量）
-        let http_resp = self
-            .content_length_client
-            .read()
-            .head(media_url)
-            .send()
-            .await?;
+        // 优先使用 HEAD 获取 Content-Length
+        let request = self.content_length_client.read().head(media_url);
+        let http_resp = request.send().await?;
         let status = http_resp.status();
         if status == StatusCode::OK {
             if let Ok(content_length) = parse_content_length(http_resp.headers()) {
@@ -787,13 +783,12 @@ impl BiliClient {
         }
 
         // 部分 upos/CDN 对 HEAD 支持不完整（尤其是高码率/高帧率流），这里降级用 Range 请求探测总大小
-        let http_resp = self
+        let request = self
             .content_length_client
             .read()
             .get(media_url)
-            .header("range", "bytes=0-0")
-            .send()
-            .await?;
+            .header("range", "bytes=0-0");
+        let http_resp = request.send().await?;
         let status = http_resp.status();
 
         if status == StatusCode::PARTIAL_CONTENT {
