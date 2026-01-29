@@ -745,24 +745,66 @@ impl BiliClient {
     }
 
     pub async fn get_content_length(&self, media_url: &str) -> anyhow::Result<u64> {
-        let request = self.content_length_client.read().head(media_url);
-        let http_resp = request.send().await?;
-        // 检查http响应状态码
-        let status = http_resp.status();
-        if status != StatusCode::OK {
-            return Err(anyhow!("预料之外的状态码({status})"));
+        fn parse_content_length(headers: &HeaderMap) -> anyhow::Result<u64> {
+            headers
+                .get("Content-Length")
+                .context("缺少 Content-Length 响应头")?
+                .to_str()
+                .context("Content-Length 响应头无法转换为字符串")?
+                .parse::<u64>()
+                .context("Content-Length 响应头无法转换为整数")
         }
 
-        let headers = http_resp.headers();
-        let content_length = headers
-            .get("Content-Length")
-            .context("缺少 Content-Length 响应头")?
-            .to_str()
-            .context("Content-Length 响应头无法转换为字符串")?
-            .parse::<u64>()
-            .context("Content-Length 响应头无法转换为整数")?;
+        fn parse_total_from_content_range(headers: &HeaderMap) -> anyhow::Result<u64> {
+            // Example: "bytes 0-0/12345"
+            let content_range = headers
+                .get("Content-Range")
+                .context("缺少 Content-Range 响应头")?
+                .to_str()
+                .context("Content-Range 响应头无法转换为字符串")?;
 
-        Ok(content_length)
+            let Some((_, total)) = content_range.split_once('/') else {
+                return Err(anyhow!("预料之外的 Content-Range 格式: {content_range}"));
+            };
+
+            total
+                .parse::<u64>()
+                .context("Content-Range 总大小无法转换为整数")
+        }
+
+        // 优先使用 HEAD 获取 Content-Length（最快且不产生流量）
+        let http_resp = self
+            .content_length_client
+            .read()
+            .head(media_url)
+            .send()
+            .await?;
+        let status = http_resp.status();
+        if status == StatusCode::OK {
+            if let Ok(content_length) = parse_content_length(http_resp.headers()) {
+                return Ok(content_length);
+            }
+        }
+
+        // 部分 upos/CDN 对 HEAD 支持不完整（尤其是高码率/高帧率流），这里降级用 Range 请求探测总大小
+        let http_resp = self
+            .content_length_client
+            .read()
+            .get(media_url)
+            .header("range", "bytes=0-0")
+            .send()
+            .await?;
+        let status = http_resp.status();
+
+        if status == StatusCode::PARTIAL_CONTENT {
+            return parse_total_from_content_range(http_resp.headers());
+        }
+
+        if status == StatusCode::OK {
+            return parse_content_length(http_resp.headers());
+        }
+
+        Err(anyhow!("预料之外的状态码({status})"))
     }
 
     pub async fn get_url_with_content_length(&self, urls: Vec<String>) -> Vec<(String, u64)> {
