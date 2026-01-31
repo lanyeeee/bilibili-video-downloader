@@ -10,6 +10,7 @@ import {
 } from '../../../bindings'
 import { ProgressData } from '../DownloadPane.vue'
 import { SelectOption } from 'naive-ui'
+import { getAudioQualityName, getCodecTypeName, getVideoQualityName } from '../../../utils'
 
 type VideoFormatOption = SelectOption & {
   videoQuality: VideoQuality
@@ -43,7 +44,7 @@ const videoFormatOptions = computed<VideoFormatOption[]>(() => {
     const videoQuality = videoQualityAndCodecType.video_quality
     const codecType = videoQualityAndCodecType.codec_type
     return {
-      label: `画质:${videoQuality}  编码:${codecType}`,
+      label: `${getVideoQualityName(videoQuality)} - ${getCodecTypeName(codecType)}`,
       value: toVideoFormatSelectValue(videoQuality, codecType),
       videoQuality: videoQuality,
       codecType: codecType,
@@ -64,7 +65,7 @@ const audioFormatOptions = computed<AudioFormatOption[]>(() => {
   }
 
   const options: AudioFormatOption[] = availableMediaFormats.value.audio_qualities.map((quality) => {
-    return { label: quality, value: quality }
+    return { label: getAudioQualityName(quality), value: quality }
   })
 
   return [priorityOption, ...options]

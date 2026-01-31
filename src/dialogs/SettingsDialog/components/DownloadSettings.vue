@@ -1,40 +1,10 @@
 <script setup lang="ts">
-import { AudioQuality, VideoQuality, CodecType } from '../../../bindings.ts'
 import { useStore } from '../../../store.ts'
 import { VueDraggable } from 'vue-draggable-plus'
 import ColorfulTag from '../../../components/ColorfulTag.vue'
+import { getVideoQualityName, getAudioQualityName, getCodecTypeName } from '../../../utils.tsx'
 
 const store = useStore()
-
-const videoQualityNameMap: Map<VideoQuality, string> = new Map([
-  ['240P', '240P 极速'],
-  ['360P', '360P 流畅'],
-  ['480P', '480P 标清'],
-  ['720P', '720P 准高清'],
-  ['720P60', '720P 60帧'],
-  ['1080P', '1080P 高清'],
-  ['AiRepair', 'AI智能修复'],
-  ['1080P+', '1080P 高码率'],
-  ['1080P60', '1080P 60帧'],
-  ['4K', '4K 超高清'],
-  ['HDR', 'HDR 真彩色'],
-  ['Dolby', '杜比视界'],
-  ['8K', '8K 超高清'],
-])
-
-const audioQualityNameMap: Map<AudioQuality, string> = new Map([
-  ['64K', '64K'],
-  ['132K', '132K'],
-  ['192K', '192K'],
-  ['Dolby', '杜比全景声'],
-  ['HiRes', 'Hi-Res 无损'],
-])
-
-const codecTypeNameMap: Map<CodecType, string> = new Map([
-  ['AVC', 'AVC (H.264)'],
-  ['HEVC', 'HEVC (H.265)'],
-  ['AV1', 'AV1'],
-])
 </script>
 
 <template>
@@ -109,7 +79,7 @@ const codecTypeNameMap: Map<CodecType, string> = new Map([
               color="blue"
               v-for="videoQuality in store.config.video_quality_priority"
               :key="videoQuality">
-              {{ videoQualityNameMap.get(videoQuality) || videoQuality }}
+              {{ getVideoQualityName(videoQuality) }}
             </ColorfulTag>
           </VueDraggable>
         </div>
@@ -129,7 +99,7 @@ const codecTypeNameMap: Map<CodecType, string> = new Map([
             color="blue"
             v-for="audioQuality in store.config.audio_quality_priority"
             :key="audioQuality">
-            {{ audioQualityNameMap.get(audioQuality) || audioQuality }}
+            {{ getAudioQualityName(audioQuality) }}
           </ColorfulTag>
         </VueDraggable>
       </div>
@@ -148,7 +118,7 @@ const codecTypeNameMap: Map<CodecType, string> = new Map([
             color="blue"
             v-for="codecType in store.config.codec_type_priority"
             :key="codecType">
-            {{ codecTypeNameMap.get(codecType) || codecType }}
+            {{ getCodecTypeName(codecType, { AVC: 'AVC (H.264)', HEVC: 'HEVC (H.265)' }) }}
           </ColorfulTag>
         </VueDraggable>
       </div>

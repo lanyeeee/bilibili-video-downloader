@@ -19,7 +19,7 @@ import { computed, DeepReadonly, inject } from 'vue'
 import ColorfulTag from '../../../components/ColorfulTag.vue'
 import { searchPaneRefKey } from '../../../injection_keys.ts'
 import { ProgressData } from '../DownloadPane.vue'
-import { ensureHttps } from '../../../utils.tsx'
+import { ensureHttps, getAudioQualityName, getCodecTypeName, getVideoQualityName } from '../../../utils.tsx'
 import IconButton from '../../../components/IconButton.vue'
 import ModifyProgressDialogContent from './ModifyProgressDialogContent.vue'
 
@@ -170,14 +170,19 @@ function handleModifyClick() {
         <div class="mt-auto flex gap-1 flex-wrap pt-2" title="任务内容">
           <ColorfulTag v-if="p.video_task.selected" color="blue">
             <span :class="{ 'text-gray': p.video_task.skipped }">
-              <span>视频(编码:{{ p.video_task.codec_type }} 画质:{{ p.video_task.video_quality }})</span>
+              <span>
+                <span>视频(</span>
+                <span>{{ getVideoQualityName(p.video_task.video_quality) }}</span>
+                <span>&nbsp;-&nbsp;</span>
+                <span>{{ getCodecTypeName(p.video_task.codec_type) }})</span>
+              </span>
               <span v-if="p.video_task.skipped">(跳过)</span>
             </span>
           </ColorfulTag>
 
           <ColorfulTag v-if="p.audio_task.selected" color="blue">
             <span :class="{ 'text-gray': p.audio_task.skipped }">
-              <span>音频(音质:{{ p.audio_task.audio_quality }})</span>
+              <span>音频({{ getAudioQualityName(p.audio_task.audio_quality) }})</span>
               <span v-if="p.audio_task.skipped">(跳过)</span>
             </span>
           </ColorfulTag>

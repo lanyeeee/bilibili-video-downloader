@@ -4,6 +4,7 @@ import { PhChecks, PhCheck, PhX } from '@phosphor-icons/vue'
 import { SelectionEvent } from '@viselect/vue'
 import TaskToQueueAnimation from './components/TaskToQueueAnimation.vue'
 import { EpisodeInfo } from './panes/SearchPane/components/EpisodeCard.vue'
+import { AudioQuality, CodecType, VideoQuality } from './bindings'
 
 export function extractAid(url: string): number | undefined {
   const parsedUrl = new URL(url)
@@ -234,4 +235,50 @@ export function ensureHttps(url: string): string {
     return url.replace('http://', 'https://')
   }
   return url
+}
+
+const videoQualityNameMap: Record<VideoQuality, string> = {
+  Unknown: '未知',
+  '240P': '240P 极速',
+  '360P': '360P 流畅',
+  '480P': '480P 标清',
+  '720P': '720P 准高清',
+  '720P60': '720P 60帧',
+  '1080P': '1080P 高清',
+  AiRepair: 'AI智能修复',
+  '1080P+': '1080P 高码率',
+  '1080P60': '1080P 60帧',
+  '4K': '4K 超高清',
+  HDR: 'HDR 真彩色',
+  Dolby: '杜比视界',
+  '8K': '8K 超高清',
+}
+
+export function getVideoQualityName(quality: VideoQuality, customMap?: Partial<Record<VideoQuality, string>>): string {
+  return customMap?.[quality] ?? videoQualityNameMap[quality]
+}
+
+const audioQualityNameMap: Record<AudioQuality, string> = {
+  Unknown: '未知',
+  '64K': '64K',
+  '132K': '132K',
+  '192K': '192K',
+  Dolby: '杜比全景声',
+  HiRes: 'Hi-Res 无损',
+}
+
+export function getAudioQualityName(quality: AudioQuality, customMap?: Partial<Record<AudioQuality, string>>): string {
+  return customMap?.[quality] ?? audioQualityNameMap[quality]
+}
+
+const codecTypeNameMap: Record<CodecType, string> = {
+  Unknown: '未知',
+  Audio: '音频',
+  AVC: 'AVC',
+  HEVC: 'HEVC',
+  AV1: 'AV1',
+}
+
+export function getCodecTypeName(codecType: CodecType, customMap?: Partial<Record<CodecType, string>>): string {
+  return customMap?.[codecType] ?? codecTypeNameMap[codecType]
 }
