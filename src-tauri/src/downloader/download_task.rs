@@ -98,7 +98,14 @@ impl DownloadTask {
                 tracing::error!(err_title, message = string_chain);
             }
 
-            let (state_sender, _) = watch::channel(DownloadTaskState::Pending);
+            let auto_start = app.get_config().read().auto_start_download_task;
+            let init_state = if auto_start {
+                DownloadTaskState::Pending
+            } else {
+                DownloadTaskState::Paused
+            };
+
+            let (state_sender, _) = watch::channel(init_state);
             let (restart_sender, _) = watch::channel(());
             let (cancel_sender, _) = watch::channel(());
             let (delete_sender, _) = watch::channel(());

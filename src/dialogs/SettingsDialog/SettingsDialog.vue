@@ -52,7 +52,7 @@ async function showConfigInFileManager() {
 
 <template>
   <n-modal v-if="store.config !== undefined" v-model:show="showing">
-    <n-dialog :showIcon="false" title="配置" content-style="" @close="showing = false">
+    <n-dialog :showIcon="false" content-style="" @close="showing = false">
       <div class="flex flex-col gap-row-2">
         <n-tabs class="h-full" v-model:value="currentTabName" type="line" size="small" animated>
           <n-tab-pane name="download_settings" tab="下载内容">

@@ -138,7 +138,7 @@ function toVideoFormatSelectValue(videoQuality: VideoQuality, codecType: CodecTy
 </script>
 
 <template>
-  <div class="flex flex-col gap-row-2">
+  <div class="flex flex-col gap-row-1">
     <div class="flex gap-2">
       <span class="w-15 font-bold">主要内容</span>
       <n-checkbox class="w-22" v-model:checked="progressData.video_task.selected">下载视频</n-checkbox>
@@ -209,7 +209,7 @@ function toVideoFormatSelectValue(videoQuality: VideoQuality, codecType: CodecTy
           :theme-overrides="{
             peers: {
               InternalSelectMenu: {
-                height: '175px',
+                height: '180px',
               },
             },
           }"

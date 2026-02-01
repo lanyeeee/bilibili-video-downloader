@@ -8,7 +8,7 @@ const store = useStore()
 </script>
 
 <template>
-  <div v-if="store.config !== undefined" class="flex flex-col gap-row-2">
+  <div v-if="store.config !== undefined" class="flex flex-col gap-row-1">
     <div class="flex gap-2">
       <span class="w-15 font-bold">主要内容</span>
       <n-checkbox class="w-22" v-model:checked="store.config.download_video">下载视频</n-checkbox>
@@ -130,6 +130,13 @@ const store = useStore()
         <n-radio-button value="Overwrite">覆盖旧文件</n-radio-button>
         <n-radio-button value="Skip">跳过下载</n-radio-button>
       </n-radio-group>
+    </div>
+
+    <div class="flex flex-col">
+      <span class="font-bold">其他</span>
+      <n-checkbox class="w-fit" v-model:checked="store.config.auto_start_download_task">
+        创建下载任务后自动开始
+      </n-checkbox>
     </div>
   </div>
 </template>

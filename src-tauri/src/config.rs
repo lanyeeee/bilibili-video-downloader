@@ -43,6 +43,7 @@ pub struct Config {
     pub chunk_download_interval_sec: u64,
     pub danmaku_config: CanvasConfig,
     pub file_exist_action: FileExistAction,
+    pub auto_start_download_task: bool,
 }
 
 impl Config {
@@ -153,6 +154,7 @@ impl Config {
             chunk_download_interval_sec: 0,
             danmaku_config: CanvasConfig::default(),
             file_exist_action: FileExistAction::Overwrite,
+            auto_start_download_task: true,
         }
     }
 }
