@@ -87,6 +87,18 @@ function AvailableFmtFields() {
         <span class="rounded bg-gray-500 px-1 select-all">create_ts</span>
         <span class="ml-2">下载任务创建的时间</span>
       </div>
+      <div>
+        <span class="rounded bg-gray-500 px-1 select-all">video_quality</span>
+        <span class="ml-2">画质(Unknown / 1080P / 1080P60 / AiRepair / 4K / Dolby ...)</span>
+      </div>
+      <div>
+        <span class="rounded bg-gray-500 px-1 select-all">codec_type</span>
+        <span class="ml-2">编码(Unknown / AVC / HEVC / AV1 / Audio)</span>
+      </div>
+      <div>
+        <span class="rounded bg-gray-500 px-1 select-all">audio_quality</span>
+        <span class="ml-2">音质(Unknown / 64K / 132K / 192K / Dolby / HiRes)</span>
+      </div>
     </>
   )
 }

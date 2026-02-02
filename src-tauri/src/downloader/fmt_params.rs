@@ -4,7 +4,11 @@ use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::{config::Config, utils::filename_filter};
+use crate::{
+    config::Config,
+    types::{audio_quality::AudioQuality, codec_type::CodecType, video_quality::VideoQuality},
+    utils::filename_filter,
+};
 
 use super::episode_type::EpisodeType;
 
@@ -26,6 +30,9 @@ pub struct FmtParams {
     pub up_name: Option<String>,
     pub up_uid: Option<i64>,
     pub create_ts: u64,
+    pub video_quality: VideoQuality,
+    pub codec_type: CodecType,
+    pub audio_quality: AudioQuality,
 }
 
 impl FmtParams {

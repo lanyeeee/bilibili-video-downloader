@@ -103,7 +103,7 @@ impl DownloadProgress {
 
         let create_ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 
-        let mut progress = Self {
+        let progress = Self {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Bangumi,
             aid: episode.aid,
@@ -134,10 +134,6 @@ impl DownloadProgress {
             completed_ts: None,
         };
 
-        progress
-            .update_fmt_fields(&config)
-            .context("更新需要格式化的字段失败")?;
-
         Ok(progress)
     }
 
@@ -154,7 +150,7 @@ impl DownloadProgress {
 
         let create_ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 
-        let mut progress = Self {
+        let progress = Self {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Cheese,
             aid: episode.aid,
@@ -185,10 +181,6 @@ impl DownloadProgress {
             completed_ts: None,
         };
 
-        progress
-            .update_fmt_fields(&config)
-            .context("更新需要格式化的字段失败")?;
-
         Ok(progress)
     }
 
@@ -199,7 +191,9 @@ impl DownloadProgress {
         let audio_completed = self.audio_task.completed;
 
         if (!video_selected && !audio_selected) || (video_completed && audio_completed) {
-            // 如果视频和音频都没有选中，或者都已经完成，则不需要准备
+            // 如果视频和音频都没有选中，或者都已经完成，则更新需要格式化的字段就返回
+            self.update_fmt_fields(app)
+                .context("更新需要格式化的字段失败")?;
             return Ok(());
         }
 
@@ -262,13 +256,17 @@ impl DownloadProgress {
             }
         }
 
+        self.update_fmt_fields(app)
+            .context("更新需要格式化的字段失败")?;
+
         Ok(())
     }
 
-    fn update_fmt_fields(&mut self, config: &Config) -> anyhow::Result<()> {
+    fn update_fmt_fields(&mut self, app: &AppHandle) -> anyhow::Result<()> {
         let fmt_params = self.create_fmt_params();
 
-        let (episode_dir, filename) = fmt_params.get_episode_dir_and_filename(config)?;
+        let config = app.get_config().read().clone();
+        let (episode_dir, filename) = fmt_params.get_episode_dir_and_filename(&config)?;
 
         self.episode_dir = episode_dir;
         self.filename = filename;
@@ -294,6 +292,9 @@ impl DownloadProgress {
             up_name: self.up_name.clone(),
             up_uid: self.up_uid,
             create_ts: self.create_ts,
+            video_quality: self.video_task.video_quality,
+            codec_type: self.video_task.codec_type,
+            audio_quality: self.audio_task.audio_quality,
         }
     }
 
@@ -362,7 +363,7 @@ fn create_normal_progresses_for_single(
         let Some(page) = info.pages.iter().find(|p| p.cid == cid) else {
             return Err(anyhow!("找不到cid为`{cid}`的分P"));
         };
-        let mut progress = DownloadProgress {
+        let progress = DownloadProgress {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Normal,
             aid: info.aid,
@@ -393,16 +394,12 @@ fn create_normal_progresses_for_single(
             completed_ts: None,
         };
 
-        progress
-            .update_fmt_fields(config)
-            .context("更新需要格式化的字段失败")?;
-
         return Ok(vec![progress]);
     }
 
     if info.pages.len() == 1 {
         // 如果只有一个分P，则直接创建一个progress
-        let mut progress = DownloadProgress {
+        let progress = DownloadProgress {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Normal,
             aid: info.aid,
@@ -433,16 +430,12 @@ fn create_normal_progresses_for_single(
             completed_ts: None,
         };
 
-        progress
-            .update_fmt_fields(config)
-            .context("更新需要格式化的字段失败")?;
-
         return Ok(vec![progress]);
     }
     // 如果有多个分P，则为每个分P创建一个progress
     let mut progresses = Vec::new();
     for page in &info.pages {
-        let mut progress = DownloadProgress {
+        let progress = DownloadProgress {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Normal,
             aid: info.aid,
@@ -472,10 +465,6 @@ fn create_normal_progresses_for_single(
             create_ts,
             completed_ts: None,
         };
-
-        progress
-            .update_fmt_fields(config)
-            .context("更新需要格式化的字段失败")?;
 
         progresses.push(progress);
     }
@@ -514,7 +503,7 @@ fn create_normal_progresses_for_season(
         let Some(page) = ep.pages.iter().find(|p| p.cid == cid) else {
             return Err(anyhow!("找不到cid为`{cid}`的分P"));
         };
-        let mut progress = DownloadProgress {
+        let progress = DownloadProgress {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Normal,
             aid: ep.aid,
@@ -545,16 +534,12 @@ fn create_normal_progresses_for_season(
             completed_ts: None,
         };
 
-        progress
-            .update_fmt_fields(config)
-            .context("更新需要格式化的字段失败")?;
-
         return Ok(vec![progress]);
     }
 
     if ep.pages.len() == 1 {
         // 如果只有一个分P，则直接创建一个progress
-        let mut progress = DownloadProgress {
+        let progress = DownloadProgress {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Normal,
             aid: ep.aid,
@@ -585,17 +570,13 @@ fn create_normal_progresses_for_season(
             completed_ts: None,
         };
 
-        progress
-            .update_fmt_fields(config)
-            .context("更新需要格式化的字段失败")?;
-
         return Ok(vec![progress]);
     }
 
     // 如果有多个分P，则为每个分P创建一个progress
     let mut progresses = Vec::new();
     for page in &ep.pages {
-        let mut progress = DownloadProgress {
+        let progress = DownloadProgress {
             task_id: Uuid::new_v4().to_string(),
             episode_type: EpisodeType::Normal,
             aid: ep.aid,
@@ -625,10 +606,6 @@ fn create_normal_progresses_for_season(
             create_ts,
             completed_ts: None,
         };
-
-        progress
-            .update_fmt_fields(config)
-            .context("更新需要格式化的字段失败")?;
 
         progresses.push(progress);
     }
