@@ -447,6 +447,7 @@ impl BiliClient {
             "ep_id": ep_id,
             "qn": 127,
             "fnval": 4048,
+            "drm_tech_type": 2,
         });
         // 发送获取课程url的请求
         let request = self

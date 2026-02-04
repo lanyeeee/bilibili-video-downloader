@@ -66,6 +66,7 @@ pub struct DownloadProgress {
     pub json_task: JsonTask,
     pub create_ts: u64,
     pub completed_ts: Option<u64>,
+    pub is_drm: bool,
 }
 
 impl DownloadProgress {
@@ -138,6 +139,7 @@ impl DownloadProgress {
             json_task: tasks.json,
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         Ok(progress)
@@ -185,6 +187,7 @@ impl DownloadProgress {
             json_task: tasks.json,
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         Ok(progress)
@@ -240,7 +243,16 @@ impl DownloadProgress {
             tracing::debug!("{ids_string} `{filename}`音频下载任务完成");
         }
 
-        if !video_process_task.is_completed() {
+        let video_process_task_is_completed = video_process_task.is_completed();
+        if self.is_drm && !video_process_task_is_completed {
+            download_task.update_progress(|p| {
+                p.video_process_task.skipped = true;
+                p.video_process_task.completed = true;
+            });
+            tracing::debug!(
+                "{ids_string} `{filename}`受版权保护(DRM)，无法处理，已跳过视频处理任务"
+            );
+        } else if !video_process_task_is_completed {
             video_process_task
                 .process(download_task, self, &mut player_info)
                 .await
@@ -358,6 +370,8 @@ impl DownloadProgress {
                     .get_cheese_url(ep_id)
                     .await
                     .context("获取课程视频链接失败")?;
+
+                self.is_drm = media_url.is_drm;
 
                 if video_selected && !video_completed {
                     // 如果视频被选中且未完成，则准备视频任务
@@ -507,6 +521,7 @@ fn create_normal_progresses_for_single(
             json_task: tasks.json,
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         return Ok(vec![progress]);
@@ -543,6 +558,7 @@ fn create_normal_progresses_for_single(
             json_task: tasks.json,
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         return Ok(vec![progress]);
@@ -579,6 +595,7 @@ fn create_normal_progresses_for_single(
             json_task: tasks.json.clone(),
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         progresses.push(progress);
@@ -647,6 +664,7 @@ fn create_normal_progresses_for_season(
             json_task: tasks.json,
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         return Ok(vec![progress]);
@@ -683,6 +701,7 @@ fn create_normal_progresses_for_season(
             json_task: tasks.json,
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         return Ok(vec![progress]);
@@ -720,6 +739,7 @@ fn create_normal_progresses_for_season(
             json_task: tasks.json.clone(),
             create_ts,
             completed_ts: None,
+            is_drm: false,
         };
 
         progresses.push(progress);
@@ -766,6 +786,7 @@ impl Tasks {
             embed_chapter_selected: config.embed_chapter,
             embed_skip_selected: config.embed_skip,
             completed: false,
+            skipped: false,
         };
 
         let danmaku = DanmakuTask {

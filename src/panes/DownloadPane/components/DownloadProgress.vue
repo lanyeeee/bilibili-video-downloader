@@ -149,12 +149,20 @@ function handleModifyClick() {
     @contextmenu="handleProgressContextMenu"
     @dblclick="handleProgressDoubleClick">
     <div class="flex">
-      <img
-        class="w-224px h-140px rounded-lg object-cover lazyload"
-        :data-src="`${ensureHttps(p.cover_task.url)}@672w_378h_1c.webp`"
-        :key="p.cover_task.url"
-        alt=""
-        draggable="false" />
+      <div class="relative">
+        <img
+          class="w-224px h-140px rounded-lg object-cover lazyload"
+          :data-src="`${ensureHttps(p.cover_task.url)}@672w_378h_1c.webp`"
+          :key="p.cover_task.url"
+          alt=""
+          draggable="false" />
+        <div
+          v-if="p.is_drm"
+          class="absolute top-3 left-3 z-1 bg-red-5 text-white px-1 rounded"
+          title="该资源受版权保护(DRM)">
+          🔒DRM
+        </div>
+      </div>
 
       <div class="ml-2 flex flex-col w-full overflow-hidden">
         <div class="text-lg font-bold line-clamp-2" :title="p.episode_title">{{ p.episode_title }}</div>
@@ -187,9 +195,24 @@ function handleModifyClick() {
             </span>
           </ColorfulTag>
 
-          <ColorfulTag v-if="p.video_process_task.merge_selected" color="purple">自动合并</ColorfulTag>
-          <ColorfulTag v-if="p.video_process_task.embed_chapter_selected" color="purple">标记章节</ColorfulTag>
-          <ColorfulTag v-if="p.video_process_task.embed_skip_selected" color="purple">标记广告</ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.merge_selected" color="purple">
+            <span :class="{ 'text-gray': p.video_process_task.skipped }">
+              <span>自动合并</span>
+              <span v-if="p.video_process_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.embed_chapter_selected" color="purple">
+            <span :class="{ 'text-gray': p.video_process_task.skipped }">
+              <span>标记章节</span>
+              <span v-if="p.video_process_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
+          <ColorfulTag v-if="p.video_process_task.embed_skip_selected" color="purple">
+            <span :class="{ 'text-gray': p.video_process_task.skipped }">
+              <span>标记广告</span>
+              <span v-if="p.video_process_task.skipped">(跳过)</span>
+            </span>
+          </ColorfulTag>
 
           <ColorfulTag v-if="p.danmaku_task.xml_selected" color="green">
             <span :class="{ 'text-gray': p.danmaku_task.skipped }">

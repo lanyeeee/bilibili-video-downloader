@@ -24,11 +24,13 @@ pub struct VideoProcessTask {
     pub embed_chapter_selected: bool,
     pub embed_skip_selected: bool,
     pub completed: bool,
+    pub skipped: bool,
 }
 
 impl VideoProcessTask {
     pub fn mark_uncompleted(&mut self) {
         self.completed = false;
+        self.skipped = false;
     }
 
     pub fn is_completed(&self) -> bool {

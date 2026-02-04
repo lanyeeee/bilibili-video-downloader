@@ -23,6 +23,7 @@ pub struct CheeseMediaUrl {
     pub seek_type: String,
     pub from: String,
     pub video_codecid: i64,
+    pub is_drm: bool,
     pub no_rexcode: i64,
     pub format: String,
     pub support_formats: Vec<SupportFormatInCheese>,
