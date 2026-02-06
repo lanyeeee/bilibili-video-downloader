@@ -3,6 +3,7 @@ pub mod available_media_formats;
 pub mod bangumi_follow_info;
 pub mod bangumi_info;
 pub mod bangumi_media_url;
+pub mod bangumi_media_url_v2;
 pub mod cheese_info;
 pub mod cheese_media_url;
 pub mod codec_type;

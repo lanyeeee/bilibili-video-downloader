@@ -22,9 +22,9 @@ use crate::{
     protobuf::DmSegMobileReply,
     types::{
         bangumi_follow_info::BangumiFollowInfo, bangumi_info::BangumiInfo,
-        bangumi_media_url::BangumiMediaUrl, cheese_info::CheeseInfo,
-        cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders, fav_info::FavInfo,
-        get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
+        bangumi_media_url::BangumiMediaUrl, bangumi_media_url_v2::BangumiMediaUrlV2,
+        cheese_info::CheeseInfo, cheese_media_url::CheeseMediaUrl, fav_folders::FavFolders,
+        fav_info::FavInfo, get_bangumi_follow_info_params::GetBangumiFollowInfoParams,
         get_bangumi_info_params::GetBangumiInfoParams, get_cheese_info_params::GetCheeseInfoParams,
         get_fav_info_params::GetFavInfoParams, get_history_info_params::GetHistoryInfoParams,
         get_normal_info_params::GetNormalInfoParams,
@@ -399,6 +399,15 @@ impl BiliClient {
     }
 
     pub async fn get_bangumi_url(&self, cid: i64) -> anyhow::Result<BangumiMediaUrl> {
+        let media_url_v2 = self.get_bangumi_url_v2(cid).await?;
+        if media_url_v2.video_info.is_drm {
+            self.get_bangumi_url_v1(cid).await
+        } else {
+            Ok(media_url_v2.video_info)
+        }
+    }
+
+    async fn get_bangumi_url_v1(&self, cid: i64) -> anyhow::Result<BangumiMediaUrl> {
         let params = json!({
             "cid": cid,
             "qn": 127,
@@ -438,6 +447,51 @@ impl BiliClient {
         let data_str = data.to_string();
         let media_url: BangumiMediaUrl = serde_json::from_str(&data_str)
             .context(format!("将data解析为BangumiMediaUrl失败: {data_str}"))?;
+
+        Ok(media_url)
+    }
+
+    async fn get_bangumi_url_v2(&self, cid: i64) -> anyhow::Result<BangumiMediaUrlV2> {
+        let params = json!({
+            "cid": cid,
+            "qn": 127,
+            "fnval": 4048,
+            "drm_tech_type": 2,
+            "from_client": "BROWSER",
+        });
+        // 发送获取番剧url的请求
+        let request = self
+            .api_client
+            .read()
+            .get("https://api.bilibili.com/pgc/player/web/v2/playurl")
+            .query(&params)
+            .header("cookie", self.get_cookie());
+        let http_resp = request.send().await?;
+        // 检查http响应状态码
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(anyhow!("预料之外的状态码({status}): {body}"));
+        }
+        // 尝试将body解析为BiliResp
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).context(format!("将body解析为BiliResp失败: {body}"))?;
+        // 检查BiliResp的code字段
+        if bili_resp.code == -10403 {
+            return Err(anyhow!(
+                "地区限制，请使用代理或切换线路后重试: {bili_resp:?}"
+            ));
+        } else if bili_resp.code != 0 {
+            return Err(anyhow!("预料之外的code: {bili_resp:?}"));
+        }
+        // 检查BiliResp的data是否存在
+        let Some(data) = bili_resp.data else {
+            return Err(anyhow!("BiliResp中不存在data字段: {bili_resp:?}"));
+        };
+        // 尝试将data解析为BangumiMediaUrlV2
+        let data_str = data.to_string();
+        let media_url: BangumiMediaUrlV2 = serde_json::from_str(&data_str)
+            .context(format!("将data解析为BangumiMediaUrlV2失败: {data_str}"))?;
 
         Ok(media_url)
     }
