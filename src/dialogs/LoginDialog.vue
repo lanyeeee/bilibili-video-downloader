@@ -93,8 +93,7 @@ function handleQrcodeStatus() {
   }
 
   if (qrcodeStatus.value.code === 0) {
-    const sessdata = qrcodeStatus.value.url.split('SESSDATA=')[1].split('&')[0]
-    store.config.sessdata = encodeURIComponent(sessdata)
+    store.config.sessdata = qrcodeStatus.value.sessdata
     showing.value = false
     message.success('登录成功')
   }
