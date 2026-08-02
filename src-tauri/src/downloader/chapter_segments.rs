@@ -67,7 +67,7 @@ impl ChapterSegments {
         // 遍历完所有现有片段并处理完所有重叠后，将新的片段添加到结果列表中
         processed_segments.push(new_segment);
 
-        processed_segments.sort_by(|a, b| a.start.cmp(&b.start));
+        processed_segments.sort_by_key(|a| a.start);
 
         self.segments = processed_segments;
     }

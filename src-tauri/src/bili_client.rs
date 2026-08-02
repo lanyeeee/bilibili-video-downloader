@@ -120,6 +120,15 @@ impl BiliClient {
         let http_resp = request.send().await?;
         // 检查http响应状态码
         let status = http_resp.status();
+        // 尝试从headers中拿SESSDATA
+        let sessdata = http_resp
+            .headers()
+            .get_all("set-cookie")
+            .iter()
+            .filter_map(|header| header.to_str().ok())
+            .filter_map(|header| header.split(';').next())
+            .filter_map(|cookie| cookie.split_once('='))
+            .find_map(|(key, value)| (key.trim() == "SESSDATA").then(|| value.to_owned()));
         let body = http_resp.text().await?;
         if status != StatusCode::OK {
             return Err(eyre!("预料之外的状态码({status}): {body}"));
@@ -137,10 +146,13 @@ impl BiliClient {
         };
         // 尝试将data解析为二维码状态
         let data_str = data.to_string();
-        let qrcode_status: QrcodeStatus = serde_json::from_str(&data_str)
+        let mut qrcode_status: QrcodeStatus = serde_json::from_str(&data_str)
             .wrap_err(format!("将data解析为QrcodeStatus失败: {data_str}"))?;
         if ![0, 86101, 86090, 86038].contains(&qrcode_status.code) {
             return Err(eyre!("预料之外的二维码code: {qrcode_status:?}"));
+        }
+        if qrcode_status.code == 0 {
+            qrcode_status.sessdata = sessdata.ok_or_eyre("扫码成功，但没有解析到SESSDATA")?;
         }
         Ok(qrcode_status)
     }
