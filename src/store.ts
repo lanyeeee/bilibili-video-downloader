@@ -27,36 +27,28 @@ export const useStore = defineStore('store', () => {
 })
 
 function useProgresses() {
-  // 内部的高频更新状态
-  const _progresses = new Map<string, ProgressData>()
   // 对外暴露的响应式状态
   const progresses = ref<Map<string, ProgressData>>(new Map())
+
+  // 等待在同一渲染帧内执行的更新函数
+  const pendingUpdateFns: Array<(progresses: Map<string, ProgressData>) => void> = []
 
   // 用于确保在同一渲染帧内只安排一次UI更新
   let isUpdateScheduled = false
 
-  // 将 `_progresses` 的内容更新到 `progresses` 中，并触发重新渲染
+  // 在同一渲染帧内集中执行等待中的更新函数
   const updateProgressesOnFrame = () => {
-    const newProgressesMap = new Map<string, ProgressData>()
-
-    for (const [key, value] of _progresses.entries()) {
-      const progressData = progresses.value.get(key)
-
-      if (progressData !== undefined) {
-        Object.assign(progressData, value)
-        newProgressesMap.set(key, progressData)
-      } else {
-        newProgressesMap.set(key, { ...value })
-      }
-    }
-    progresses.value = newProgressesMap
-
     isUpdateScheduled = false
+
+    const updateFns = pendingUpdateFns.splice(0)
+    for (const updateFn of updateFns) {
+      updateFn(progresses.value)
+    }
   }
 
   const updateProgresses = (updateFn: (progresses: Map<string, ProgressData>) => void) => {
-    // 使用传入的更新函数来修改 `_progresses`
-    updateFn(_progresses)
+    // 将传入的更新函数添加到等待队列
+    pendingUpdateFns.push(updateFn)
 
     if (!isUpdateScheduled) {
       // 如果没有安排过UI更新，则安排一次
