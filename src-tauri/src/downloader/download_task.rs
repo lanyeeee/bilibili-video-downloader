@@ -2,7 +2,7 @@
 
 use eyre::WrapErr;
 use parking_lot::RwLock;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::{
     sync::{SemaphorePermit, watch},
@@ -14,7 +14,10 @@ use crate::{
     downloader::episode_type::EpisodeType,
     events::DownloadEvent,
     extensions::{AppHandleExt, EyreReportToMessage},
-    types::create_download_task_params::CreateDownloadTaskParams,
+    types::{
+        create_download_task_params::CreateDownloadTaskParams,
+        restart_download_task_params::RestartDownloadTaskParams,
+    },
 };
 
 use super::{download_progress::DownloadProgress, download_task_state::DownloadTaskState};
@@ -197,6 +200,70 @@ impl DownloadTask {
         tauri::async_runtime::spawn(task.clone().process());
 
         task
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    pub fn pause(&self) {
+        self.set_state(DownloadTaskState::Paused);
+        tracing::debug!("已将下载任务状态设置为`Paused`");
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    pub fn resume(&self) {
+        self.set_state(DownloadTaskState::Pending);
+        tracing::debug!("已将下载任务状态设置为`Pending`");
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    pub fn cancel(&self) {
+        let _ = self.cancel_sender.send(());
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    pub fn delete(&self) -> eyre::Result<()> {
+        self.delete_progress_file()?;
+        self.delete_sender
+            .send(())
+            .map_err(eyre::Report::from)
+            .wrap_err("通知ID对应的下载任务删除失败")?;
+        tracing::debug!("已通知ID对应的下载任务删除");
+        Ok(())
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    pub fn restart(&self) -> eyre::Result<()> {
+        self.restart_sender
+            .send(())
+            .map_err(eyre::Report::from)
+            .wrap_err("通知ID对应的下载任务重来失败")?;
+        tracing::debug!("已通知ID对应的下载任务重来");
+        Ok(())
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    pub fn restart_with_params(&self, params: &RestartDownloadTaskParams) -> eyre::Result<()> {
+        {
+            let mut progress = self.progress.write();
+
+            progress.video_task.selected = params.video_task_selected;
+            progress.audio_task.selected = params.audio_task_selected;
+            progress.video_process_task.merge_selected = params.merge_selected;
+            progress.video_process_task.embed_chapter_selected = params.embed_chapter_selected;
+            progress.video_process_task.embed_skip_selected = params.embed_skip_selected;
+            progress.subtitle_task.selected = params.subtitle_task_selected;
+            progress.danmaku_task.xml_selected = params.xml_danmaku_selected;
+            progress.danmaku_task.ass_selected = params.ass_danmaku_selected;
+            progress.danmaku_task.json_selected = params.json_danmaku_selected;
+            progress.cover_task.selected = params.cover_task_selected;
+            progress.nfo_task.selected = params.nfo_task_selected;
+            progress.json_task.selected = params.json_task_selected;
+
+            progress.video_task.video_quality = params.video_quality;
+            progress.video_task.codec_type = params.codec_type;
+            progress.audio_task.audio_quality = params.audio_quality;
+        }
+
+        self.restart()
     }
 
     #[instrument(
@@ -424,7 +491,7 @@ impl DownloadTask {
             up_uid = self.trace_fields.up_uid,
         )
     )]
-    pub fn set_state(&self, state: DownloadTaskState) {
+    fn set_state(&self, state: DownloadTaskState) {
         if let Err(err) = self.state_sender.send(state).map_err(eyre::Report::from) {
             let err_title = format!("发送状态`{state:?}`失败");
             let message = err.to_message();
@@ -455,6 +522,18 @@ impl DownloadTask {
             let message = err.to_message();
             tracing::error!(err_title, message);
         }
+    }
+
+    #[instrument(level = "error", skip_all, fields(task_id = self.task_id))]
+    fn delete_progress_file(&self) -> eyre::Result<()> {
+        let app_data_dir = self.app.path().app_data_dir()?;
+        let task_file = app_data_dir
+            .join(".下载任务")
+            .join(format!("{}.json", self.task_id));
+        if task_file.exists() {
+            std::fs::remove_file(task_file)?;
+        }
+        Ok(())
     }
 }
 

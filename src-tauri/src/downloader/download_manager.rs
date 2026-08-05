@@ -24,10 +24,7 @@ use crate::{
     },
 };
 
-use super::{
-    download_progress::DownloadProgress, download_task::DownloadTask,
-    download_task_state::DownloadTaskState,
-};
+use super::{download_progress::DownloadProgress, download_task::DownloadTask};
 
 pub struct DownloadManager {
     pub app: AppHandle,
@@ -91,7 +88,7 @@ impl DownloadManager {
             let old_task = tasks.insert(new_task.task_id.clone(), new_task);
             if let Some(old_task) = old_task {
                 // 如果同一个ID的下载任务已经存在，则取消旧的任务
-                let _ = old_task.cancel_sender.send(());
+                old_task.cancel();
             }
         }
 
@@ -120,8 +117,7 @@ impl DownloadManager {
                 tracing::error!(err_title, message);
                 continue;
             };
-            task.set_state(DownloadTaskState::Paused);
-            tracing::debug!("已将ID对应的下载任务状态设置为`Paused`");
+            task.pause();
         }
     }
 
@@ -139,8 +135,7 @@ impl DownloadManager {
                 tracing::error!(err_title, message);
                 continue;
             };
-            task.set_state(DownloadTaskState::Pending);
-            tracing::debug!("已将ID对应的下载任务状态设置为`Pending`");
+            task.resume();
         }
     }
 
@@ -158,27 +153,13 @@ impl DownloadManager {
                 tracing::error!(err_title, message);
                 continue;
             };
-            // TODO: 应该先发删除新号再删文件
-            // 因为发信号失败会把任务重新塞回去
-            // 目前先删文件会导致发信号失败时出现 任务还在但文件没了的情况
-            if let Err(err) = self.delete_progress_file(task_id) {
+            if let Err(err) = task.delete() {
                 let err_title = "删除下载任务失败";
                 let message = err.to_message();
                 tracing::error!(err_title, message);
                 tasks.insert(task_id.clone(), task);
                 continue;
             }
-
-            if let Err(err) = task.delete_sender.send(()).map_err(eyre::Report::from) {
-                let err = err.wrap_err("通知ID对应的下载任务删除失败");
-                let err_title = "删除下载任务失败";
-                let message = err.to_message();
-                tracing::error!(err_title, message);
-                tasks.insert(task_id.clone(), task);
-                continue;
-            }
-
-            tracing::debug!("已通知ID对应的下载任务删除");
         }
     }
 
@@ -197,15 +178,12 @@ impl DownloadManager {
                 continue;
             };
 
-            if let Err(err) = task.restart_sender.send(()).map_err(eyre::Report::from) {
+            if let Err(err) = task.restart() {
                 let err_title = "重来下载任务失败";
-                let err = err.wrap_err("通知ID对应的下载任务重来失败");
                 let message = err.to_message();
                 tracing::error!(err_title, message);
                 continue;
             }
-
-            tracing::debug!("已通知ID对应的下载任务重来");
         }
     }
 
@@ -222,37 +200,11 @@ impl DownloadManager {
             return;
         };
 
-        // TODO: 把这块代码变成DownloadProgress的mark_restart函数
-        {
-            let mut progress = task.progress.write();
-
-            progress.video_task.selected = params.video_task_selected;
-            progress.audio_task.selected = params.audio_task_selected;
-            progress.video_process_task.merge_selected = params.merge_selected;
-            progress.video_process_task.embed_chapter_selected = params.embed_chapter_selected;
-            progress.video_process_task.embed_skip_selected = params.embed_skip_selected;
-            progress.subtitle_task.selected = params.subtitle_task_selected;
-            progress.danmaku_task.xml_selected = params.xml_danmaku_selected;
-            progress.danmaku_task.ass_selected = params.ass_danmaku_selected;
-            progress.danmaku_task.json_selected = params.json_danmaku_selected;
-            progress.cover_task.selected = params.cover_task_selected;
-            progress.nfo_task.selected = params.nfo_task_selected;
-            progress.json_task.selected = params.json_task_selected;
-
-            progress.video_task.video_quality = params.video_quality;
-            progress.video_task.codec_type = params.codec_type;
-            progress.audio_task.audio_quality = params.audio_quality;
-        }
-
-        if let Err(err) = task.restart_sender.send(()).map_err(eyre::Report::from) {
+        if let Err(err) = task.restart_with_params(params) {
             let err_title = "重来下载任务失败";
-            let err = err.wrap_err("通知ID对应的下载任务重来失败");
             let message = err.to_message();
             tracing::error!(err_title, message);
-            return;
         }
-
-        tracing::debug!("已通知ID对应的下载任务重来");
     }
 
     async fn emit_download_speed_loop(app: AppHandle, byte_per_sec: Arc<AtomicU64>) {
@@ -273,15 +225,5 @@ impl DownloadManager {
         let app_data_dir = self.app.path().app_data_dir()?;
         let task_dir = app_data_dir.join(".下载任务");
         Ok(task_dir)
-    }
-
-    #[instrument(level = "error", skip_all, fields(task_id = task_id))]
-    fn delete_progress_file(&self, task_id: &str) -> eyre::Result<()> {
-        let task_dir = self.get_task_dir()?;
-        let task_file = task_dir.join(format!("{task_id}.json"));
-        if task_file.exists() {
-            std::fs::remove_file(task_file)?;
-        }
-        Ok(())
     }
 }
