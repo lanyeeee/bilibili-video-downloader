@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use super::deserialize_null_default;
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(default)]
 #[allow(clippy::struct_excessive_bools)]
@@ -30,6 +32,7 @@ pub struct PlayerInfo {
     pub online_count: i64,
     pub need_login_subtitle: bool,
     pub subtitle: SubtitleInPlayerInfo,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub view_points: Vec<ViewPoint>,
     pub preview_toast: String,
     pub options: Options,
