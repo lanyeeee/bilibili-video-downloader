@@ -327,6 +327,7 @@ pub mod v1 {
         pub part_title: Option<String>,
         pub part_order: Option<i64>,
         pub episode_title: String,
+        pub episode_title_in_collection: Option<String>,
         pub episode_order: i64,
         pub up_name: Option<String>,
         pub up_uid: Option<i64>,

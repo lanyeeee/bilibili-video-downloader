@@ -32,6 +32,7 @@ use crate::{
         bangumi_info::BangumiInfo,
         cheese_info::CheeseInfo,
         codec_type::CodecType,
+        get_normal_info_params::GetNormalInfoParams,
         normal_info::{NormalInfo, UgcSeason},
         video_quality::VideoQuality,
     },
@@ -54,6 +55,7 @@ pub struct DownloadProgress {
     pub part_title: Option<String>,
     pub part_order: Option<i64>,
     pub episode_title: String,
+    pub episode_title_in_collection: Option<String>,
     pub episode_order: i64,
     pub up_name: Option<String>,
     pub up_uid: Option<i64>,
@@ -129,6 +131,7 @@ impl DownloadProgress {
             part_title: None,
             part_order: None,
             episode_title: episode.show_title.clone().unwrap_or(episode.title.clone()),
+            episode_title_in_collection: None,
             episode_order,
             up_name,
             up_uid,
@@ -179,6 +182,7 @@ impl DownloadProgress {
             part_title: None,
             part_order: None,
             episode_title: episode.title.clone(),
+            episode_title_in_collection: None,
             episode_order: episode.index,
             up_name: Some(info.up_info.uname.clone()),
             up_uid: Some(info.up_info.mid),
@@ -338,6 +342,18 @@ impl DownloadProgress {
         let audio_selected = self.audio_task.selected;
         let audio_completed = self.audio_task.completed;
 
+        // 通过合集批量创建的任务时，合集接口只提供视频在合集内的标题
+        // 所以在创建任务阶段，episode_title暂时用它占位
+        // 在真正开始下载前，需要重新获取视频的真实标题
+        if self.episode_type == EpisodeType::Normal && self.episode_title_in_collection.is_some() {
+            let bili_client = app.get_bili_client();
+            let info = bili_client
+                .get_normal_info(GetNormalInfoParams::Aid(self.aid))
+                .await
+                .wrap_err("获取视频信息失败")?;
+            self.episode_title = info.title;
+        }
+
         if (!video_selected && !audio_selected) || (video_completed && audio_completed) {
             // 如果视频和音频都没有选中，或者都已经完成，则更新需要格式化的字段就返回
             self.update_fmt_fields(app)
@@ -352,6 +368,7 @@ impl DownloadProgress {
                 let Some(bvid) = &self.bvid else {
                     return Err(eyre!("progress中的bvid为None，无法获取视频链接"));
                 };
+
                 let media_url = bili_client
                     .get_normal_url(bvid, self.cid)
                     .await
@@ -442,6 +459,7 @@ impl DownloadProgress {
             pub_ts: self.pub_ts,
             collection_title: self.collection_title.clone(),
             episode_title: self.episode_title.clone(),
+            episode_title_in_collection: self.episode_title_in_collection.clone(),
             episode_order: self.episode_order,
             part_title: self.part_title.clone(),
             part_order: self.part_order,
@@ -526,6 +544,7 @@ fn create_normal_progresses_for_single(
             part_title: Some(page.part.clone()),
             part_order: Some(page.page),
             episode_title: info.title.clone(),
+            episode_title_in_collection: None,
             episode_order: 1,
             up_name: Some(info.owner.name.clone()),
             up_uid: Some(info.owner.mid),
@@ -564,6 +583,7 @@ fn create_normal_progresses_for_single(
             part_title: None,
             part_order: None,
             episode_title: info.title.clone(),
+            episode_title_in_collection: None,
             episode_order: 1,
             up_name: Some(info.owner.name.clone()),
             up_uid: Some(info.owner.mid),
@@ -602,6 +622,7 @@ fn create_normal_progresses_for_single(
             part_title: Some(page.part.clone()),
             part_order: Some(page.page),
             episode_title: info.title.clone(),
+            episode_title_in_collection: None,
             episode_order: 1,
             up_name: Some(info.owner.name.clone()),
             up_uid: Some(info.owner.mid),
@@ -653,6 +674,10 @@ fn create_normal_progresses_for_season(
 
     let tasks = Tasks::new(config, &ep.arc.pic);
 
+    // 合集接口返回的只有在合集内的标题，视频标题先用它占位，到prepare时再按aid获取真实标题
+    let episode_title = ep.title.clone();
+    let episode_title_in_collection = Some(ep.title.clone());
+
     let create_ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 
     if let Some(cid) = cid {
@@ -672,7 +697,8 @@ fn create_normal_progresses_for_season(
             collection_title: ugc_season.title.clone(),
             part_title: Some(page.part.clone()),
             part_order: Some(page.page),
-            episode_title: ep.title.clone(),
+            episode_title: episode_title.clone(),
+            episode_title_in_collection: episode_title_in_collection.clone(),
             episode_order,
             up_name: Some(info.owner.name.clone()),
             up_uid: Some(info.owner.mid),
@@ -710,7 +736,8 @@ fn create_normal_progresses_for_season(
             collection_title: ugc_season.title.clone(),
             part_title: None,
             part_order: None,
-            episode_title: ep.title.clone(),
+            episode_title: episode_title.clone(),
+            episode_title_in_collection: episode_title_in_collection.clone(),
             episode_order,
             up_name: Some(info.owner.name.clone()),
             up_uid: Some(info.owner.mid),
@@ -749,7 +776,8 @@ fn create_normal_progresses_for_season(
             collection_title: ugc_season.title.clone(),
             part_title: Some(page.part.clone()),
             part_order: Some(page.page),
-            episode_title: ep.title.clone(),
+            episode_title: episode_title.clone(),
+            episode_title_in_collection: episode_title_in_collection.clone(),
             episode_order,
             up_name: Some(info.owner.name.clone()),
             up_uid: Some(info.owner.mid),

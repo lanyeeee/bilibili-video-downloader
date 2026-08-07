@@ -25,6 +25,7 @@ pub struct FmtParams {
     pub pub_ts: i64,
     pub collection_title: String,
     pub episode_title: String,
+    pub episode_title_in_collection: Option<String>,
     pub episode_order: i64,
     pub part_title: Option<String>,
     pub part_order: Option<i64>,
