@@ -56,13 +56,17 @@ function AvailableFmtFields() {
       <div>
         <span class="rounded bg-gray-500 px-1 select-all">collection_title</span>
         <span class="ml-2">
-          合集名称，
-          <span class="text-blue">对于单独(没有合集)的视频，合集名称就是视频名称</span>
+          合集标题，
+          <span class="text-blue">对于单独(没有合集)的视频，合集标题就是视频标题</span>
         </span>
       </div>
       <div>
         <span class="rounded bg-gray-500 px-1 select-all">episode_title</span>
-        <span class="ml-2">视频名称</span>
+        <span class="ml-2">视频标题</span>
+      </div>
+      <div>
+        <span class="rounded bg-gray-500 px-1 select-all">episode_title_in_collection</span>
+        <span class="ml-2">视频在合集内的标题</span>
       </div>
       <div>
         <span class="rounded bg-gray-500 px-1 select-all">episode_order</span>
@@ -83,7 +87,7 @@ function AvailableFmtFields() {
       </div>
       <div>
         <span class="rounded bg-gray-500 px-1 select-all">part_title</span>
-        <span class="ml-2">分P名称</span>
+        <span class="ml-2">分P标题</span>
       </div>
       <div>
         <span class="rounded bg-gray-500 px-1 select-all">part_order</span>
