@@ -22,6 +22,7 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-os = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-window-state = "2"
 dlopen2 = { version = "0.8.2" }
 bilibili-video-downloader-plugin-api = { path = "../src-plugin/plugin-api" }
 
