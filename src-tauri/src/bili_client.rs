@@ -351,7 +351,8 @@ impl BiliClient {
             .read()
             .get("https://api.bilibili.com/x/space/wbi/arc/search")
             .query(&params)
-            .header("cookie", self.get_cookie());
+            // 不带DedeUserID会随机触发412错误
+            .header("cookie", format!("DedeUserID=1; {}", self.get_cookie()));
         let http_resp = request.send().await?;
         // 检查http响应状态码
         let status = http_resp.status();
