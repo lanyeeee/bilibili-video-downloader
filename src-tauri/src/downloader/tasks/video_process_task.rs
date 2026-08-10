@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{io, path::PathBuf, sync::Arc};
 
 use eyre::{WrapErr, eyre};
 use serde::{Deserialize, Serialize};
@@ -98,53 +98,28 @@ impl VideoProcessTask {
 
         let output_path = episode_dir.join(format!("{filename}-merged.mp4"));
 
-        let (tx, rx) = tokio::sync::oneshot::channel();
-        let video_path_clone = video_path.clone();
-        let audio_path_clone = audio_path.clone();
-        let metadata_path_clone = metadata_path.clone();
-        let output_path_clone = output_path.clone();
+        let mut command = std::process::Command::new(ffmpeg_program);
 
-        let current_span = tracing::Span::current();
-        tauri::async_runtime::spawn_blocking(move || {
-            let _enter = current_span.enter();
-
-            let mut command = std::process::Command::new(ffmpeg_program);
-
-            command.arg("-i").arg(video_path_clone);
-            command.arg("-i").arg(audio_path_clone);
-            if let Some(metadata_path) = metadata_path_clone {
-                command.arg("-i").arg(metadata_path);
-                command.arg("-map_metadata").arg("2");
-            }
-
-            command.arg("-c").arg("copy");
-            command.arg("-map").arg("0:v:0");
-            command.arg("-map").arg("1:a:0");
-
-            command.arg(output_path_clone).arg("-y");
-
-            #[cfg(target_os = "windows")]
-            {
-                // 隐藏窗口
-                use std::os::windows::process::CommandExt;
-                command.creation_flags(0x0800_0000);
-            }
-
-            let output = command.output();
-
-            let _ = tx.send(output);
-        });
-
-        let output = rx.await??;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let err = eyre!(format!("STDOUT: {stdout}"))
-                .wrap_err(format!("STDERR: {stderr}"))
-                .wrap_err("原因可能是视频或音频文件损坏，建议[重来]试试");
-            return Err(err);
+        command.arg("-i").arg(&video_path);
+        command.arg("-i").arg(&audio_path);
+        if let Some(metadata_path) = &metadata_path {
+            command.arg("-i").arg(metadata_path);
+            command.arg("-map_metadata").arg("2");
         }
+
+        command.arg("-c").arg("copy");
+        command.arg("-map").arg("0:v:0");
+        command.arg("-map").arg("1:a:0");
+        command.arg(&output_path).arg("-y");
+
+        #[cfg(target_os = "windows")]
+        {
+            // 隐藏窗口
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+        }
+
+        execute_ffmpeg(command).await.wrap_err("执行FFmpeg失败")?;
 
         std::fs::remove_file(&video_path)
             .wrap_err(format!("删除视频文件`{}`失败", video_path.display()))?;
@@ -192,48 +167,23 @@ impl VideoProcessTask {
 
         let ffmpeg_program = utils::get_ffmpeg_program().wrap_err("获取FFmpeg程序路径失败")?;
 
-        let (tx, rx) = tokio::sync::oneshot::channel();
-        let video_path_clone = video_path.clone();
-        let audio_path_clone = audio_path.clone();
-        let output_path_clone = output_path.clone();
+        let mut command = std::process::Command::new(ffmpeg_program);
 
-        let current_span = tracing::Span::current();
-        tauri::async_runtime::spawn_blocking(move || {
-            let _enter = current_span.enter();
+        command.arg("-i").arg(&video_path);
+        command.arg("-i").arg(&audio_path);
+        command.arg("-c").arg("copy");
+        command.arg("-map").arg("0:v:0");
+        command.arg("-map").arg("1:a:0");
+        command.arg(&output_path).arg("-y");
 
-            let mut command = std::process::Command::new(ffmpeg_program);
-
-            command.arg("-i").arg(video_path_clone);
-            command.arg("-i").arg(audio_path_clone);
-
-            command.arg("-c").arg("copy");
-            command.arg("-map").arg("0:v:0");
-            command.arg("-map").arg("1:a:0");
-
-            command.arg(output_path_clone).arg("-y");
-
-            #[cfg(target_os = "windows")]
-            {
-                // 隐藏窗口
-                use std::os::windows::process::CommandExt;
-                command.creation_flags(0x0800_0000);
-            }
-
-            let output = command.output();
-
-            let _ = tx.send(output);
-        });
-
-        let output = rx.await??;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let err = eyre!(format!("STDOUT: {stdout}"))
-                .wrap_err(format!("STDERR: {stderr}"))
-                .wrap_err("原因可能是视频或音频文件损坏，建议[重来]试试");
-            return Err(err);
+        #[cfg(target_os = "windows")]
+        {
+            // 隐藏窗口
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
         }
+
+        execute_ffmpeg(command).await.wrap_err("执行FFmpeg失败")?;
 
         std::fs::remove_file(&video_path)
             .wrap_err(format!("删除视频文件`{}`失败", video_path.display()))?;
@@ -279,47 +229,22 @@ impl VideoProcessTask {
             return Ok(());
         };
 
-        let (tx, rx) = tokio::sync::oneshot::channel();
-        let video_path_clone = video_path.clone();
-        let metadata_path_clone = metadata_path.clone();
-        let output_path_clone = output_path.clone();
+        let mut command = std::process::Command::new(ffmpeg_program);
 
-        let current_span = tracing::Span::current();
-        tauri::async_runtime::spawn_blocking(move || {
-            let _enter = current_span.enter();
+        command.arg("-i").arg(&video_path);
+        command.arg("-i").arg(&metadata_path);
+        command.arg("-map_metadata").arg("1");
+        command.arg("-c").arg("copy");
+        command.arg(&output_path).arg("-y");
 
-            let mut command = std::process::Command::new(ffmpeg_program);
-
-            command.arg("-i").arg(video_path_clone);
-            command.arg("-i").arg(metadata_path_clone);
-
-            command.arg("-map_metadata").arg("1");
-            command.arg("-c").arg("copy");
-
-            command.arg(output_path_clone).arg("-y");
-
-            #[cfg(target_os = "windows")]
-            {
-                // 隐藏窗口
-                use std::os::windows::process::CommandExt;
-                command.creation_flags(0x0800_0000);
-            }
-
-            let output = command.output();
-
-            let _ = tx.send(output);
-        });
-
-        let output = rx.await??;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let err = eyre!(format!("STDOUT: {stdout}"))
-                .wrap_err(format!("STDERR: {stderr}"))
-                .wrap_err("原因可能是视频或音频文件损坏，建议[重来]试试");
-            return Err(err);
+        #[cfg(target_os = "windows")]
+        {
+            // 隐藏窗口
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
         }
+
+        execute_ffmpeg(command).await.wrap_err("执行FFmpeg失败")?;
 
         std::fs::remove_file(&video_path)
             .wrap_err(format!("删除视频文件`{}`失败", video_path.display()))?;
@@ -387,4 +312,33 @@ impl VideoProcessTask {
 
         Ok(Some(metadata_path))
     }
+}
+
+#[instrument(level = "error", skip_all)]
+async fn execute_ffmpeg(mut command: std::process::Command) -> eyre::Result<()> {
+    let span = tracing::Span::current();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let _enter = span.enter();
+
+        let program = command.get_program().to_string_lossy().into_owned();
+        let output = command.output().map_err(|err| {
+            if err.kind() == io::ErrorKind::NotFound {
+                eyre!(err).wrap_err(format!("找不到FFmpeg `{program}`"))
+            } else {
+                eyre!(err)
+            }
+        })?;
+
+        if output.status.success() {
+            return Ok(());
+        }
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Err(eyre!(format!("STDOUT: {stdout}")))
+            .wrap_err(format!("STDERR: {stderr}"))
+            .wrap_err("原因可能是视频或音频文件损坏，建议[重来]试试")
+    })
+    .await?
 }
