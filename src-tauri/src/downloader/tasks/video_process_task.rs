@@ -292,7 +292,10 @@ impl VideoProcessTask {
             let bili_client = app.get_bili_client();
             let cid = Some(progress.cid);
 
-            let skip_segments = bili_client.get_skip_segments(bvid, cid).await?;
+            let skip_segments = bili_client
+                .get_skip_segments(bvid, cid)
+                .await
+                .wrap_err("获取广告片段失败，请[继续]以重试。如果重试多次依旧失败，请在设置中取消勾选[标记广告]")?;
             for segment in skip_segments.0 {
                 if let Some(chapter_segment) = segment.into_chapter_segment() {
                     chapter_segments.insert(chapter_segment);
