@@ -47,10 +47,9 @@ impl SubtitleTask {
 
         for subtitle_detail in &player_info.subtitle.subtitles {
             let url = format!("http:{}", subtitle_detail.subtitle_url);
-            let subtitle = bili_client
-                .get_subtitle(&url)
-                .await
-                .wrap_err("获取字幕失败")?;
+            let subtitle = bili_client.get_subtitle(&url).await.wrap_err(
+                "获取字幕失败，请[继续]以重试。如果重试多次依旧失败，请在设置中取消勾选[下载字幕]",
+            )?;
 
             let mut srt_content = String::new();
             for (i, b) in subtitle.body.iter().enumerate() {
