@@ -67,7 +67,7 @@ impl DanmakuTask {
         let replies = bili_client
             .get_danmaku(progress.aid, progress.cid, progress.duration)
             .await
-            .wrap_err("获取弹幕失败")?;
+            .wrap_err("获取弹幕失败，请[继续]以重试。如果重试多次依旧失败，请在设置中取消勾选[下载弹幕]相关的所有选项")?;
 
         let xml = replies
             .to_xml(progress.cid)
