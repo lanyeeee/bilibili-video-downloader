@@ -33,7 +33,7 @@ onMounted(async () => {
         ...progress,
         state,
         percentage: 0,
-        stateIndicator: '',
+        stateIndicator: getStateIndicator(state),
         taskIndicator: '',
       }
       store.updateProgresses((progresses) => {
@@ -48,21 +48,8 @@ onMounted(async () => {
           return
         }
 
-        let stateIndicator = ''
-        if (state === 'Pending') {
-          stateIndicator = '排队中'
-        } else if (state === 'Downloading') {
-          stateIndicator = '下载中'
-        } else if (state === 'Paused') {
-          stateIndicator = '已暂停'
-        } else if (state === 'Completed') {
-          stateIndicator = '下载完成'
-        } else if (state === 'Failed') {
-          stateIndicator = '下载失败'
-        }
-
         progressData.state = state
-        progressData.stateIndicator = stateIndicator
+        progressData.stateIndicator = getStateIndicator(state)
       })
     } else if (event === 'TaskSleeping') {
       const { task_id, remaining_sec } = data
@@ -151,8 +138,41 @@ onMounted(async () => {
   const result = await commands.restoreDownloadTasks()
   if (result.status === 'error') {
     console.error(result.error)
+    return
   }
+
+  store.updateProgresses((progresses) => {
+    for (const { state, progress } of result.data) {
+      const progressData: ProgressData = {
+        ...progress,
+        state,
+        percentage: 0,
+        stateIndicator: getStateIndicator(state),
+        taskIndicator: '',
+      }
+
+      progresses.set(progress.task_id, progressData)
+    }
+  })
 })
+
+function getStateIndicator(state: DownloadTaskState) {
+  let stateIndicator = ''
+
+  if (state === 'Pending') {
+    stateIndicator = '排队中'
+  } else if (state === 'Downloading') {
+    stateIndicator = '下载中'
+  } else if (state === 'Paused') {
+    stateIndicator = '已暂停'
+  } else if (state === 'Completed') {
+    stateIndicator = '下载完成'
+  } else if (state === 'Failed') {
+    stateIndicator = '下载失败'
+  }
+
+  return stateIndicator
+}
 </script>
 
 <template>

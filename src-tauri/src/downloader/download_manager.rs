@@ -10,12 +10,17 @@ use std::{
 
 use eyre::{WrapErr, eyre};
 use parking_lot::RwLock;
+use rayon::prelude::*;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
-use tokio::sync::Semaphore;
-use tracing::instrument;
+use tokio::{
+    sync::{Semaphore, oneshot},
+    task::JoinSet,
+};
+use tracing::{Instrument, instrument};
 
 use crate::{
+    downloader::download_progress::DownloadProgress,
     events::DownloadEvent,
     extensions::{AppHandleExt, EyreReportToMessage},
     types::{
@@ -24,7 +29,7 @@ use crate::{
     },
 };
 
-use super::{download_progress::DownloadProgress, download_task::DownloadTask};
+use super::download_task::{DownloadTask, RestoredDownloadTask};
 
 pub struct DownloadManager {
     pub app: AppHandle,
@@ -58,41 +63,92 @@ impl DownloadManager {
     }
 
     #[instrument(level = "error", skip_all)]
-    pub fn restore_download_tasks(&self) -> eyre::Result<()> {
+    pub async fn restore_download_tasks(&self) -> eyre::Result<Vec<RestoredDownloadTask>> {
+        struct TaskFile {
+            path: PathBuf,
+            content: String,
+        }
+
         let task_dir = self.get_task_dir()?;
         std::fs::create_dir_all(&task_dir)
             .wrap_err(format!("创建下载任务目录`{}`失败", task_dir.display()))?;
 
-        let mut tasks = self.download_tasks.write();
+        let mut join_set = JoinSet::new();
         for entry in std::fs::read_dir(&task_dir)?.filter_map(Result::ok) {
-            let path = entry.path();
-            let extension = path.extension().and_then(|s| s.to_str());
-            if extension != Some("json") {
-                // 如果这个文件不是json则删除
-                let _ = std::fs::remove_file(&path);
-                continue;
-            }
+            let read_task_file = async move {
+                let path = entry.path();
 
-            let progress_json = std::fs::read_to_string(&path)?;
+                let extension = path.extension().and_then(|s| s.to_str());
+                if extension != Some("json") {
+                    // 如果这个文件不是json则删除
+                    let _ = tokio::fs::remove_file(path).await;
+                    return None;
+                }
 
-            let progress: DownloadProgress =
-                if let Ok(progress) = serde_json::from_str(&progress_json) {
-                    progress
-                } else {
-                    // 如果这个json解析失败则删除
-                    let _ = std::fs::remove_file(&path);
-                    continue;
+                let content = match tokio::fs::read_to_string(&path)
+                    .await
+                    .map_err(eyre::Report::from)
+                {
+                    Ok(content) => content,
+                    Err(err) => {
+                        let err_title = format!("读取下载任务文件`{}`失败", path.display());
+                        let message = err.to_message();
+                        tracing::error!(err_title, message);
+                        return None;
+                    }
                 };
 
-            let new_task = DownloadTask::from_progress(self.app.clone(), progress);
+                Some(TaskFile { path, content })
+            };
+
+            join_set.spawn(read_task_file.in_current_span());
+        }
+
+        let mut task_files = Vec::new();
+        while let Some(join_result) = join_set.join_next().await {
+            let Ok(Some(task_file)) = join_result else {
+                continue;
+            };
+
+            task_files.push(task_file);
+        }
+
+        let (progresses_sender, progresses_receiver) = oneshot::channel();
+        rayon::spawn(move || {
+            let progresses = task_files
+                .into_par_iter()
+                .filter_map(|task_file| {
+                    if let Ok(progress) = serde_json::from_str(&task_file.content) {
+                        Some(progress)
+                    } else {
+                        // 如果这个json解析失败则删除
+                        let _ = std::fs::remove_file(&task_file.path);
+                        None
+                    }
+                })
+                .collect();
+
+            let _ = progresses_sender.send(progresses);
+        });
+        let progresses: Vec<DownloadProgress> = progresses_receiver.await?;
+
+        let mut tasks = self.download_tasks.write();
+        let mut restored_tasks = Vec::new();
+
+        for progress in progresses {
+            let new_task = DownloadTask::from_progress(self.app.clone(), progress.clone());
+            let state = *new_task.state_sender.borrow();
+
             let old_task = tasks.insert(new_task.task_id.clone(), new_task);
             if let Some(old_task) = old_task {
                 // 如果同一个ID的下载任务已经存在，则取消旧的任务
                 old_task.cancel();
             }
+
+            restored_tasks.push(RestoredDownloadTask { state, progress });
         }
 
-        Ok(())
+        Ok(restored_tasks)
     }
 
     pub fn create_download_tasks(&self, params: &CreateDownloadTaskParams) {

@@ -1,7 +1,9 @@
-﻿use std::{sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use eyre::WrapErr;
 use parking_lot::RwLock;
+use serde::Serialize;
+use specta::Type;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::{
@@ -31,6 +33,12 @@ pub struct DownloadTask {
     pub task_id: String,
     pub trace_fields: DownloadTaskTraceFields,
     pub progress: RwLock<DownloadProgress>,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct RestoredDownloadTask {
+    pub state: DownloadTaskState,
+    pub progress: DownloadProgress,
 }
 
 impl DownloadTask {
@@ -168,7 +176,7 @@ impl DownloadTask {
                 progress: RwLock::new(progress),
             });
 
-            tauri::async_runtime::spawn(task.clone().process());
+            tauri::async_runtime::spawn(task.clone().process(true));
 
             tasks.push(task);
         }
@@ -198,7 +206,7 @@ impl DownloadTask {
             progress: RwLock::new(progress),
         });
 
-        tauri::async_runtime::spawn(task.clone().process());
+        tauri::async_runtime::spawn(task.clone().process(false));
 
         task
     }
@@ -287,14 +295,14 @@ impl DownloadTask {
             up_uid = self.trace_fields.up_uid,
         )
     )]
-    async fn process(self: Arc<Self>) {
-        let state = *self.state_sender.borrow();
-        let progress = self.progress.read().clone();
-        let _ = DownloadEvent::TaskCreate { state, progress }.emit(&self.app);
+    async fn process(self: Arc<Self>, emit_create_events: bool) {
+        if emit_create_events {
+            let state = *self.state_sender.borrow();
+            let progress = self.progress.read().clone();
+            let _ = DownloadEvent::TaskCreate { state, progress }.emit(&self.app);
+        }
 
         let mut state_receiver = self.state_sender.subscribe();
-        state_receiver.mark_changed();
-
         let mut restart_receiver = self.restart_sender.subscribe();
         let mut cancel_receiver = self.cancel_sender.subscribe();
         let mut delete_receiver = self.delete_sender.subscribe();

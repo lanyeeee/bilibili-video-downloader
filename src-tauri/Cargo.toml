@@ -60,6 +60,7 @@ memchr = { version = "2.7.5" }
 md-5 = { version = "0.10.6" }
 rand = { version = "0.9.1" }
 base64 = { version = "0.22.1" }
+rayon = { version = "1.12.0" }
 
 [profile.release]
 strip = true

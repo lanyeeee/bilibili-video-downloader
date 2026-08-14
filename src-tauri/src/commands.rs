@@ -11,6 +11,7 @@ use tracing::instrument;
 
 use crate::{
     config::Config,
+    downloader::download_task::RestoredDownloadTask,
     errors::{CommandError, CommandResult},
     extensions::AppHandleExt,
     logger,
@@ -310,13 +311,14 @@ pub fn restart_download_task(app: AppHandle, params: RestartDownloadTaskParams) 
 #[tauri::command(async)]
 #[specta::specta]
 #[instrument(level = "error", skip_all)]
-pub fn restore_download_tasks(app: AppHandle) -> CommandResult<()> {
+pub async fn restore_download_tasks(app: AppHandle) -> CommandResult<Vec<RestoredDownloadTask>> {
     let download_manager = app.get_download_manager();
-    download_manager
+    let restored_tasks = download_manager
         .restore_download_tasks()
+        .await
         .map_err(|err| CommandError::from("恢复下载任务失败", err))?;
     tracing::debug!("恢复下载任务成功");
-    Ok(())
+    Ok(restored_tasks)
 }
 
 #[tauri::command(async)]
