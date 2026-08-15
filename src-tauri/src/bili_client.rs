@@ -1098,7 +1098,12 @@ impl BiliClient {
 
     pub fn get_cookie(&self) -> String {
         let sessdata = self.app.get_config().read().sessdata.clone();
-        format!("SESSDATA={}", sessdata.trim_end_matches(';'))
+
+        let trimmed = sessdata.trim_end_matches(';');
+        let decoded = urlencoding::decode(trimmed).unwrap_or_else(|_| trimmed.into());
+        let encoded = urlencoding::encode(&decoded);
+
+        format!("SESSDATA={encoded}")
     }
 }
 
