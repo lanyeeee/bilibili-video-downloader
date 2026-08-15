@@ -61,6 +61,7 @@ md-5 = { version = "0.10.6" }
 rand = { version = "0.9.1" }
 base64 = { version = "0.22.1" }
 rayon = { version = "1.12.0" }
+urlencoding = { version = "2.1.3" }
 
 [profile.release]
 strip = true
