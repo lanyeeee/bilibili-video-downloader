@@ -385,7 +385,7 @@ impl BiliClient {
             "bvid": bvid,
             "cid": cid,
             "qn": 127,
-            "fnval": 4048,
+            "fnval": 139216,
         });
         // 发送获取普通url的请求
         let request = self
@@ -435,7 +435,7 @@ impl BiliClient {
         let params = json!({
             "cid": cid,
             "qn": 127,
-            "fnval": 4048,
+            "fnval": 139216,
             "drm_tech_type": 2,
         });
         // 发送获取番剧url的请求
@@ -478,7 +478,7 @@ impl BiliClient {
         let params = json!({
             "cid": cid,
             "qn": 127,
-            "fnval": 4048,
+            "fnval": 139216,
             "drm_tech_type": 2,
             "from_client": "BROWSER",
         });
@@ -522,7 +522,7 @@ impl BiliClient {
         let params = json!({
             "ep_id": ep_id,
             "qn": 127,
-            "fnval": 4048,
+            "fnval": 139216,
             "drm_tech_type": 2,
         });
         // 发送获取课程url的请求

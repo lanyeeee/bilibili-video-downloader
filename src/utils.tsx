@@ -249,6 +249,7 @@ const videoQualityNameMap: Record<VideoQuality, string> = {
   '1080P+': '1080P 高码率',
   '1080P60': '1080P 60帧',
   '4K': '4K 超高清',
+  SDR: '4K SDR增强',
   HDR: 'HDR 真彩色',
   Dolby: '杜比视界',
   '8K': '8K 超高清',
