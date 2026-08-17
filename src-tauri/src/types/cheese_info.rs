@@ -172,7 +172,7 @@ pub struct PaidJump {
 pub struct Payment {
     pub bp_enough: i64,
     pub desc: String,
-    pub my_bp: i64,
+    pub my_bp: f64,
     pub pay_shade: String,
     pub price: f64,
     pub price_format: String,
