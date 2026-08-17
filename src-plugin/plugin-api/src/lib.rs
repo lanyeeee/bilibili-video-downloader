@@ -192,6 +192,8 @@ pub mod v1 {
         Video1080P60 = 116,
         #[serde(rename = "4K")]
         Video4K = 120,
+        #[serde(rename = "SDR")]
+        VideoSDR = 122,
         #[serde(rename = "HDR")]
         VideoHDR = 125,
         #[serde(rename = "Dolby")]

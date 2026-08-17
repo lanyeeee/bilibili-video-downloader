@@ -53,7 +53,7 @@ impl Config {
         let app_data_dir = app.path().app_data_dir()?;
         let config_path = app_data_dir.join("config.json");
 
-        let config = if config_path.exists() {
+        let mut config = if config_path.exists() {
             let config_string = std::fs::read_to_string(config_path)?;
             match serde_json::from_str(&config_string) {
                 // 如果能够直接解析为Config，则直接返回
@@ -65,6 +65,8 @@ impl Config {
         } else {
             Config::default(&app_data_dir)
         };
+
+        config.reconcile_priority_lists();
         config.save(app)?;
         Ok(config)
     }
@@ -76,6 +78,18 @@ impl Config {
         let config_string = serde_json::to_string_pretty(self)?;
         std::fs::write(config_path, config_string)?;
         Ok(())
+    }
+
+    fn reconcile_priority_lists(&mut self) {
+        reconcile(
+            &mut self.video_quality_priority,
+            DEFAULT_VIDEO_QUALITY_PRIORITY,
+        );
+        reconcile(
+            &mut self.audio_quality_priority,
+            DEFAULT_AUDIO_QUALITY_PRIORITY,
+        );
+        reconcile(&mut self.codec_type_priority, DEFAULT_CODEC_TYPE_PRIORITY);
     }
 
     fn merge_config(config_string: &str, app_data_dir: &Path) -> Config {
@@ -103,36 +117,14 @@ impl Config {
     fn default(app_data_dir: &Path) -> Config {
         const DEFAULT_FMT_FOR_PART: &str =
             "{collection_title}/{episode_title}/{episode_title}-P{part_order} {part_title}";
-        let default_video_quality_priority = vec![
-            VideoQuality::Video8K,
-            VideoQuality::VideoDolby,
-            VideoQuality::VideoHDR,
-            VideoQuality::Video4K,
-            VideoQuality::Video1080P60,
-            VideoQuality::Video1080PPlus,
-            VideoQuality::Video1080P,
-            VideoQuality::VideoAiRepair,
-            VideoQuality::Video720P60,
-            VideoQuality::Video720P,
-            VideoQuality::Video480P,
-            VideoQuality::Video360P,
-            VideoQuality::Video240P,
-        ];
-        let default_audio_quality_priority = vec![
-            AudioQuality::AudioHiRes,
-            AudioQuality::AudioDolby,
-            AudioQuality::Audio192K,
-            AudioQuality::Audio132K,
-            AudioQuality::Audio64K,
-        ];
 
         Config {
             download_dir: app_data_dir.join("视频下载"),
             enable_file_logger: true,
             sessdata: String::new(),
-            video_quality_priority: default_video_quality_priority,
-            codec_type_priority: vec![CodecType::AVC, CodecType::HEVC, CodecType::AV1],
-            audio_quality_priority: default_audio_quality_priority,
+            video_quality_priority: DEFAULT_VIDEO_QUALITY_PRIORITY.to_vec(),
+            codec_type_priority: DEFAULT_CODEC_TYPE_PRIORITY.to_vec(),
+            audio_quality_priority: DEFAULT_AUDIO_QUALITY_PRIORITY.to_vec(),
             download_video: true,
             download_audio: true,
             auto_merge: true,
@@ -162,6 +154,14 @@ impl Config {
     }
 }
 
+fn reconcile<T: Copy + Eq>(priority: &mut Vec<T>, all: &[T]) {
+    for &item in all {
+        if !priority.contains(&item) {
+            priority.push(item);
+        }
+    }
+}
+
 #[derive(Default, Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]
 pub enum ProxyMode {
     #[default]
@@ -176,3 +176,31 @@ pub enum FileExistAction {
     Overwrite,
     Skip,
 }
+
+const DEFAULT_VIDEO_QUALITY_PRIORITY: &[VideoQuality] = &[
+    VideoQuality::Video8K,
+    VideoQuality::VideoDolby,
+    VideoQuality::VideoHDR,
+    VideoQuality::VideoSDR,
+    VideoQuality::Video4K,
+    VideoQuality::Video1080P60,
+    VideoQuality::Video1080PPlus,
+    VideoQuality::Video1080P,
+    VideoQuality::VideoAiRepair,
+    VideoQuality::Video720P60,
+    VideoQuality::Video720P,
+    VideoQuality::Video480P,
+    VideoQuality::Video360P,
+    VideoQuality::Video240P,
+];
+
+const DEFAULT_AUDIO_QUALITY_PRIORITY: &[AudioQuality] = &[
+    AudioQuality::AudioHiRes,
+    AudioQuality::AudioDolby,
+    AudioQuality::Audio192K,
+    AudioQuality::Audio132K,
+    AudioQuality::Audio64K,
+];
+
+const DEFAULT_CODEC_TYPE_PRIORITY: &[CodecType] =
+    &[CodecType::AVC, CodecType::HEVC, CodecType::AV1];
