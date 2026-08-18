@@ -385,7 +385,7 @@ impl BiliClient {
             "bvid": bvid,
             "cid": cid,
             "qn": 127,
-            "fnval": 139216,
+            "fnval": 4048,
         });
         // 发送获取普通url的请求
         let request = self
