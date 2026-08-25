@@ -217,6 +217,9 @@ impl DownloadProgress {
 
         self.prepare(app).await.wrap_err("准备下载失败")?;
 
+        self.completed_ts = None; // 重置完成时间戳
+        download_task.update_progress(|p| *p = self.clone());
+
         let progress_before_hook = self.clone();
         app.get_plugin_manager()
             .run_hook(HookContext::AfterPrepare(AfterPrepareContext::new(self)))
@@ -224,9 +227,6 @@ impl DownloadProgress {
         if *self != progress_before_hook {
             download_task.update_progress(|p| *p = self.clone());
         }
-
-        self.completed_ts = None; // 重置完成时间戳
-        download_task.update_progress(|p| *p = self.clone());
 
         std::fs::create_dir_all(&self.episode_dir)
             .wrap_err(format!("创建目录`{}`失败", self.episode_dir.display()))?;
@@ -250,6 +250,7 @@ impl DownloadProgress {
             tracing::debug!("音频下载任务完成");
         }
 
+        *self = download_task.progress.read().clone();
         let progress_before_hook = self.clone();
         app.get_plugin_manager()
             .run_hook(HookContext::BeforeVideoProcess(
@@ -324,6 +325,7 @@ impl DownloadProgress {
             download_task.update_progress(|p| p.completed_ts = Some(completed_ts));
         }
 
+        *self = download_task.progress.read().clone();
         let progress_before_hook = self.clone();
         app.get_plugin_manager()
             .run_hook(HookContext::OnCompleted(OnCompletedContext::new(self)))
