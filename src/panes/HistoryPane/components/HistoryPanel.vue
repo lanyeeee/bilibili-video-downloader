@@ -6,6 +6,7 @@ import HistoryCard from './HistoryCard.vue'
 import { useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
 import FloatLabelInput from '../../../components/FloatLabelInput.vue'
+import RefreshButton from '../../../components/RefreshButton.vue'
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
 import {
   NButton,
@@ -115,6 +116,10 @@ async function getHistory(page: number) {
   }
   historyInfo.value = result.data
   searching.value = false
+}
+
+async function refresh() {
+  await getHistory(currentPage.value)
 }
 
 const historyCardRefs = useTemplateRef<InstanceType<typeof HistoryCard>[]>('historyCardRefs')
@@ -350,7 +355,10 @@ function useFavCard(
 
     <div class="flex gap-2 m-2 box-border">
       <n-pagination :page-count="pageCount" :page="currentPage" @update:page="getHistory($event)" />
-      <n-button class="ml-auto" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <RefreshButton :refresh="refresh" />
+        <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      </div>
     </div>
 
     <n-dropdown

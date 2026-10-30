@@ -6,9 +6,11 @@ import CollectionCard from './CollectionCard.vue'
 import { useEpisodeCard, useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import EpisodeCard, { EpisodeInfo } from './EpisodeCard.vue'
 import { NButton, NCollapseTransition, NDropdown } from 'naive-ui'
+import RefreshButton from '../../../components/RefreshButton.vue'
 
 const props = defineProps<{
   cheeseResult: CheeseSearchResult
+  refresh: () => Promise<void>
 }>()
 
 const collectionCardShowing = ref<boolean>(false)
@@ -162,10 +164,11 @@ async function downloadCheckedEpisodes() {
       </div>
     </div>
 
-    <div class="p-2 ml-auto">
-      <n-button class="mr-2" size="small" @click="collectionCardShowing = !collectionCardShowing">
+    <div class="p-2 ml-auto flex items-center gap-2">
+      <n-button size="small" @click="collectionCardShowing = !collectionCardShowing">
         {{ collectionCardShowing ? '隐藏合集' : '显示合集' }}
       </n-button>
+      <RefreshButton :refresh="refresh" />
       <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
     </div>
     <n-collapse-transition :show="collectionCardShowing">

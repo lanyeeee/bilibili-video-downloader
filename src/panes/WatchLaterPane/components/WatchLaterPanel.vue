@@ -6,6 +6,7 @@ import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
 import { searchPaneRefKey } from '../../../injection_keys.ts'
 import WatchLaterCard from './WatchLaterCard.vue'
 import { NButton, NDropdown, NPagination } from 'naive-ui'
+import RefreshButton from '../../../components/RefreshButton.vue'
 
 const watchLaterInfo = defineModel<WatchLaterInfo>('watchLaterInfo', { required: true })
 
@@ -122,6 +123,10 @@ async function getWatchLaterInfo(page: number) {
   watchLaterInfo.value = result.data
 }
 
+async function refresh() {
+  await getWatchLaterInfo(currentPage.value)
+}
+
 function useWatchLaterCard(
   downloadEpisode: (media: MediaInWatchLater) => Promise<void>,
   checkboxChecked: (media: MediaInWatchLater) => boolean,
@@ -171,7 +176,10 @@ function useWatchLaterCard(
 
     <div class="flex gap-2 m-2 box-border">
       <n-pagination :page-count="pageCount" :page="currentPage" @update:page="getWatchLaterInfo($event)" />
-      <n-button class="ml-auto" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <RefreshButton :refresh="refresh" />
+        <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      </div>
     </div>
 
     <n-dropdown

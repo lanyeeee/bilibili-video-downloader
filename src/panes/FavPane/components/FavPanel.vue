@@ -6,6 +6,7 @@ import { useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import { NButton, NDropdown, NPagination, NSelect, SelectOption } from 'naive-ui'
 import { searchPaneRefKey } from '../../../injection_keys.ts'
 import FavCard from './FavCard.vue'
+import RefreshButton from '../../../components/RefreshButton.vue'
 
 const favInfo = defineModel<FavInfo>('favInfo', { required: true })
 
@@ -63,6 +64,16 @@ async function getFav(page: number) {
     return
   }
   favInfo.value = result.data
+}
+
+async function refresh() {
+  const result = await commands.getFavFolders(favInfo.value.info.mid)
+  if (result.status === 'error') {
+    console.error(result.error)
+  } else {
+    favFolders.value = result.data
+  }
+  await getFav(currentPage.value)
 }
 
 const favCardRefs = useTemplateRef<InstanceType<typeof FavCard>[]>('favCardRefs')
@@ -215,7 +226,10 @@ function useFavCard(
     <div class="flex gap-2 m-2 box-border">
       <n-pagination :page-count="pageCount" :page="currentPage" @update:page="getFav($event)" />
       <n-select class="w-40%" size="small" v-model:value="selectedMediaListId" :options="selectOptions" />
-      <n-button class="ml-auto" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <RefreshButton :refresh="refresh" />
+        <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      </div>
     </div>
 
     <n-dropdown

@@ -6,6 +6,7 @@ import BangumiFollowCard from './BangumiFollowCard.vue'
 import { useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
 import { NButton, NDropdown, NPagination, NSelect, SelectOption } from 'naive-ui'
+import RefreshButton from '../../../components/RefreshButton.vue'
 
 const store = useStore()
 
@@ -125,6 +126,10 @@ async function getBangumiFollowInfo(page: number) {
   bangumiFollowInfo.value = result.data
 }
 
+async function refresh() {
+  await getBangumiFollowInfo(currentPage.value)
+}
+
 async function downloadSeason(seasonId: number) {
   // 获取番剧信息，用于创建下载任务
   const result = await commands.getBangumiInfo({ SeasonId: seasonId })
@@ -205,7 +210,10 @@ function useBangumiFollowCard(
         :options="selectFollowStatusOptions"
         size="small"
         @update:value="getBangumiFollowInfo(1)" />
-      <n-button class="ml-auto" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选剧集</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <RefreshButton :refresh="refresh" />
+        <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选剧集</n-button>
+      </div>
     </div>
 
     <n-dropdown
