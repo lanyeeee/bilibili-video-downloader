@@ -6,6 +6,7 @@ use specta::Type;
 pub struct QrcodeStatus {
     pub url: String,
     pub sessdata: String,
+    pub bili_jct: String,
     pub refresh_token: String,
     pub timestamp: i64,
     pub code: i64,

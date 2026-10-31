@@ -5,10 +5,13 @@ import { useStore } from '../../../store.ts'
 import BangumiFollowCard from './BangumiFollowCard.vue'
 import { useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
-import { NButton, NDropdown, NPagination, NSelect, SelectOption } from 'naive-ui'
+import { NButton, NDropdown, NPagination, NSelect, SelectOption, useDialog, useMessage } from 'naive-ui'
 import RefreshButton from '../../../components/RefreshButton.vue'
 
 const store = useStore()
+
+const dialog = useDialog()
+const message = useMessage()
 
 const bangumiFollowInfo = defineModel<BangumiFollowInfo>('bangumiFollowInfo', { required: true })
 
@@ -130,6 +133,29 @@ async function refresh() {
   await getBangumiFollowInfo(currentPage.value)
 }
 
+async function deleteChecked() {
+  const seasonIds = Array.from(checkedIds.value)
+  if (seasonIds.length === 0) {
+    return
+  }
+
+  dialog.warning({
+    title: '确认取消追番',
+    content: `将取消追番 ${seasonIds.length} 部番剧。此操作只影响账号内的追番列表，不会删除已下载的本地文件。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const result = await commands.unfollowBangumis(seasonIds)
+      if (result.status === 'error') {
+        message.error(result.error.message)
+        return
+      }
+      message.success(`已取消追番 ${result.data} 部番剧`)
+      await refresh()
+    },
+  })
+}
+
 async function downloadSeason(seasonId: number) {
   // 获取番剧信息，用于创建下载任务
   const result = await commands.getBangumiInfo({ SeasonId: seasonId })
@@ -211,6 +237,7 @@ function useBangumiFollowCard(
         size="small"
         @update:value="getBangumiFollowInfo(1)" />
       <div class="ml-auto flex items-center gap-2">
+        <n-button size="small" type="error" :disabled="checkedIds.size === 0" @click="deleteChecked">删除</n-button>
         <RefreshButton :refresh="refresh" />
         <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选剧集</n-button>
       </div>

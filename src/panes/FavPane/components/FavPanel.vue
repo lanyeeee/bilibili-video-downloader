@@ -3,7 +3,7 @@ import { computed, inject, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { commands, FavFolders, Folder, FavInfo, MediaInFav } from '../../../bindings.ts'
 import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
 import { useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
-import { NButton, NDropdown, NPagination, NSelect, SelectOption } from 'naive-ui'
+import { NButton, NDropdown, NPagination, NSelect, SelectOption, useDialog, useMessage } from 'naive-ui'
 import { searchPaneRefKey } from '../../../injection_keys.ts'
 import FavCard from './FavCard.vue'
 import RefreshButton from '../../../components/RefreshButton.vue'
@@ -11,6 +11,9 @@ import RefreshButton from '../../../components/RefreshButton.vue'
 const favInfo = defineModel<FavInfo>('favInfo', { required: true })
 
 const searchPaneRef = inject(searchPaneRefKey)
+
+const dialog = useDialog()
+const message = useMessage()
 
 const favFolders = ref<FavFolders>()
 const selectedMediaListId = ref<number>(favInfo.value.info.id)
@@ -74,6 +77,29 @@ async function refresh() {
     favFolders.value = result.data
   }
   await getFav(currentPage.value)
+}
+
+async function deleteChecked() {
+  const aids = Array.from(checkedIds.value)
+  if (aids.length === 0) {
+    return
+  }
+
+  dialog.warning({
+    title: '确认取消收藏',
+    content: `将从收藏夹「${favInfo.value.info.title}」中取消收藏 ${aids.length} 个视频。此操作只影响账号内的收藏，不会删除已下载的本地文件。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const result = await commands.deleteFavResources(selectedMediaListId.value, aids)
+      if (result.status === 'error') {
+        message.error(result.error.message)
+        return
+      }
+      message.success(`已取消收藏 ${result.data} 个视频`)
+      await refresh()
+    },
+  })
 }
 
 const favCardRefs = useTemplateRef<InstanceType<typeof FavCard>[]>('favCardRefs')
@@ -227,6 +253,7 @@ function useFavCard(
       <n-pagination :page-count="pageCount" :page="currentPage" @update:page="getFav($event)" />
       <n-select class="w-40%" size="small" v-model:value="selectedMediaListId" :options="selectOptions" />
       <div class="ml-auto flex items-center gap-2">
+        <n-button size="small" type="error" :disabled="checkedIds.size === 0" @click="deleteChecked">删除</n-button>
         <RefreshButton :refresh="refresh" />
         <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
       </div>

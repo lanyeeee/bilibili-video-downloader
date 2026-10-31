@@ -17,13 +17,14 @@ mod protobuf {
 }
 
 use commands::{
-    add_plugin, create_download_tasks, delete_download_tasks, generate_qrcode,
-    get_available_media_formats, get_bangumi_follow_info, get_bangumi_info, get_config,
-    get_fav_folders, get_fav_info, get_history_info, get_logs_dir_size, get_normal_info,
-    get_plugin_infos, get_qrcode_status, get_skip_segments, get_user_info, get_user_video_info,
-    get_watch_later_info, pause_download_tasks, restart_download_task, restart_download_tasks,
-    restore_download_tasks, resume_download_tasks, save_config, search, set_plugin_enabled,
-    set_plugin_priority, show_path_in_file_manager, uninstall_plugin,
+    add_plugin, create_download_tasks, delete_download_tasks, delete_fav_resources,
+    delete_history_items, delete_watch_later_items, generate_qrcode, get_available_media_formats,
+    get_bangumi_follow_info, get_bangumi_info, get_config, get_fav_folders, get_fav_info,
+    get_history_info, get_logs_dir_size, get_normal_info, get_plugin_infos, get_qrcode_status,
+    get_skip_segments, get_user_info, get_user_video_info, get_watch_later_info,
+    pause_download_tasks, restart_download_task, restart_download_tasks, restore_download_tasks,
+    resume_download_tasks, save_config, search, set_plugin_enabled, set_plugin_priority,
+    show_path_in_file_manager, unfollow_bangumis, uninstall_plugin,
 };
 use eyre::WrapErr;
 use parking_lot::RwLock;
@@ -64,6 +65,10 @@ pub fn run() {
             get_watch_later_info,
             get_bangumi_follow_info,
             get_history_info,
+            delete_fav_resources,
+            delete_watch_later_items,
+            delete_history_items,
+            unfollow_bangumis,
             create_download_tasks,
             pause_download_tasks,
             resume_download_tasks,

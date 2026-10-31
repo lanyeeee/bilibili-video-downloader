@@ -257,6 +257,62 @@ pub async fn get_history_info(
 #[tauri::command(async)]
 #[specta::specta]
 #[instrument(level = "error", skip_all)]
+pub async fn delete_fav_resources(
+    app: AppHandle,
+    media_id: i64,
+    aids: Vec<i64>,
+) -> CommandResult<usize> {
+    let bili_client = app.get_bili_client();
+    let deleted = bili_client
+        .delete_fav_resources(media_id, aids)
+        .await
+        .map_err(|err| CommandError::from("取消收藏失败", err))?;
+    Ok(deleted)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+#[instrument(level = "error", skip_all)]
+pub async fn delete_watch_later_items(app: AppHandle, aids: Vec<i64>) -> CommandResult<usize> {
+    let bili_client = app.get_bili_client();
+    let deleted = bili_client
+        .delete_watch_later_items(aids)
+        .await
+        .map_err(|err| CommandError::from("删除稍后再看失败", err))?;
+    Ok(deleted)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+#[instrument(level = "error", skip_all)]
+pub async fn delete_history_items(app: AppHandle, kids: Vec<String>) -> CommandResult<usize> {
+    let bili_client = app.get_bili_client();
+    let deleted = bili_client
+        .delete_history_items(kids)
+        .await
+        .map_err(|err| CommandError::from("删除历史记录失败", err))?;
+    Ok(deleted)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+#[instrument(level = "error", skip_all)]
+pub async fn unfollow_bangumis(app: AppHandle, season_ids: Vec<i64>) -> CommandResult<usize> {
+    let bili_client = app.get_bili_client();
+    let unfollowed = bili_client
+        .unfollow_bangumis(season_ids)
+        .await
+        .map_err(|err| CommandError::from("取消追番失败", err))?;
+    Ok(unfollowed)
+}
+
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command(async)]
+#[specta::specta]
+#[instrument(level = "error", skip_all)]
 pub fn create_download_tasks(app: AppHandle, params: CreateDownloadTaskParams) {
     let download_manager = app.get_download_manager();
     download_manager.create_download_tasks(&params);
