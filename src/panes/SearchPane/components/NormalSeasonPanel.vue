@@ -6,10 +6,12 @@ import CollectionCard from './CollectionCard.vue'
 import { useEpisodeCard, useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import { NButton, NCollapseTransition, NDropdown, NTab, NTabs } from 'naive-ui'
 import EpisodeCard, { EpisodeInfo } from './EpisodeCard.vue'
+import RefreshButton from '../../../components/RefreshButton.vue'
 
 const props = defineProps<{
   ugcSeason: UgcSeason
   normalResult: NormalSearchResult
+  refresh: () => Promise<void>
 }>()
 
 const collectionCardShowing = ref<boolean>(false)
@@ -179,10 +181,13 @@ async function downloadCheckedEpisodes() {
       <n-tab v-for="(section, index) in ugcSeason.sections" :key="index" :name="index" :tab="section.title" />
 
       <template #suffix>
-        <n-button class="ml-auto mb-2" size="small" @click="collectionCardShowing = !collectionCardShowing">
-          {{ collectionCardShowing ? '隐藏合集' : '显示合集' }}
-        </n-button>
-        <n-button class="mx-2 mb-2" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+        <div class="ml-auto mb-2 flex items-center gap-2">
+          <n-button size="small" @click="collectionCardShowing = !collectionCardShowing">
+            {{ collectionCardShowing ? '隐藏合集' : '显示合集' }}
+          </n-button>
+          <RefreshButton :refresh="refresh" />
+          <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+        </div>
       </template>
     </n-tabs>
 

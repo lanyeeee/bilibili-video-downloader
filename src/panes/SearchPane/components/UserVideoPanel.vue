@@ -6,6 +6,7 @@ import { useEpisodeCard, useEpisodeDropdown, useEpisodeSelection } from '../../.
 import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
 import { searchPaneRefKey } from '../../../injection_keys.ts'
 import { NButton, NDropdown, NPagination } from 'naive-ui'
+import RefreshButton from '../../../components/RefreshButton.vue'
 
 const userVideoResult = defineModel<UserVideoSearchResult>('userVideoResult', { required: true })
 
@@ -117,7 +118,10 @@ async function downloadCheckedEpisodes() {
 
 async function getUserVideoInfo(page: number) {
   currentPage.value = page
-  const mid = userVideoResult.value.list.vlist[0].mid
+  const mid = userVideoResult.value.list.vlist[0]?.mid
+  if (mid === undefined) {
+    return
+  }
   const params: GetUserVideoInfoParams = { mid, pn: page }
   const result = await commands.getUserVideoInfo(params)
   if (result.status === 'error') {
@@ -125,6 +129,10 @@ async function getUserVideoInfo(page: number) {
     return
   }
   userVideoResult.value = result.data
+}
+
+async function refresh() {
+  await getUserVideoInfo(currentPage.value)
 }
 </script>
 
@@ -155,7 +163,10 @@ async function getUserVideoInfo(page: number) {
 
     <div class="flex gap-2 m-2 box-border">
       <n-pagination :page-count="pageCount" :page="currentPage" @update:page="getUserVideoInfo($event)" />
-      <n-button class="ml-auto" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <RefreshButton :refresh="refresh" />
+        <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      </div>
     </div>
 
     <n-dropdown

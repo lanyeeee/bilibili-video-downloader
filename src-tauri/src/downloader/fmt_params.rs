@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use eyre::{OptionExt, WrapErr};
+use eyre::{OptionExt, WrapErr, bail};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use tracing::instrument;
@@ -41,6 +41,20 @@ impl FmtParams {
     #[instrument(level = "error", skip_all)]
     pub fn get_episode_dir_and_filename(&self, config: &Config) -> eyre::Result<(PathBuf, String)> {
         use strfmt::strfmt;
+
+        // 没有勾选任何附加内容（弹幕 / 字幕 / 封面 / 刮削）时，
+        // 不创建独立目录，视频文件直接保存在下载目录下，文件名取单集标题（分P取分P标题）
+        if !config.downloads_extra_content() {
+            let title = self
+                .part_title
+                .clone()
+                .unwrap_or_else(|| self.episode_title.clone());
+            let filename = filename_filter(&title);
+            if filename.is_empty() {
+                bail!("格式化文件名失败，结果为空字符串");
+            }
+            return Ok((config.download_dir.clone(), filename));
+        }
 
         let mut json_value =
             serde_json::to_value(self).wrap_err("将FmtParams转为serde_json::Value失败")?;

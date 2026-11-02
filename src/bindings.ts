@@ -107,6 +107,38 @@ async getHistoryInfo(params: GetHistoryInfoParams) : Promise<Result<HistoryInfo,
     else return { status: "error", error: e  as any };
 }
 },
+async deleteFavResources(mediaId: number, aids: number[]) : Promise<Result<number, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_fav_resources", { mediaId, aids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteWatchLaterItems(aids: number[]) : Promise<Result<number, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_watch_later_items", { aids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteHistoryItems(kids: string[]) : Promise<Result<number, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_history_items", { kids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unfollowBangumis(seasonIds: number[]) : Promise<Result<number, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unfollow_bangumis", { seasonIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async createDownloadTasks(params: CreateDownloadTaskParams) : Promise<void> {
     await TAURI_INVOKE("create_download_tasks", { params });
 },
@@ -312,7 +344,7 @@ export type CntInfo = { collect: number; play: number; thumb_up: number; share: 
 export type CntInfoInMedia = { collect: number; play: number; danmaku: number; vt: number; play_switch: number; reply: number; view_text_1: string }
 export type CodecType = "Unknown" | "Audio" | "AVC" | "HEVC" | "AV1"
 export type CommandError = { err_title: string; message: string }
-export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; video_quality_priority: VideoQuality[]; codec_type_priority: CodecType[]; audio_quality_priority: AudioQuality[]; download_video: boolean; download_audio: boolean; auto_merge: boolean; embed_chapter: boolean; embed_skip: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; download_subtitle: boolean; download_cover: boolean; download_nfo: boolean; download_json: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; proxy_mode: ProxyMode; proxy_host: string; proxy_port: number; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig; file_exist_action: FileExistAction; auto_start_download_task: boolean }
+export type Config = { download_dir: string; enable_file_logger: boolean; sessdata: string; bili_jct: string; video_quality_priority: VideoQuality[]; codec_type_priority: CodecType[]; audio_quality_priority: AudioQuality[]; download_video: boolean; download_audio: boolean; auto_merge: boolean; embed_chapter: boolean; embed_skip: boolean; download_xml_danmaku: boolean; download_ass_danmaku: boolean; download_json_danmaku: boolean; download_subtitle: boolean; download_cover: boolean; download_nfo: boolean; download_json: boolean; dir_fmt: string; dir_fmt_for_part: string; time_fmt: string; proxy_mode: ProxyMode; proxy_host: string; proxy_port: number; task_concurrency: number; task_download_interval_sec: number; chunk_concurrency: number; chunk_download_interval_sec: number; danmaku_config: CanvasConfig; file_exist_action: FileExistAction; auto_start_download_task: boolean }
 export type Consulting = { consulting_flag: boolean; consulting_url: string }
 export type ContentAttr = { text: string; bg_color: string; bg_color_night: string; img: string; multi_img: MultiImg }
 export type ContentList = { bold: boolean; content: string; number: string }
@@ -424,7 +456,7 @@ export type PurchaseFormatNote = { content_list: ContentList[]; link: string; ti
 export type PurchaseNote = { content: string; link: string; title: string }
 export type PurchaseProtocol = { link: string; title: string }
 export type QrcodeData = { url: string; qrcode_key: string }
-export type QrcodeStatus = { url: string; sessdata: string; refresh_token: string; timestamp: number; code: number; message: string }
+export type QrcodeStatus = { url: string; sessdata: string; bili_jct: string; refresh_token: string; timestamp: number; code: number; message: string }
 export type RatingInBangumi = { count: number; score: number }
 export type RatingInBangumiFollow = { score: number; count: number }
 export type RecommendSeason = { cover: string; ep_count: string; id: number; season_url: string; subtitle: string; title: string; view: number }

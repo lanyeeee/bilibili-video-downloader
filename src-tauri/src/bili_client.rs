@@ -120,15 +120,20 @@ impl BiliClient {
         let http_resp = request.send().await?;
         // 检查http响应状态码
         let status = http_resp.status();
-        // 尝试从headers中拿SESSDATA
-        let sessdata = http_resp
-            .headers()
-            .get_all("set-cookie")
-            .iter()
-            .filter_map(|header| header.to_str().ok())
-            .filter_map(|header| header.split(';').next())
-            .filter_map(|cookie| cookie.split_once('='))
-            .find_map(|(key, value)| (key.trim() == "SESSDATA").then(|| value.to_owned()));
+        // 尝试从headers中拿SESSDATA和bili_jct（写操作需要bili_jct作为csrf）
+        let (sessdata, bili_jct) = {
+            let extract = |name: &str| {
+                http_resp
+                    .headers()
+                    .get_all("set-cookie")
+                    .iter()
+                    .filter_map(|header| header.to_str().ok())
+                    .filter_map(|header| header.split(';').next())
+                    .filter_map(|cookie| cookie.split_once('='))
+                    .find_map(|(key, value)| (key.trim() == name).then(|| value.to_owned()))
+            };
+            (extract("SESSDATA"), extract("bili_jct"))
+        };
         let body = http_resp.text().await?;
         if status != StatusCode::OK {
             return Err(eyre!("预料之外的状态码({status}): {body}"));
@@ -153,6 +158,7 @@ impl BiliClient {
         }
         if qrcode_status.code == 0 {
             qrcode_status.sessdata = sessdata.ok_or_eyre("扫码成功，但没有解析到SESSDATA")?;
+            qrcode_status.bili_jct = bili_jct.unwrap_or_default();
         }
         Ok(qrcode_status)
     }
@@ -1096,14 +1102,161 @@ impl BiliClient {
         Ok(skip_segments)
     }
 
+    /// 发送带 csrf 的表单 POST 请求，用于收藏 / 稍后再看 / 历史 / 关注等写操作
+    async fn post_with_csrf(&self, url: &str, params: &[(&str, String)]) -> eyre::Result<()> {
+        let csrf = self.get_csrf_token()?;
+
+        let mut form: Vec<(String, String)> = params
+            .iter()
+            .map(|(key, value)| ((*key).to_owned(), value.clone()))
+            .collect();
+        form.push(("csrf".to_owned(), csrf));
+
+        let http_resp = self
+            .api_client
+            .read()
+            .post(url)
+            .form(&form)
+            .header("cookie", self.get_cookie())
+            .header("referer", REFERRER)
+            .send()
+            .await?;
+
+        let status = http_resp.status();
+        let body = http_resp.text().await?;
+        if status != StatusCode::OK {
+            return Err(eyre!("预料之外的状态码({status}): {body}"));
+        }
+
+        let bili_resp: BiliResp =
+            serde_json::from_str(&body).wrap_err(format!("将body解析为BiliResp失败: {body}"))?;
+        if bili_resp.code != 0 {
+            return Err(eyre!("操作失败: {bili_resp:?}"));
+        }
+
+        Ok(())
+    }
+
+    fn get_csrf_token(&self) -> eyre::Result<String> {
+        let bili_jct = self.app.get_config().read().bili_jct.trim().to_owned();
+        if bili_jct.is_empty() {
+            return Err(eyre!(
+                "缺少 bili_jct（CSRF Token），无法执行写操作，请重新扫码登录"
+            ));
+        }
+        Ok(bili_jct)
+    }
+
+    /// 批量取消收藏，返回成功的条数
+    #[instrument(level = "error", skip_all)]
+    pub async fn delete_fav_resources(&self, media_id: i64, aids: Vec<i64>) -> eyre::Result<usize> {
+        if aids.is_empty() {
+            return Ok(0);
+        }
+
+        // resources 格式为 {avid}:2，2 表示视频稿件，多个用逗号分隔
+        let resources = aids
+            .iter()
+            .map(|aid| format!("{aid}:2"))
+            .collect::<Vec<_>>()
+            .join(",");
+
+        self.post_with_csrf(
+            "https://api.bilibili.com/x/v3/fav/resource/batch-del",
+            &[
+                ("media_id", media_id.to_string()),
+                ("resources", resources),
+                ("platform", "web".to_owned()),
+            ],
+        )
+        .await?;
+
+        Ok(aids.len())
+    }
+
+    /// 从稍后再看中删除，接口一次只支持一个 aid，返回成功的条数
+    #[instrument(level = "error", skip_all)]
+    pub async fn delete_watch_later_items(&self, aids: Vec<i64>) -> eyre::Result<usize> {
+        self.get_csrf_token()?;
+        let mut success = 0;
+        for aid in aids {
+            match self
+                .post_with_csrf(
+                    "https://api.bilibili.com/x/v2/history/toview/del",
+                    &[("aid", aid.to_string())],
+                )
+                .await
+            {
+                Ok(()) => success += 1,
+                Err(err) => tracing::warn!("删除稍后再看失败 aid={aid}: {err}"),
+            }
+            tokio::time::sleep(Duration::from_millis(300)).await;
+        }
+        Ok(success)
+    }
+
+    /// 删除历史记录，kid 格式为 `{business}_{id}`，如 `archive_123`，返回成功的条数
+    #[instrument(level = "error", skip_all)]
+    pub async fn delete_history_items(&self, kids: Vec<String>) -> eyre::Result<usize> {
+        self.get_csrf_token()?;
+        let mut success = 0;
+        for kid in kids {
+            match self
+                .post_with_csrf(
+                    "https://api.bilibili.com/x/v2/history/delete",
+                    &[("kid", kid.clone())],
+                )
+                .await
+            {
+                Ok(()) => success += 1,
+                Err(err) => tracing::warn!("删除历史记录失败 kid={kid}: {err}"),
+            }
+            tokio::time::sleep(Duration::from_millis(300)).await;
+        }
+        Ok(success)
+    }
+
+    /// 取消追番，返回成功的条数
+    #[instrument(level = "error", skip_all)]
+    pub async fn unfollow_bangumis(&self, season_ids: Vec<i64>) -> eyre::Result<usize> {
+        self.get_csrf_token()?;
+        let mut success = 0;
+        for season_id in season_ids {
+            match self
+                .post_with_csrf(
+                    "https://api.bilibili.com/x/relation/modify",
+                    &[
+                        ("fid", season_id.to_string()),
+                        ("act", "2".to_owned()),
+                        ("re_src", "11".to_owned()),
+                    ],
+                )
+                .await
+            {
+                Ok(()) => success += 1,
+                Err(err) => tracing::warn!("取消追番失败 season_id={season_id}: {err}"),
+            }
+            tokio::time::sleep(Duration::from_millis(300)).await;
+        }
+        Ok(success)
+    }
+
     pub fn get_cookie(&self) -> String {
-        let sessdata = self.app.get_config().read().sessdata.clone();
+        let config = self.app.get_config().read().clone();
+        let sessdata = config.sessdata;
 
         let trimmed = sessdata.trim_end_matches(';');
         let decoded = urlencoding::decode(trimmed).unwrap_or_else(|_| trimmed.into());
         let encoded = urlencoding::encode(&decoded);
 
-        format!("SESSDATA={encoded}")
+        let mut cookie = format!("SESSDATA={encoded}");
+
+        let bili_jct = config.bili_jct.trim();
+        if !bili_jct.is_empty() {
+            cookie.push_str(&format!("; bili_jct={bili_jct}"));
+        }
+
+        cookie
     }
 }
 

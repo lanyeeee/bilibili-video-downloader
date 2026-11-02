@@ -17,6 +17,9 @@ pub struct Config {
     pub download_dir: PathBuf,
     pub enable_file_logger: bool,
     pub sessdata: String,
+    /// CSRF Token，写操作（删除收藏、取消追番等）必需，来自 cookie 中的 bili_jct
+    #[serde(default)]
+    pub bili_jct: String,
     pub video_quality_priority: Vec<VideoQuality>,
     pub codec_type_priority: Vec<CodecType>,
     pub audio_quality_priority: Vec<AudioQuality>,
@@ -80,6 +83,20 @@ impl Config {
         Ok(())
     }
 
+    /// 是否勾选了任何会额外产生文件的下载项（弹幕 / 字幕 / 封面 / 刮削）
+    ///
+    /// 用于决定是否为一个视频创建独立目录：
+    /// 全部未勾选时，视频文件直接保存在下载目录下，不建独立目录。
+    pub fn downloads_extra_content(&self) -> bool {
+        self.download_xml_danmaku
+            || self.download_ass_danmaku
+            || self.download_json_danmaku
+            || self.download_subtitle
+            || self.download_cover
+            || self.download_nfo
+            || self.download_json
+    }
+
     fn reconcile_priority_lists(&mut self) {
         reconcile(
             &mut self.video_quality_priority,
@@ -122,6 +139,7 @@ impl Config {
             download_dir: app_data_dir.join("视频下载"),
             enable_file_logger: true,
             sessdata: String::new(),
+            bili_jct: String::new(),
             video_quality_priority: DEFAULT_VIDEO_QUALITY_PRIORITY.to_vec(),
             codec_type_priority: DEFAULT_CODEC_TYPE_PRIORITY.to_vec(),
             audio_quality_priority: DEFAULT_AUDIO_QUALITY_PRIORITY.to_vec(),

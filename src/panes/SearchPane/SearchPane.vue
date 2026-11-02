@@ -325,6 +325,10 @@ async function searchFav(input: string, isUrl: boolean) {
 }
 
 defineExpose({ search })
+
+async function refreshSearch() {
+  await search(searchInput.value, searchTypeSelected.value)
+}
 </script>
 
 <template>
@@ -359,10 +363,14 @@ defineExpose({ search })
       <NormalSeasonPanel
         v-if="'Normal' in searchResult && searchResult.Normal.ugc_season !== null"
         :normal-result="searchResult.Normal"
-        :ugc-season="searchResult.Normal.ugc_season" />
+        :ugc-season="searchResult.Normal.ugc_season"
+        :refresh="refreshSearch" />
       <NormalSinglePanel v-else-if="'Normal' in searchResult" :normal-result="searchResult.Normal" />
-      <BangumiPanel v-else-if="'Bangumi' in searchResult" :bangumi-result="searchResult.Bangumi" />
-      <CheesePanel v-else-if="'Cheese' in searchResult" :cheese-result="searchResult.Cheese" />
+      <BangumiPanel
+        v-else-if="'Bangumi' in searchResult"
+        :bangumi-result="searchResult.Bangumi"
+        :refresh="refreshSearch" />
+      <CheesePanel v-else-if="'Cheese' in searchResult" :cheese-result="searchResult.Cheese" :refresh="refreshSearch" />
       <UserVideoPanel v-else-if="'UserVideo' in searchResult" v-model:user-video-result="searchResult.UserVideo" />
       <FavPanel v-else-if="'Fav' in searchResult" :fav-info="searchResult.Fav" />
     </div>

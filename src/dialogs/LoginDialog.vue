@@ -94,6 +94,7 @@ function handleQrcodeStatus() {
 
   if (qrcodeStatus.value.code === 0) {
     store.config.sessdata = qrcodeStatus.value.sessdata
+    store.config.bili_jct = qrcodeStatus.value.bili_jct
     showing.value = false
     message.success('登录成功')
   }
@@ -106,7 +107,10 @@ function handleQrcodeStatus() {
       <div class="flex flex-col">
         <n-tabs class="h-full" v-model:value="currentTabName" type="line" size="small" animated>
           <n-tab-pane name="cookie" tab="Cookie">
-            <FloatLabelInput v-model:value="store.config.sessdata" label="SESSDATA" clearable />
+            <div class="flex flex-col gap-2">
+              <FloatLabelInput v-model:value="store.config.sessdata" label="SESSDATA" clearable />
+              <FloatLabelInput v-model:value="store.config.bili_jct" label="bili_jct（删除等写操作需要）" clearable />
+            </div>
           </n-tab-pane>
           <n-tab-pane name="qrcode" tab="二维码" display-directive="show:lazy">
             <div class="flex flex-col">

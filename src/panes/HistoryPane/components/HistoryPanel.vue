@@ -6,6 +6,7 @@ import HistoryCard from './HistoryCard.vue'
 import { useEpisodeDropdown, useEpisodeSelection } from '../../../utils.tsx'
 import { PartialSelectionOptions, SelectionArea } from '@viselect/vue'
 import FloatLabelInput from '../../../components/FloatLabelInput.vue'
+import RefreshButton from '../../../components/RefreshButton.vue'
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
 import {
   NButton,
@@ -18,11 +19,16 @@ import {
   NSelect,
   NTab,
   NTabs,
+  useDialog,
+  useMessage,
 } from 'naive-ui'
 
 const historyInfo = defineModel<HistoryInfo>('historyInfo', { required: true })
 
 const searchPaneRef = inject(searchPaneRefKey)
+
+const dialog = useDialog()
+const message = useMessage()
 
 const currentPage = ref<number>(1)
 const pageCount = computed<number>(() => Math.ceil(historyInfo.value.page.total / 20))
@@ -115,6 +121,40 @@ async function getHistory(page: number) {
   }
   historyInfo.value = result.data
   searching.value = false
+}
+
+async function refresh() {
+  await getHistory(currentPage.value)
+}
+
+async function deleteChecked() {
+  const kids = Array.from(checkedIds.value)
+  if (kids.length === 0) {
+    return
+  }
+
+  // 删除历史记录接口要求 kid 带类型前缀，如 archive_123 / pgc_456
+  const kidStrings = kids.map((kid) => {
+    const detail = historyInfo.value?.list?.find((item) => item.kid === kid)
+    const business = detail?.history.business
+    return business === undefined || business === '' ? `archive_${kid}` : `${business}_${kid}`
+  })
+
+  dialog.warning({
+    title: '确认删除历史记录',
+    content: `将从账号的历史记录中删除 ${kids.length} 条记录。此操作只影响账号内的历史，不会删除已下载的本地文件。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const result = await commands.deleteHistoryItems(kidStrings)
+      if (result.status === 'error') {
+        message.error(result.error.message)
+        return
+      }
+      message.success(`已删除 ${result.data} 条历史记录`)
+      await refresh()
+    },
+  })
 }
 
 const historyCardRefs = useTemplateRef<InstanceType<typeof HistoryCard>[]>('historyCardRefs')
@@ -350,7 +390,11 @@ function useFavCard(
 
     <div class="flex gap-2 m-2 box-border">
       <n-pagination :page-count="pageCount" :page="currentPage" @update:page="getHistory($event)" />
-      <n-button class="ml-auto" size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <n-button size="small" type="error" :disabled="checkedIds.size === 0" @click="deleteChecked">删除</n-button>
+        <RefreshButton :refresh="refresh" />
+        <n-button size="small" type="primary" @click="downloadCheckedEpisodes">下载勾选视频</n-button>
+      </div>
     </div>
 
     <n-dropdown
