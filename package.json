@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "test": "vitest run",
     "preview": "vite preview",
     "tauri": "tauri",
     "format": "prettier . -w && cargo fmt --all --manifest-path src-tauri/Cargo.toml && cargo fmt --all --manifest-path src-plugin/Cargo.toml && cargo fmt --all --manifest-path src-plugin/examples/Cargo.toml",
@@ -40,6 +41,7 @@
     "unocss": "^66.3.3",
     "vite": "^6.0.3",
     "vite-plugin-vue-devtools": "^7.7.7",
+    "vitest": "^3.2.4",
     "vue-tsc": "^2.1.10"
   },
   "packageManager": "pnpm@9.5.0"

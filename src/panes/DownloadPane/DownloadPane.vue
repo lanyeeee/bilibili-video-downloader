@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref, useTemplateRef } from 'vue'
-import { commands, DownloadProgress, DownloadTaskState, events } from '../../bindings.ts'
+import { commands, events } from '../../bindings.ts'
 import { useStore } from '../../store.ts'
 import UncompletedProgresses from './components/UncompletedProgresses.vue'
 import CompletedProgresses from './components/CompletedProgresses.vue'
 import DownloadDirInput from './components/DownloadDirInput.vue'
 import { PhCheckCircle, PhCloudArrowDown } from '@phosphor-icons/vue'
 import { NBadge, NPagination, NTabPane, NTabs } from 'naive-ui'
-
-export type ProgressData = DownloadProgress & {
-  state: DownloadTaskState
-  percentage: number
-  stateIndicator: string
-  taskIndicator: string
-}
+import { createProgressData, createProgressUpdate, getStateIndicator } from './progress.ts'
 
 const store = useStore()
 
@@ -28,110 +22,23 @@ onMounted(async () => {
       store.downloadSpeed = data.speed
     } else if (event === 'TaskCreate') {
       const { progress, state } = data
-      const taskId = progress.task_id
-      const progressData: ProgressData = {
-        ...progress,
-        state,
-        percentage: 0,
-        stateIndicator: getStateIndicator(state),
-        taskIndicator: '',
-      }
-      store.updateProgresses((progresses) => {
-        progresses.set(taskId, progressData)
-      })
+      store.setProgress(createProgressData(progress, state))
     } else if (event === 'TaskStateUpdate') {
       const { task_id, state } = data
 
-      store.updateProgresses((progresses) => {
-        const progressData = progresses.get(task_id)
-        if (progressData === undefined) {
-          return
-        }
-
-        progressData.state = state
-        progressData.stateIndicator = getStateIndicator(state)
-      })
+      store.patchProgress(task_id, { state, stateIndicator: getStateIndicator(state) })
     } else if (event === 'TaskSleeping') {
       const { task_id, remaining_sec } = data
-      store.updateProgresses((progresses) => {
-        const progressData = progresses.get(task_id)
-        if (progressData !== undefined) {
-          progressData.taskIndicator = `将在${remaining_sec}秒后继续下载`
-        }
-      })
+      store.patchProgress(task_id, { taskIndicator: `将在${remaining_sec}秒后继续下载` })
     } else if (event === 'TaskDelete') {
       const { task_id } = data
-      store.updateProgresses((progresses) => {
-        progresses.delete(task_id)
-      })
+      store.deleteProgress(task_id)
     } else if (event === 'ProgressPreparing') {
       const { task_id } = data
-      store.updateProgresses((progresses) => {
-        const progressData = progresses.get(task_id)
-        if (progressData !== undefined) {
-          progressData.taskIndicator = '正在准备下载'
-        }
-      })
+      store.patchProgress(task_id, { taskIndicator: '正在准备下载' })
     } else if (event === 'ProgressUpdate') {
       const progress = data.progress
-      store.updateProgresses((progresses) => {
-        const progressData = progresses.get(progress.task_id)
-        if (progressData === undefined) {
-          return
-        }
-
-        Object.assign(progressData, progress)
-
-        const videoTask = progressData.video_task
-        const audioTask = progressData.audio_task
-        const videoProcessTask = progressData.video_process_task
-        const danmakuTask = progressData.danmaku_task
-        const subtitleTask = progressData.subtitle_task
-        const coverTask = progressData.cover_task
-        const nfoTask = progressData.nfo_task
-        const jsonTask = progressData.json_task
-
-        const danmakuSelected = danmakuTask.xml_selected || danmakuTask.ass_selected || danmakuTask.json_selected
-
-        if (videoTask.selected && !videoTask.completed && videoTask.content_length > 0) {
-          const chunkCount = progressData.video_task.chunks.length
-          const completedChunks = progressData.video_task.chunks.filter((chunk) => chunk.completed).length
-          progressData.percentage = (completedChunks / chunkCount) * 100
-          progressData.taskIndicator = `视频分片 ${completedChunks}/${chunkCount}`
-        } else if (audioTask.selected && !audioTask.completed && audioTask.content_length > 0) {
-          const chunkCount = progressData.audio_task.chunks.length
-          const completedChunks = progressData.audio_task.chunks.filter((chunk) => chunk.completed).length
-          progressData.percentage = (completedChunks / chunkCount) * 100
-          progressData.taskIndicator = `音频分片 ${completedChunks}/${chunkCount}`
-        } else if (!videoProcessTask.completed) {
-          const embedSelected = videoProcessTask.embed_chapter_selected || videoProcessTask.embed_skip_selected
-          if (videoProcessTask.merge_selected && embedSelected) {
-            progressData.percentage = 100
-            progressData.taskIndicator = '自动合并+嵌入章节元数据'
-          } else if (videoProcessTask.merge_selected) {
-            progressData.percentage = 100
-            progressData.taskIndicator = '自动合并'
-          } else if (embedSelected) {
-            progressData.percentage = 100
-            progressData.taskIndicator = '嵌入章节元数据'
-          }
-        } else if (danmakuSelected && !danmakuTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '弹幕'
-        } else if (subtitleTask.selected && !subtitleTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '字幕'
-        } else if (coverTask.selected && !coverTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = '封面'
-        } else if (nfoTask.selected && !nfoTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = 'nfo刮削'
-        } else if (jsonTask.selected && !jsonTask.completed) {
-          progressData.percentage = 100
-          progressData.taskIndicator = 'json刮削'
-        }
-      })
+      store.patchProgress(progress.task_id, (current) => createProgressUpdate(current, progress))
     }
   })
 
@@ -141,38 +48,10 @@ onMounted(async () => {
     return
   }
 
-  store.updateProgresses((progresses) => {
-    for (const { state, progress } of result.data) {
-      const progressData: ProgressData = {
-        ...progress,
-        state,
-        percentage: 0,
-        stateIndicator: getStateIndicator(state),
-        taskIndicator: '',
-      }
-
-      progresses.set(progress.task_id, progressData)
-    }
-  })
-})
-
-function getStateIndicator(state: DownloadTaskState) {
-  let stateIndicator = ''
-
-  if (state === 'Pending') {
-    stateIndicator = '排队中'
-  } else if (state === 'Downloading') {
-    stateIndicator = '下载中'
-  } else if (state === 'Paused') {
-    stateIndicator = '已暂停'
-  } else if (state === 'Completed') {
-    stateIndicator = '下载完成'
-  } else if (state === 'Failed') {
-    stateIndicator = '下载失败'
+  for (const { state, progress } of result.data) {
+    store.setProgress(createProgressData(progress, state))
   }
-
-  return stateIndicator
-}
+})
 </script>
 
 <template>

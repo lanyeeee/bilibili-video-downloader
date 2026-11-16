@@ -6,7 +6,7 @@ import { DropdownOption, NDropdown, NIcon } from 'naive-ui'
 import { PhChecks, PhTrash, PhArrowClockwise } from '@phosphor-icons/vue'
 import { useStore } from '../../../store.ts'
 import DownloadProgress from './DownloadProgress.vue'
-import { ProgressData } from '../DownloadPane.vue'
+import { ProgressData } from '../progress.ts'
 
 const store = useStore()
 
@@ -20,9 +20,7 @@ const selectedIds = ref<Set<string>>(new Set())
 const { dropdownX, dropdownY, dropdownShowing, dropdownOptions, showDropdown } = useDropdown()
 
 const completedProgresses = computed<[string, DeepReadonly<ProgressData>][]>(() =>
-  Array.from(store.progresses.entries())
-    .filter(([, { state }]) => state === 'Completed')
-    .sort((a, b) => (b[1].completed_ts ?? 0) - (a[1].completed_ts ?? 0)),
+  Array.from(store.completedProgresses.entries()).sort((a, b) => (b[1].completed_ts ?? 0) - (a[1].completed_ts ?? 0)),
 )
 
 const PAGE_SIZE = 20
