@@ -6,7 +6,7 @@ import { DropdownOption, NDropdown, NIcon } from 'naive-ui'
 import { PhPause, PhChecks, PhTrash, PhCaretRight, PhArrowClockwise } from '@phosphor-icons/vue'
 import { useStore } from '../../../store.ts'
 import DownloadProgress from './DownloadProgress.vue'
-import { ProgressData } from '../DownloadPane.vue'
+import { ProgressData } from '../progress.ts'
 
 const store = useStore()
 
@@ -20,37 +20,35 @@ const selectedIds = ref<Set<string>>(new Set())
 const { dropdownX, dropdownY, dropdownShowing, dropdownOptions, showDropdown } = useDropdown()
 
 const uncompletedProgresses = computed<[string, DeepReadonly<ProgressData>][]>(() =>
-  Array.from(store.progresses.entries())
-    .filter(([, { state }]) => state !== 'Completed')
-    .sort((a, b) => {
-      // 下载中的任务排在最前面
-      if (a[1].state === 'Downloading' && b[1].state !== 'Downloading') {
-        return -1
-      }
-      if (b[1].state === 'Downloading' && a[1].state !== 'Downloading') {
-        return 1
-      }
-      // 其次是排队中的任务
-      if (a[1].state === 'Pending' && b[1].state !== 'Pending') {
-        return -1
-      }
-      if (b[1].state === 'Pending' && a[1].state !== 'Pending') {
-        return 1
-      }
-      // 再其次是已开始的任务(即有进度的任务)
-      if (a[1].taskIndicator !== '' && b[1].taskIndicator === '') {
-        return -1
-      }
-      if (b[1].taskIndicator !== '' && a[1].taskIndicator === '') {
-        return 1
-      }
-      // 如果任务都已开始(即有进度的任务)，则按进度排序
-      if (a[1].taskIndicator !== '' && b[1].taskIndicator !== '') {
-        return b[1].percentage - a[1].percentage
-      }
-      // 上述条件都不满足时，按创建时间排序
-      return b[1].create_ts - a[1].create_ts
-    }),
+  Array.from(store.uncompletedProgresses.entries()).sort((a, b) => {
+    // 下载中的任务排在最前面
+    if (a[1].state === 'Downloading' && b[1].state !== 'Downloading') {
+      return -1
+    }
+    if (b[1].state === 'Downloading' && a[1].state !== 'Downloading') {
+      return 1
+    }
+    // 其次是排队中的任务
+    if (a[1].state === 'Pending' && b[1].state !== 'Pending') {
+      return -1
+    }
+    if (b[1].state === 'Pending' && a[1].state !== 'Pending') {
+      return 1
+    }
+    // 再其次是已开始的任务(即有进度的任务)
+    if (a[1].taskIndicator !== '' && b[1].taskIndicator === '') {
+      return -1
+    }
+    if (b[1].taskIndicator !== '' && a[1].taskIndicator === '') {
+      return 1
+    }
+    // 如果任务都已开始(即有进度的任务)，则按进度排序
+    if (a[1].taskIndicator !== '' && b[1].taskIndicator !== '') {
+      return b[1].percentage - a[1].percentage
+    }
+    // 上述条件都不满足时，按创建时间排序
+    return b[1].create_ts - a[1].create_ts
+  }),
 )
 
 const PAGE_SIZE = 20
